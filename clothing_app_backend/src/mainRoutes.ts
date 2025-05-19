@@ -1,7 +1,7 @@
-// import express, { Router } from 'express';
+import express, { Router } from 'express';
 
 // import { AuthRoutes } from './utils/generic/auth/auth.routes';
-// import { UserRoutes } from './userModule/user.routes';
+import { UserRoutes } from './userModule/user.routes';
 // import { CafeRoutes } from './cafeModule/cafe.routes';
 // import { LoyalLevelRoutes } from './loyaltyProgramModule/loyalty.routes';
 // import { OffersRoutes } from './offersModule/offers.routes';
@@ -24,7 +24,7 @@
 // import { DashboardRoutes } from './adminModule/dashboard/dashboard.routes';
 // import { ItemRoutes } from './itemModule/item.routes';
 // import { WalletRouter } from './petpoojaModule/wallet.routes';
-// const app = express();
+const app = express();
 
 // // ---------------------------------- Auth Routes ----------------------------------
 
@@ -36,7 +36,7 @@
 // // ---------------------------------- App Routes ----------------------------------
 
 // // api/user
-// app.use('/user', UserRoutes);
+app.use('/user', UserRoutes);
 
 // // api/appConfig
 // app.use('/appConfig', AppConfigRoutes);
@@ -103,4 +103,4 @@
 // // item
 // app.use('/item', ItemRoutes);
 
-// module.exports = app;
+module.exports = app;
