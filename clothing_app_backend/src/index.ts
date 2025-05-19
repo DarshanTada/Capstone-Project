@@ -23,8 +23,8 @@ const eFileUpload = require('express-fileupload');
   );
 
   mongoose
-    .connect(
-   'mongodb+srv://adeeshpatel09:Conestoga%40123@fixndatabase.q02jd.mongodb.net/FixnDatabase?retryWrites=true&w=majority&appName=FixnDatabase',
+    .connect( 
+      'mongodb+srv://darshantada7:gWvTubWMosngksUV@capstone-project.esjmjci.mongodb.net/?retryWrites=true&w=majority&appName=capstone-project',
     
     )
     .then(() => {
