@@ -4,16 +4,19 @@ export const admin = require("firebase-admin");
 
 admin.initializeApp({
   credential: admin.credential.cert({
-    "type": "service_account",
-    "project_id": "safarpe-9ff17",
-    "private_key_id": "72c8f21b602d88e1975e91dc5684a5cea9b16cbf",
-    "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvQIBADANBgkqhkiG9w0BAQEFAASCBKcwggSjAgEAAoIBAQDOlwWqDAkhloGi\nJIXfaGdTk8IqlFR93OG/cNiUgIswdP6Z3jPYnuUGasPGAQ5zT5QJ7QkNkU96DH3Q\nJInH07hBEcCFnUmOONJegY1c2JwGuasPmGQzGNgKE/JbLCFSIA3HqRcb4TLFOC5v\nngRNY0VsEoIZO0yx8zJbAy4BD/RaBz+ShNA0TjOgsPUlOuEtyCCpCU+WoQtQs3nD\nL4tZdIOEJ9qz9CGy05jae4wTEzmWTYBy6ZKsBLL5CGrAGe2DdxoULladMcZyQla5\n7qzUdJ9Yjd9D6/hJ0LcNmRY2hUs0D+QBqIDdgCfVqHosgiEtzKyzgqZN4wt8RH55\nt/NSq0mzAgMBAAECggEADofFwLeW/tNIq+BYwCVmOxUl73u+U5nxENd9jDhcUdyw\nuZ7M07wdTK2+tlMFsquStH4FCHzDc8ikIrsnK7Ri/cSjX2J4NXYeqcH/8NtVYg22\nD+M+jO9+5nqPrcT1VQLnJTdp5i6ZNRDmBzi8gbrtO5QzrVWj59I8pPUcy7tVCu3e\nJIxa7R2Oq+2XUObD8fRtBhJnS1bbCFrDBpVwFXJojZJcK76D8wNdSEqg44W5jWNH\njsQYapQTi+KS6VoqmYbXjCkO8fdgO9E4cwiCMp21S8Q1x0+qx8nxMW+oB/38TJ0j\nOL52mV/PjLf3uNDUYvls58XQhC5XIkPJ7d3jT3E2VQKBgQD3yyM32N0UyUzrCJ/4\nVX3hdm6W+w0V8AeHkvoaFTZ9c9FhOCZ9I9AiEjMFQqERP7DrASqJ8NSwgEIdoxoI\nNhmKN7fxbzMZ+99FGaQieC2ivRiktmqGDIezv+wGuVJmlB+o0U+cQNE6le24izMc\nbCdDHF4KBg9iT78iXv2gVqcxNQKBgQDVboyVIz0mM233lyTfh7ZaDNfKwUeS5ePE\nkqalc0+Lt0KwkiyvOGKqpUy1rfNquiTnTdUu9YeyRx4PzdObdFQIfQsQLZ2xszP8\nbKvihO+aeVRubG+kMqMt0vltJQ9VOLKfG3uOnwx0wj3bGyev0p+PWEpGzwNSgHha\nbf0ZH7KURwKBgDkv65fW9+b1MkhH/Etex6eCIrG7jOCUPdifJhNg8+tuEFOElvVo\nj39dfeLn5q5JabZC1aNyLlPxtdCLNNXSToCkrVIOHNgRVgznhwbhf37Ab3CMHPeE\n6sikMX+3w3mjE89tRxdDqkYAFhXyIkCcAU+uu1FK5sAEsZLoI1aeyQVFAoGAJ2sr\ne7/uY0fMX5YCsWYXP7pvgHsCBReAYaXUMWqCnoNSRdo5doMrdejhqgxekK+gcTfm\nz615SmvoGXMiSevKOWcey/Yg0dkPGOfZNxTmS9lsxpgwZlsT2DrG5mmZ01uNYeVp\nhIXLfyUA157ETazQ22CrFzjUnEAt+kWmISXBjbECgYEA78AIEKlOI0njL59DpLGu\n3AeF3c9ea8FJ6APFunCt7cqI0xLmcOoVnlE5rm293DHfdS7lfy1OPUjooaHyN459\nunwNK2eYV6v9SkXFZtO5IDJe5LEI4cRfXp7N1vgxs+hu4IICPIuOd1tJNc6dbGRp\nXAdOjPEqOqIkWM/MKpLJSVI=\n-----END PRIVATE KEY-----\n",
-    "client_email": "firebase-adminsdk-gxyzw@safarpe-9ff17.iam.gserviceaccount.com",
-    "client_id": "100165782740760626718",
-    "auth_uri": "https://accounts.google.com/o/oauth2/auth",
-    "token_uri": "https://oauth2.googleapis.com/token",
-    "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
-    "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-gxyzw%40safarpe-9ff17.iam.gserviceaccount.com"
-  }
-  ),
+    type: "service_account",
+    project_id: "capstone-clothingapp",
+    private_key_id: "b57404cf740a18afb4bef9aa5879a9c2871d6edd",
+    private_key:
+      "-----BEGIN PRIVATE KEY-----\nMIIEuwIBADANBgkqhkiG9w0BAQEFAASCBKUwggShAgEAAoIBAQC259n06GUPtC0/\nmMNztpGl8azGmX0Jbk7eO/zEJNgos/Rb31pwZfZJQ+2ANbR+GwLan3qa4Ki7ob+u\nErI9mWJ0Dba/S3O9/3mNDcR36QcAecMjeUVyNVxuaFkjDBNEZfUTxSECXiTwBsPS\n/traMdulJFBkAQ0cGREAp9sK/LmI8p3BAmHeVpr9AWAq6zSnLjlaajDSFYE5yd44\niRVhVxbWi7kEGz0BEg3k3hMOhqAdMrS58D2n4/kX6IiM8IxeXkfV0rxFAI2peTtp\n92wUUb3wooVlcZjkoc7oTolWQpsfyUSbwuk50OZdnKI1qpTszZPY3Tl8v/rVMmN5\nevNOB6X7AgMBAAECgf8jPzVr/LInqeZjsGH56oomxcEwhGOUGFhv0HTlV4mlo7LI\nrEIWvDoPObKLAnkbKW64sq2YgF1ZIH0lDnVKvu7kw7/JHWvbMWA7I8FjWi9Uks0I\nCQFZAO95rKIrdChCW2OJwR3wrDPHYtuvIsMJ8+cKlp+R+0yLcvPT1y+0Q6ooDu/M\nFLfkPp4BlcHJ30HFb2vtDZEnqxjQHeLlu8v+6NtuZmVL+c22lIJfNdYlagTnfTTv\nFUm9XAM0vP5cGT2n8lBGvJq5GvFzZPu4H73Gii+ULE9FibFCF9gRS/paKEnzRXff\nu6D0CPppR5mIOrbKEMu+ECDRBtKNoEpxd6EVDgECgYEA8Njvcg0UbEQDYXhDnhw5\nj72IGb9nBRZuAKzYZp3u7AFjWSP17/L51JAlWyUj4PBk3gTkXlaS5S27hcr63czj\nWW/Yfzq4Kl9nHk6NgOmkcAlYWIG16UkK58G/Mpa3pq5+piKwOq/wZydCxR7cbMjp\ni//nQ4FwyrWi/VhXuobJhDsCgYEAwmm2UNMuPrfxYtBBTEkX/H6+qsApt+krQ4a+\nYJmv2X8RDmwOSzWd/QoRlTJ2pU59serkqp2GQWm9RbVficmWw7p5ILVNlEvHNnaI\nZMTk2yA86pT09CApZlESj+vQRukx9e9hXt6mCrvukDpJa4C1wDHoy10ZtcNJShgD\nte01CUECgYBCcod1PtiQmh8YqBZ3q6/R0WeYOu9QPwTwWL+HaDE/mY5wTHSQ08dL\nds1nnRKN/6TEgDMFN/tlET34Rqz5vopG5Y2kZG3k+tc3TFLL6yn74wgluvuWNhm1\nIQYADgbzDJdSfKWEO4Am5XUNb1s/BBszDdIfFLoqovwpy1LA2mkEewKBgQC04gZv\nTQ1J7Xr5pSocACYBFyvvUrt+EcPfIA8hcdzbUA5ejMr/zvMf665QUpNxWoY4c4Qt\n+kJfujIQGaC6YoWTtnvcotN7lsXTNpXQrCECgAwtdkoymXnraKMMpSszzuRdHkxK\nKH30nsZoCtMk4qw4Fjeyfvzc0MXv2kgZjIo8AQKBgFm1n8oBEfoMNLbtmq7Vp/is\nFY1tVQgQSZDLvfKNpemYedmIW0ttxYcIDTs0LLER4pg7XIe1SsV7OZ46dWtZ4c8U\nf4t/XhVi5U9TMWsjioj9IA3psJoyC3sVOLKE+LzLrjLKePaVbMCfSvTmTvVaS9f1\nspY2JofqKakXxuj+DaV3\n-----END PRIVATE KEY-----\n",
+    client_email:
+      "firebase-adminsdk-fbsvc@capstone-clothingapp.iam.gserviceaccount.com",
+    client_id: "107983235935750306338",
+    auth_uri: "https://accounts.google.com/o/oauth2/auth",
+    token_uri: "https://oauth2.googleapis.com/token",
+    auth_provider_x509_cert_url: "https://www.googleapis.com/oauth2/v1/certs",
+    client_x509_cert_url:
+      "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-fbsvc%40capstone-clothingapp.iam.gserviceaccount.com",
+    universe_domain: "googleapis.com",
+  }),
 });
