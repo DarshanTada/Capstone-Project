@@ -1,17 +1,19 @@
-// import express, { Router } from "express";
-// export const `UserRoutes: Router = express.Router();
-// import { login, register, editProfile, refreshUser } from './user.controller'
-// import { verifyJwtToken } from "./../utils/middleware/verify-jwt-token";
+import express, { Router } from "express";
+export const UserRoutes: Router = express.Router();
+import { login, register, editProfile, refreshUser } from '../userModule/user.controller'
+import { verifyJwtToken } from "./../utils/middleware/verify-jwt-token";
 
-// // api/user/login
-// UserRoutes.get("/login", login);
+// api/user/login
+UserRoutes.get("/login", login);
 
-// // // api/user/register
-// UserRoutes.post("/register", register);
+// // api/user/register
+UserRoutes.post("/register", register);
 
-// // api/user/refreshUser
-// UserRoutes.get("/refreshUser", verifyJwtToken, refreshUser);
+// api/user/refreshUser
+UserRoutes.get("/refreshUser", verifyJwtToken, refreshUser);
 
+// api/user/editProfile
+UserRoutes.put("/editProfile", verifyJwtToken, editProfile);
 
 // // api/user/editProfile
 // UserRoutes.put("/editProfile", verifyJwtToken, editProfile);
