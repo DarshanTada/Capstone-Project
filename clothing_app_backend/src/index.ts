@@ -43,6 +43,11 @@ const eFileUpload = require('express-fileupload');
 
   app.use('/api', mainRoutes);
 
+  // 
+    app.get('/', (req, res) => {
+      res.send('API is running!');
+    });
+
   app.use(errorHandler);
 
   const port = process.env.PORT || 3001;
