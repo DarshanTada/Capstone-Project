@@ -27,7 +27,7 @@ class MyTextButton extends StatelessWidget {
   double dW = 0.0;
   double tS = 0.0;
 
-  TextTheme get textTheme => Theme.of(bContext).textTheme;
+  TextTheme get textTheme => Theme.of(navigatorKey.currentContext!).textTheme;
 
   @override
   Widget build(BuildContext context) {

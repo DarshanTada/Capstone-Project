@@ -11,7 +11,7 @@ class NewWidget extends StatelessWidget {
   double dW = 0.0;
   double tS = 0.0;
   Map language = {};
-  TextTheme get textTheme => Theme.of(bContext).textTheme;
+  TextTheme get textTheme => Theme.of(navigatorKey.currentContext!).textTheme;
 
   @override
   Widget build(BuildContext context) {

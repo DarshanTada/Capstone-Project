@@ -1,3 +1,4 @@
+import 'package:clothing_app_frontend/authModule/screens/login.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/common_widgets/bottom_nav_bar.dart';
 import 'package:clothing_app_frontend/common_widgets/loading_screen.dart';
@@ -14,13 +15,14 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     case NamedRoute.loadingScreen:
       return _getPageRoute(
-          LoadingScreen(args: settings.arguments as LoadingScreenArguments));
+        LoadingScreen(args: settings.arguments as LoadingScreenArguments),
+      );
 
     case NamedRoute.onBoardingScreen1:
       return _getPageRoute(OnBoardingScreen1());
 
-    // case NamedRoute.mobileNumberScreen:
-    //   return _getPageRoute(const MobileNumberScreen());
+    case NamedRoute.loginScreen:
+      return _getPageRoute(const LoginScreen());
 
     // case NamedRoute.verifyOtpScreen:
     //   return _getPageRoute(VerifyOtpScreen(
@@ -48,13 +50,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     // case NamedRoute.walletScreen:
     //   return _getPageRoute(const WalletScreen());
 
-
-
     // case NamedRoute.editProfileScreen:
     //   return _getPageRoute(EditProfileScreen(
     //     args: settings.arguments as EditProfileScreenArguments,
     //   ));
-
 
     // case NamedRoute.faqsScreen:
     //   return _getPageRoute(

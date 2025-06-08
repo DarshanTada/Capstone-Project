@@ -31,7 +31,7 @@ class _OnBoardingScreen1State extends State<OnBoardingScreen1> {
 
   int screenNumber = 1;
 
-  TextTheme get textTheme => Theme.of(bContext).textTheme;
+  TextTheme get textTheme => Theme.of(navigatorKey.currentContext!).textTheme;
 
   @override
   Widget build(BuildContext context) {

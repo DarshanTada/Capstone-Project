@@ -25,16 +25,20 @@ import 'main.dart';
 String networkDummy =
     'https://media.istockphoto.com/vectors/default-avatar-photo-placeholder-icon-grey-profile-picture-business-vector-id1327592449?k=20&m=1327592449&s=612x612&w=0&h=6yFQPGaxmMLgoEKibnVSRIEnnBgelAeIAf8FqpLBNww=';
 
-get bContext => navigatorKey;
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-mixin navigatorKey {}
+// get navigatorKey.currentContext! => navigatorKey;
 
-MediaQueryData get _mediaQuery => MediaQuery.of(bContext as BuildContext);
+// mixin navigatorKey {
+//   var currentState;
+// }
+
+MediaQueryData get _mediaQuery => MediaQuery.of(navigatorKey.currentContext!);
 
 double get _tS => _mediaQuery.textScaleFactor;
 
 bool get isGuest => Provider.of<AuthProvider>(
-  bContext as BuildContext,
+  navigatorKey.currentContext!,
   listen: false,
 ).user.isGuest;
 
@@ -43,7 +47,7 @@ List<Color> gradientColors = [const Color(0xFF0197FC), const Color(0xFF01B0B1)];
 Gradient get linearGradient => LinearGradient(colors: gradientColors);
 
 hideKeyBoard() =>
-    FocusScope.of(bContext as BuildContext).requestFocus(FocusNode());
+    FocusScope.of(navigatorKey.currentContext!).requestFocus(FocusNode());
 
 double horizontalPaddingFactor = 0.06;
 
@@ -162,7 +166,7 @@ bool iOSCondition(double dH) => Platform.isIOS && dH > 850;
 Text subHeaderText(String title, [Color color = lightGray]) => Text(
   title,
   style: Theme.of(
-    bContext as BuildContext,
+    navigatorKey.currentContext!,
   ).textTheme.displayLarge!.copyWith(fontSize: _tS * 16, color: color),
 );
 
@@ -220,15 +224,14 @@ pickImage(ImageSource source) async {
     final image = await picker.pickImage(source: source);
 
     return image;
-  } catch (e) { 
+  } catch (e) {
     return null;
   }
 }
 
 void showSnackbar(String msg, [Color color = Colors.red, int duration = 2]) {
   // final context = navigatorKey.currentContext;
-  final context = navigatorKey as BuildContext;
-
+  final context = navigatorKey.currentContext!;
 
   if (context == null) {
     debugPrint("⚠️ Cannot show snackbar: navigatorKey.currentContext is null");
@@ -297,7 +300,7 @@ selectDateRange(
   DateTime endDate,
 ) async {
   return await showDateRangePicker(
-    context: bContext,
+    context: navigatorKey.currentContext!,
     firstDate: DateTime.now().subtract(const Duration(days: 90)),
     lastDate: DateTime.now(),
     initialDateRange: selectedFilter == 'customDateRange'

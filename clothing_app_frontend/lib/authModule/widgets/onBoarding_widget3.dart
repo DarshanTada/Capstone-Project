@@ -19,7 +19,7 @@ class OnBoardingWidget3 extends StatelessWidget {
   Map language = {};
   int screenNumber = 1;
 
-  TextTheme get textTheme => Theme.of(bContext).textTheme;
+  TextTheme get textTheme => Theme.of(navigatorKey.currentContext!).textTheme;
 
   @override
   Widget build(BuildContext context) {

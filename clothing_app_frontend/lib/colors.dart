@@ -1,27 +1,15 @@
 import 'package:flutter/material.dart';
 import 'common_functions.dart';
 
-Color get themeColor => Theme.of(bContext).primaryColor;
+Color get themeColor => Theme.of(navigatorKey.currentContext!).primaryColor;
 
 //OnBoarding screen
 Color getScaffoldBgColor(BuildContext context) {
-  final themeMode = Theme.of(context).brightness;
-
-  if (themeMode == Brightness.light) {
-    return const Color(0xFF5ECBEE); // Light mode color
-  } else {
-    return const Color(0xFF212B1E); // Dark mode color
-  }
+  return const Color(0xFF5ECBEE);
 }
 
 Color getThemeColor(BuildContext context) {
-  final themeMode = Theme.of(context).brightness;
-
-  if (themeMode == Brightness.light) {
-    return const Color(0xff434343); // Light mode color
-  } else {
-    return const Color(0xFFFFFFFF); // Dark mode color
-  }
+  return const Color(0xff434343);
 }
 
 const Color offWhite = Color(0xFFF1F1F1);
