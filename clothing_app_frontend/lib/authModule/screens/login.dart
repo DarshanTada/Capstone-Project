@@ -83,7 +83,7 @@ class _LoginScreenState extends State<LoginScreen> {
           //Overlay content
           Column(
             children: [
-              const Spacer(flex: 2),
+              const Spacer(flex: 1),
               const Center(
                 child: Column(
                   children: [
@@ -134,20 +134,6 @@ class _LoginScreenState extends State<LoginScreen> {
                     const SizedBox(height: 20),
                     Row(
                       children: [
-                        // Container(
-                        //   padding: const EdgeInsets.symmetric(horizontal: 8),
-                        //   decoration: BoxDecoration(
-                        //     border: Border.all(color: Colors.grey),
-                        //     borderRadius: BorderRadius.circular(8),
-                        //   ),
-                        //   child: Row(
-                        //     children: const [
-                        //       Text("🇨🇦"),
-                        //       SizedBox(width: 4, height: 50),
-                        //       Text("+1"),
-                        //     ],
-                        //   ),
-                        // ),
                         const SizedBox(width: 10),
                         Expanded(
                           child: TextField(
@@ -183,11 +169,13 @@ class _LoginScreenState extends State<LoginScreen> {
                       ],
                     ),
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Checkbox(
                           value: _termsAccepted,
                           onChanged: (val) =>
                               setState(() => _termsAccepted = val ?? false),
+                          activeColor: Colors.black,
                         ),
                         const Text("I accept the "),
                         GestureDetector(
@@ -224,20 +212,23 @@ class _LoginScreenState extends State<LoginScreen> {
                         ],
                       ),
                     ),
-                    TextButton(
-                      onPressed: () {
-                        // Skip logic
-                      },
-                      child: const Text(
-                        "Skip",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    const Text(
-                      "Privacy Policy",
-                      textAlign: TextAlign.center,
-                      style: TextStyle(fontSize: 12, color: Colors.grey),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          "Privacy Policy",
+                          style: TextStyle(fontSize: 12, color: Colors.grey),
+                        ),
+                        TextButton(
+                          onPressed: () {
+                            // Skip logic
+                          },
+                          child: const Text(
+                            "Skip",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
