@@ -1,26 +1,170 @@
-import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
+import 'package:clothing_app_frontend/common_functions.dart';
+import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class NewWidget extends StatefulWidget {
-  const NewWidget({super.key});
-
-  @override
-  State<NewWidget> createState() => _NewWidgetState();
+abstract class BaseScreen extends StatefulWidget {
+  const BaseScreen({Key? key}) : super(key: key);
 }
 
-class _NewWidgetState extends State<NewWidget> {
-  //
-  Map language = {};
-  double dW = 0.0;
-  double tS = 0.0;
-  TextTheme get textTheme => Theme.of(context).textTheme;
+abstract class BaseScreenState<T extends BaseScreen> extends State<T> {
+  late double dW;
+  late double dH;
+  late double tS;
+  late TextTheme textTheme;
+  late Map language;
+
+  bool isLoading = false;
+
+  void setLoading(bool value) {
+    if (mounted) {
+      setState(() {
+        isLoading = value;
+      });
+    }
+  }
+
+  void showSnackBar(String message, {Color color = Colors.red, int duration = 2}) {
+    ScaffoldMessenger.of(context).hideCurrentSnackBar();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child: Text(message, softWrap: true),
+        ),
+        backgroundColor: color,
+        duration: Duration(seconds: duration),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    dH = MediaQuery.of(context).size.height;
     dW = MediaQuery.of(context).size.width;
     tS = MediaQuery.of(context).textScaleFactor;
+    textTheme = Theme.of(context).textTheme;
     language = Provider.of<AuthProvider>(context).selectedLanguage;
-    return Container();
+
+    final body = SizedBox(
+      height: dH,
+      width: dW,
+      child: isLoading
+          ? CircularLoader(android: dW * 0.08, iOS: dW * 0.035)
+          : buildBody(context),
+    );
+
+    return Scaffold(
+      appBar: buildAppBar(),
+      body: iOSCondition(dH) ? body : SafeArea(child: body),
+      bottomNavigationBar: buildBottomNavigationBar(),
+      floatingActionButton: buildFloatingActionButton(),
+    );
   }
+
+  // These can be overridden by subclasses:
+  PreferredSizeWidget? buildAppBar() => AppBar(title: Text("Title"));
+  Widget? buildBottomNavigationBar() => null;
+  Widget? buildFloatingActionButton() => null;
+
+  // Must be implemented by the child screen
+  Widget buildBody(BuildContext context);
 }
+
+
+
+// import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
+// import 'package:clothing_app_frontend/common_widgets/custom_app_bar.dart';
+// import 'package:flutter/material.dart';
+// import 'package:provider/provider.dart';
+// import '../authModule/providers/auth_provider.dart';
+// import '../common_functions.dart';
+// class ScreenLayout extends StatefulWidget {
+//   const ScreenLayout({Key? key}) : super(key: key);
+//   @override
+//   ScreenLayoutState createState() => ScreenLayoutState();
+// }
+// class ScreenLayoutState extends State<ScreenLayout> {
+//   double dH = 0.0;
+//   double dW = 0.0;
+//   double tS = 0.0;
+//   TextTheme customTextTheme = const TextTheme();
+//   Map language = {};
+//   bool isLoading = false;
+//   fetchData() async {}
+//   @override
+//   void initState() {
+//     super.initState();
+//     fetchData();
+//   }
+//   @override
+//   Widget build(BuildContext context) {
+//     dH = MediaQuery.of(context).size.height;
+//     dW = MediaQuery.of(context).size.width;
+//     tS = MediaQuery.of(context).textScaleFactor;
+//     language = Provider.of<AuthProvider>(context).selectedLanguage;
+//     customTextTheme = Theme.of(context).textTheme;
+//     return Scaffold(
+//       appBar: CustomAppBar(title: 'Title', dW: dW),
+//       body: iOSCondition(dH) ? screenBody() : SafeArea(child: screenBody()),
+//     );
+//   }
+//   screenBody() {
+//     return SizedBox(
+//       height: dH,
+//       width: dW,
+//       child: isLoading
+//           ? CircularLoader(android: dW * 0.08, iOS: dW * 0.035)
+//           : SingleChildScrollView(
+//               physics: const BouncingScrollPhysics(),
+//               padding: EdgeInsets.symmetric(horizontal: dW * 0.05),
+//               child: Column(
+//                 crossAxisAlignment: CrossAxisAlignment.stretch,
+//                 children: [
+//                   SizedBox(height: dW * 0.05),
+//                 ],
+//               ),
+//             ),
+//     );
+//   }
+// }
+
+
+
+// !  NOTE: use inherited screen like this 
+
+
+// class DashboardScreen extends BaseScreen {
+//   const DashboardScreen({Key? key}) : super(key: key);
+
+//   @override
+//   State<DashboardScreen> createState() => _DashboardScreenState();
+// }
+
+// class _DashboardScreenState extends BaseScreenState<DashboardScreen> {
+//   @override
+//   Widget buildBody(BuildContext context) {
+//     return Column(
+//       crossAxisAlignment: CrossAxisAlignment.start,
+//       children: [
+//         Text("dW: $dW, dH: $dH", style: textTheme.bodyText1),
+//         ElevatedButton(
+//           onPressed: () {
+//             setLoading(true);
+//             Future.delayed(Duration(seconds: 2), () {
+//               setLoading(false);
+//               showSnackBar("Done!", color: Colors.green);
+//             });
+//           },
+//           child: Text("Test Loading & SnackBar"),
+//         ),
+//       ],
+//     );
+//   }
+
+//   @override
+//   PreferredSizeWidget? buildAppBar() {
+//     return AppBar(title: Text("Dashboard"));
+//   }
+// }

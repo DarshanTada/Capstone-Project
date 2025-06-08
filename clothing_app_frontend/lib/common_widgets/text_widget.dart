@@ -6,7 +6,7 @@ class TextWidget extends StatelessWidget {
   final Color? color;
   final double fontSize;
   final FontWeight fontWeight;
-
+final String? fontFamily;
   final double letterSpacing;
   final int? maxLines;
   final TextOverflow? textOverflow;
@@ -17,6 +17,7 @@ class TextWidget extends StatelessWidget {
     super.key,
     required this.title,
     this.color,
+    this.fontFamily,
     this.fontSize = 14,
     this.fontWeight = FontWeight.normal,
     this.letterSpacing = 0.25,
@@ -34,6 +35,7 @@ class TextWidget extends StatelessWidget {
       title,
       style: Theme.of(context).textTheme.displaySmall!.copyWith(
         fontSize: tS * fontSize,
+        fontFamily: fontFamily ?? 'Kardia',
         color: color ?? getThemeColor(context),
         fontWeight: fontWeight,
         letterSpacing: letterSpacing,
