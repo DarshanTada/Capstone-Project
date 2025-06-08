@@ -1,10 +1,11 @@
+import 'package:clothing_app_frontend/common_widgets/stateful_widget_layout.dart';
 import 'package:country_flags/country_flags.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends BaseScreen {
   const LoginScreen({super.key});
 
   @override
@@ -88,7 +89,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   children: [
                     Text(
-                      "YOLO",
+                      language['YOLO'],
                       style: TextStyle(
                         fontSize: 36,
                         color: Colors.white,

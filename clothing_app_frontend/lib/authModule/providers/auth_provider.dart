@@ -33,7 +33,7 @@ class AuthProvider with ChangeNotifier {
     "welcomeTo": "Welcome to",
     "signIn": "Sign In",
     "yourStyleYourWay": "Your Style, Your Way",
-    "phoneNumber": "000-000-0000",
+    "000-000-0000": "000-000-0000",
 
     //Home Screen
 

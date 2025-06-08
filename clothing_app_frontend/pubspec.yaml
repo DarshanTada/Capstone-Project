@@ -143,11 +143,11 @@ flutter:
   #         style: italic
     - family: Kardia
       fonts:
-        - asset: fonts/Kardia_Slim.otf
+        - asset: assets/fonts/Kardia_Slim.otf
           weight: 400
-        - asset: fonts/Kardia_Fit.otf
+        - asset: assets/fonts/Kardia_Fit.otf
           weight: 600
-        - asset: fonts/Kardia_Bold.otf
+        - asset: assets/fonts/Kardia_Fat.otf
           weight: 700
   #
   # For details regarding fonts from package dependencies,
