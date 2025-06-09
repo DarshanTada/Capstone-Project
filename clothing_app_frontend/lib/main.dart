@@ -17,6 +17,8 @@ import 'authModule/providers/auth_provider.dart';
 import 'authModule/screens/splash_screen.dart';
 import 'navigation/navigation_service.dart';
 import 'theme_manager.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'firebase_options.dart';
 
 final LocalStorage storage = LocalStorage('re_household');
 
@@ -39,7 +41,9 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   if (Platform.isAndroid) {
-    await Firebase.initializeApp();
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
     FirebaseMessaging.onBackgroundMessage(backgroundHandler);
   }
 
@@ -50,6 +54,7 @@ Future<void> main() async {
     }
   }
 
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   return runApp(const MyApp());
 }
 

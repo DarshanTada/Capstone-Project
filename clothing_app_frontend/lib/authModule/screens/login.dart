@@ -1,8 +1,13 @@
+import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen.dart';
+import 'package:clothing_app_frontend/navigation/arguments.dart';
 import 'package:country_flags/country_flags.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -15,6 +20,7 @@ class _LoginScreenState extends State<LoginScreen> {
   //
   late VideoPlayerController _controller;
   final TextEditingController _phoneController = TextEditingController();
+  final FirebaseAnalytics analytic = FirebaseAnalytics.instance;
   bool _termsAccepted = false;
 
   Map language = {};
@@ -32,6 +38,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void initState() {
     // TODO: implement initState
     super.initState();
+    analytic.setAnalyticsCollectionEnabled(true);
     _controller = VideoPlayerController.asset("assets/videos/v_login.mp4");
     initialze().then((_) {
       setState(() {
@@ -204,8 +211,37 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                     ElevatedButton(
                       onPressed: _termsAccepted
-                          ? () {
+                          ? () async {
                               // Send OTP logic
+                              if (_phoneController.text != "") {
+                                await FirebaseAuth.instance.verifyPhoneNumber(
+                                  phoneNumber: _phoneController.text,
+                                  verificationCompleted:
+                                      (phoneAuthCredential) {},
+                                  verificationFailed: (error) {},
+                                  codeSent:
+                                      (verificationId, forceResendingToken) {
+                                        setState(() {});
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                VerifyOtpScreen(
+                                                  args: VerifyOtpArguments(
+                                                    mobileNo:
+                                                        _phoneController.text,
+                                                    verificationId:
+                                                        verificationId,
+                                                  ),
+                                                ),
+                                          ),
+                                        );
+                                      },
+                                  codeAutoRetrievalTimeout: (verificationId) {},
+                                );
+                              } else {
+                                //Set alert message
+                              }
                             }
                           : null,
                       style: ElevatedButton.styleFrom(
@@ -225,8 +261,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     TextButton(
-                      onPressed: () {
+                      onPressed: () async {
                         // Skip logic
+                        await analytic.logEvent(
+                          name: "login_pressed",
+                          parameters: {"page": "Login", "isButton": "Skip"},
+                        );
                       },
                       child: const Text(
                         "Skip",
