@@ -143,7 +143,7 @@ flutter:
   #         style: italic
     - family: Kardia
       fonts:
-        - asset: assets//Kardia_Slim.otf
+        - asset: assets/fonts/Kardia_Slim.otf
           weight: 400
         - asset: assets/fonts/Kardia_Fit.otf
           weight: 600
