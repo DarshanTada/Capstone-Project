@@ -1,9 +1,10 @@
 import React from 'react'
 import { useLocation } from 'react-router-dom'
+import { NavLink } from 'react-router-dom'
 
 import routes from '../routes'
 
-import { CBreadcrumb, CBreadcrumbItem } from '@coreui/react'
+import { CBreadcrumb, CBreadcrumbItem, CNavLink } from '@coreui/react'
 
 const AppBreadcrumb = () => {
   const currentLocation = useLocation().pathname
@@ -33,7 +34,11 @@ const AppBreadcrumb = () => {
 
   return (
     <CBreadcrumb className="my-0">
-      <CBreadcrumbItem href="/">Home</CBreadcrumbItem>
+      <CBreadcrumbItem>
+        <CNavLink to="/dashboard" as={NavLink}>
+          Home
+        </CNavLink>
+      </CBreadcrumbItem>
       {breadcrumbs.map((breadcrumb, index) => {
         return (
           <CBreadcrumbItem
