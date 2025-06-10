@@ -12,9 +12,8 @@ class BottomNavArgumnets {
 
 class VerifyOtpArguments {
   final String mobileNo;
-  VerifyOtpArguments({
-    required this.mobileNo,
-  });
+  final String verificationId;
+  VerifyOtpArguments({required this.mobileNo, required this.verificationId});
 }
 
 class RegistrationArguments {
@@ -37,10 +36,6 @@ class PrivacyPolicyAndTcScreenArguments {
   });
 }
 
-
-
-
-
 class CafeImageArguments {
   final String otherPhoto;
   CafeImageArguments({required this.otherPhoto});
@@ -51,12 +46,10 @@ class MenuImageArguments {
   MenuImageArguments({required this.menuPhoto});
 }
 
-
 class EditProfileScreenArguments {
   final User user;
   EditProfileScreenArguments({required this.user});
 }
-
 
 class PaymentScreenArguments {
   final String orderId;

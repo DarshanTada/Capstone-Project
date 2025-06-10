@@ -12,6 +12,7 @@ import 'package:clothing_app_frontend/navigation/navigators.dart';
 import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:provider/provider.dart';
+import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider, User;
 
 class VerifyOtpScreen extends StatefulWidget {
   final VerifyOtpArguments args;

@@ -75,6 +75,7 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
             NamedRoute.verifyOtpScreen,
             arguments: VerifyOtpArguments(
               mobileNo: _phoneEditingController.text.trim(),
+              verificationId: '',
             ),
           );
         } else {
@@ -122,7 +123,6 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
   //   return null;
   // }
 
- 
   guestUser() {
     Provider.of<AuthProvider>(context, listen: false).setGuestUser();
     final user = Provider.of<AuthProvider>(context, listen: false).user;
