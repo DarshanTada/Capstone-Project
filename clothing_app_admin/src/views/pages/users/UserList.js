@@ -1,10 +1,12 @@
 /* eslint-disable prettier/prettier */
 import { cilPeople } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
-import { CRow, CCol, CCard, CCardHeader, CCardBody, CProgress, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CAvatar } from '@coreui/react'
-import React from 'react'
+import { CRow, CCol, CCard, CCardHeader, CCardBody, CProgress, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CAvatar, CPagination, CPaginationItem, CBadge } from '@coreui/react'
+import React, { useState } from 'react'
 import { cifUs, cifBr, cifIn, cifFr, cifEs, cifPl } from '@coreui/icons'
 import { cibCcMastercard, cibCcVisa, cibCcStripe, cibCcPaypal, cibCcApplePay, cibCcAmex } from '@coreui/icons'
+import { useNavigate } from 'react-router-dom'
+
 
 import avatar1 from 'src/assets/images/avatars/1.jpg'
 import avatar2 from 'src/assets/images/avatars/2.jpg'
@@ -15,96 +17,117 @@ import avatar6 from 'src/assets/images/avatars/6.jpg'
 
 
 const UserList = () => { 
-  const tableExample = [
-    {
-      avatar: { src: avatar1, status: 'success' },
-      user: {
-        name: 'Yiorgos Avraamu',
-        new: true,
-        registered: 'Jan 1, 2023',
-      },
-      country: { name: 'USA', flag: cifUs },
-      usage: {
-        value: 50,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'success',
-      },
-      payment: { name: 'Mastercard', icon: cibCcMastercard },
-      activity: '10 sec ago',
+  // Example: Add phone_number and email to each user in tableExample
+const tableExample = [
+  {
+    avatar: { src: avatar1, status: 'success' },
+    user: {
+      name: 'Yiorgos Avraamu',
+      phone_number: '+1 555-123-4567',
+      email: 'yiorgos@example.com',
+      new: true,
+      registered: 'Jan 1, 2023',
     },
-    {
-      avatar: { src: avatar2, status: 'danger' },
-      user: {
-        name: 'Avram Tarasios',
-        new: false,
-        registered: 'Jan 1, 2023',
-      },
-      country: { name: 'Brazil', flag: cifBr },
-      usage: {
-        value: 22,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'info',
-      },
-      payment: { name: 'Visa', icon: cibCcVisa },
-      activity: '5 minutes ago',
+    country: { name: 'USA', flag: cifUs },
+    usage: {
+      value: 50,
+      period: 'Jun 11, 2023 - Jul 10, 2023',
+      color: 'success',
     },
-    {
-      avatar: { src: avatar3, status: 'warning' },
-      user: { name: 'Quintin Ed', new: true, registered: 'Jan 1, 2023' },
-      country: { name: 'India', flag: cifIn },
-      usage: {
-        value: 74,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'warning',
-      },
-      payment: { name: 'Stripe', icon: cibCcStripe },
-      activity: '1 hour ago',
+    payment: { name: 'Mastercard', icon: cibCcMastercard },
+    activity: '10 sec ago',
+  },
+  {
+    avatar: { src: avatar2, status: 'danger' },
+    user: {
+      name: 'Avram Tarasios',
+      phone_number: '+55 11 91234-5678',
+      email: 'avram@example.com',
+      new: false,
+      registered: 'Jan 1, 2023',
     },
-    {
-      avatar: { src: avatar4, status: 'secondary' },
-      user: { name: 'Enéas Kwadwo', new: true, registered: 'Jan 1, 2023' },
-      country: { name: 'France', flag: cifFr },
-      usage: {
-        value: 98,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'danger',
-      },
-      payment: { name: 'PayPal', icon: cibCcPaypal },
-      activity: 'Last month',
+    country: { name: 'Brazil', flag: cifBr },
+    usage: {
+      value: 22,
+      period: 'Jun 11, 2023 - Jul 10, 2023',
+      color: 'info',
     },
-    {
-      avatar: { src: avatar5, status: 'success' },
-      user: {
-        name: 'Agapetus Tadeáš',
-        new: true,
-        registered: 'Jan 1, 2023',
-      },
-      country: { name: 'Spain', flag: cifEs },
-      usage: {
-        value: 22,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'primary',
-      },
-      payment: { name: 'Google Wallet', icon: cibCcApplePay },
-      activity: 'Last week',
+    payment: { name: 'Visa', icon: cibCcVisa },
+    activity: '5 minutes ago',
+  },
+  {
+    avatar: { src: avatar3, status: 'warning' },
+    user: { 
+      name: 'Quintin Ed', 
+      phone_number: '+91 98765 43210', 
+      email: 'quintin@example.com', 
+      new: true, 
+      registered: 'Jan 1, 2023' 
     },
-    {
-      avatar: { src: avatar6, status: 'danger' },
-      user: {
-        name: 'Friderik Dávid',
-        new: true,
-        registered: 'Jan 1, 2023',
-      },
-      country: { name: 'Poland', flag: cifPl },
-      usage: {
-        value: 43,
-        period: 'Jun 11, 2023 - Jul 10, 2023',
-        color: 'success',
-      },
-      payment: { name: 'Amex', icon: cibCcAmex },
-      activity: 'Last week',
+    country: { name: 'India', flag: cifIn },
+    usage: {
+      value: 74,
+      period: 'Jun 11, 2023 - Jul 10, 2023',
+      color: 'warning',
     },
-  ]
+    payment: { name: 'Stripe', icon: cibCcStripe },
+    activity: '1 hour ago',
+  },
+  {
+    avatar: { src: avatar4, status: 'secondary' },
+    user: { 
+      name: 'Enéas Kwadwo', 
+      phone_number: '+33 1 23 45 67 89', 
+      email: 'eneas@example.com', 
+      new: true, 
+      registered: 'Jan 1, 2023' 
+    },
+    country: { name: 'France', flag: cifFr },
+    usage: {
+      value: 98,
+      period: 'Jun 11, 2023 - Jul 10, 2023',
+      color: 'danger',
+    },
+    payment: { name: 'PayPal', icon: cibCcPaypal },
+    activity: 'Last month',
+  },
+  {
+    avatar: { src: avatar5, status: 'success' },
+    user: {
+      name: 'Agapetus Tadeáš',
+      phone_number: '+34 612 34 56 78',
+      email: 'agapetus@example.com',
+      new: true,
+      registered: 'Jan 1, 2023',
+    },
+    country: { name: 'Spain', flag: cifEs },
+    usage: {
+      value: 22,
+      period: 'Jun 11, 2023 - Jul 10, 2023',
+      color: 'primary',
+    },
+    payment: { name: 'Google Wallet', icon: cibCcApplePay },
+    activity: 'Last week',
+  },
+  {
+    avatar: { src: avatar6, status: 'danger' },
+    user: {
+      name: 'Friderik Dávid',
+      phone_number: '+48 12 345 67 89',
+      email: 'friderik@example.com',
+      new: true,
+      registered: 'Jan 1, 2023',
+    },
+    country: { name: 'Poland', flag: cifPl },
+    usage: {
+      value: 43,
+      period: 'Jun 11, 2023 - Jul 10, 2023',
+      color: 'success',
+    },
+    payment: { name: 'Amex', icon: cibCcAmex },
+    activity: 'Last week',
+  },
+]
 
   const progressGroupExample2 = [
     { title: 'Male', icon: cilPeople, value: 35 },
@@ -112,12 +135,51 @@ const UserList = () => {
     { title: 'Other', icon: cilPeople, value: 18 },
   ]
 
+  const [usersPerPage, setUsersPerPage] = useState(2) // Now stateful
+  const [currentPage, setCurrentPage] = useState(1)
+  const totalPages = Math.ceil(tableExample.length / usersPerPage)
+
+  const handlePageChange = (page) => {
+    if (page >= 1 && page <= totalPages) {
+      setCurrentPage(page)
+    }
+  }
+
+  const handleUsersPerPageChange = (e) => {
+    setUsersPerPage(Number(e.target.value))
+    setCurrentPage(1) // Reset to first page when changing page size
+  }
+
+  const paginatedUsers = tableExample.slice(
+    (currentPage - 1) * usersPerPage,
+    currentPage * usersPerPage
+  )
+
+  const navigate = useNavigate()
+
   return (
     <div>
       <CRow>
         <CCol xs>
           <CCard className="mb-4">
-            <CCardHeader>Traffic {' & '} Sales</CCardHeader>
+            <CCardHeader className="d-flex justify-content-between align-items-center">
+              <span>Traffic {' & '} Sales</span>
+              <div>
+                <label htmlFor="usersPerPage" className="me-2">Users per page:</label>
+                <select
+                  id="usersPerPage"
+                  value={usersPerPage}
+                  onChange={handleUsersPerPageChange}
+                  className="form-select d-inline-block w-auto"
+                >
+                  {[2, 3, 5, 10, tableExample.length].map((num) => (
+                    <option key={num} value={num}>
+                      {num === tableExample.length ? 'All' : num}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </CCardHeader>
             <CCardBody>
               <CRow>
                 <CCol xs={12}>
@@ -177,52 +239,59 @@ const UserList = () => {
                       <CIcon icon={cilPeople} />
                     </CTableHeaderCell>
                     <CTableHeaderCell className="bg-body-tertiary">User</CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary text-center">
-                      Country
-                    </CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary">Usage</CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary text-center">
-                      Payment Method
-                    </CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary">Activity</CTableHeaderCell>
+                    <CTableHeaderCell className="bg-body-tertiary">Phone Number</CTableHeaderCell>
+                    <CTableHeaderCell className="bg-body-tertiary">Email</CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                  {tableExample.map((item, index) => (
-                    <CTableRow v-for="item in tableItems" key={index}>
+                  {paginatedUsers.map((item, index) => (
+                    <CTableRow
+                      key={index + (currentPage - 1) * usersPerPage}
+                      style={{ cursor: 'pointer' }}
+                      onClick={() => navigate(`/users/${index + (currentPage - 1) * usersPerPage}`)}
+                    >
                       <CTableDataCell className="text-center">
-                        <CAvatar size="md" src={item.avatar.src} status={item.avatar.status} />
+                        <CAvatar size="md" src={item.avatar.src} />
                       </CTableDataCell>
                       <CTableDataCell>
                         <div>{item.user.name}</div>
                         <div className="small text-body-secondary text-nowrap">
-                          <span>{item.user.new ? 'New' : 'Recurring'}</span> | Registered:{' '}
-                          {item.user.registered}
+                          <span>{item.user.new ? 'New' : 'Recurring'}</span> | Registered: {item.user.registered}
                         </div>
                       </CTableDataCell>
-                      <CTableDataCell className="text-center">
-                        <CIcon size="xl" icon={item.country.flag} title={item.country.name} />
+                      <CTableDataCell>
+                        <div>{item.user.phone_number}</div>
                       </CTableDataCell>
                       <CTableDataCell>
-                        <div className="d-flex justify-content-between text-nowrap">
-                          <div className="fw-semibold">{item.usage.value}%</div>
-                          <div className="ms-3">
-                            <small className="text-body-secondary">{item.usage.period}</small>
-                          </div>
-                        </div>
-                        <CProgress thin color={item.usage.color} value={item.usage.value} />
-                      </CTableDataCell>
-                      <CTableDataCell className="text-center">
-                        <CIcon size="xl" icon={item.payment.icon} />
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div className="small text-body-secondary text-nowrap">Last login</div>
-                        <div className="fw-semibold text-nowrap">{item.activity}</div>
+                        <div>{item.user.email}</div>
                       </CTableDataCell>
                     </CTableRow>
                   ))}
                 </CTableBody>
               </CTable>
+              <CPagination className="justify-content-center my-3" aria-label="Page navigation example">
+                <CPaginationItem
+                  disabled={currentPage === 1}
+                  onClick={() => handlePageChange(currentPage - 1)}
+                >
+                  Previous
+                </CPaginationItem>
+                {[...Array(totalPages)].map((_, idx) => (
+                  <CPaginationItem
+                    key={idx + 1}
+                    active={currentPage === idx + 1}
+                    onClick={() => handlePageChange(idx + 1)}
+                  >
+                    {idx + 1}
+                  </CPaginationItem>
+                ))}
+                <CPaginationItem
+                  disabled={currentPage === totalPages}
+                  onClick={() => handlePageChange(currentPage + 1)}
+                >
+                  Next
+                </CPaginationItem>
+              </CPagination>
             </CCardBody>
           </CCard>
         </CCol>
@@ -230,4 +299,5 @@ const UserList = () => {
     </div> 
   )
 }
+
 export default UserList
