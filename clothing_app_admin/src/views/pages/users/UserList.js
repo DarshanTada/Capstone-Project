@@ -1,5 +1,5 @@
 /* eslint-disable prettier/prettier */
-import { cilPeople } from '@coreui/icons'
+import { cilPeople, cilTrash } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
 import { CRow, CCol, CCard, CCardHeader, CCardBody, CProgress, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CAvatar, CPagination, CPaginationItem, CBadge } from '@coreui/react'
 import React, { useState } from 'react'
@@ -137,7 +137,8 @@ const tableExample = [
 
   const [usersPerPage, setUsersPerPage] = useState(2) // Now stateful
   const [currentPage, setCurrentPage] = useState(1)
-  const totalPages = Math.ceil(tableExample.length / usersPerPage)
+  const [users, setUsers] = useState(tableExample) // Add state for users so you can update the list after delete
+  const totalPages = Math.ceil(users.length / usersPerPage)
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -150,12 +151,20 @@ const tableExample = [
     setCurrentPage(1) // Reset to first page when changing page size
   }
 
-  const paginatedUsers = tableExample.slice(
+  const paginatedUsers = users.slice(
     (currentPage - 1) * usersPerPage,
     currentPage * usersPerPage
   )
 
   const navigate = useNavigate()
+
+  // Delete handler
+  const handleDelete = (deleteIdx) => {
+    if (window.confirm('Are you sure you want to delete this user?')) {
+      const globalIdx = (currentPage - 1) * usersPerPage + deleteIdx
+      setUsers((prev) => prev.filter((_, idx) => idx !== globalIdx))
+    }
+  }
 
   return (
     <div>
@@ -241,6 +250,9 @@ const tableExample = [
                     <CTableHeaderCell className="bg-body-tertiary">User</CTableHeaderCell>
                     <CTableHeaderCell className="bg-body-tertiary">Phone Number</CTableHeaderCell>
                     <CTableHeaderCell className="bg-body-tertiary">Email</CTableHeaderCell>
+                    <CTableHeaderCell className="bg-body-tertiary text-center"> {/* Add Delete column */}
+                      Actions
+                    </CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
@@ -248,7 +260,11 @@ const tableExample = [
                     <CTableRow
                       key={index + (currentPage - 1) * usersPerPage}
                       style={{ cursor: 'pointer' }}
-                      onClick={() => navigate(`/users/${index + (currentPage - 1) * usersPerPage}`)}
+                      onClick={(e) => {
+                        // Prevent row click when clicking delete
+                        if (e.target.closest('.delete-icon')) return
+                        navigate(`/users/${index + (currentPage - 1) * usersPerPage}`)
+                      }}
                     >
                       <CTableDataCell className="text-center">
                         <CAvatar size="md" src={item.avatar.src} />
@@ -264,6 +280,15 @@ const tableExample = [
                       </CTableDataCell>
                       <CTableDataCell>
                         <div>{item.user.email}</div>
+                      </CTableDataCell>
+                      <CTableDataCell className="text-center">
+                        <CIcon
+                          icon={cilTrash}
+                          className="text-danger delete-icon"
+                          style={{ cursor: 'pointer' }}
+                          title="Delete"
+                          onClick={() => handleDelete(index)}
+                        />
                       </CTableDataCell>
                     </CTableRow>
                   ))}
