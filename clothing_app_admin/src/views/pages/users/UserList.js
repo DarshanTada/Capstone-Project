@@ -1,7 +1,7 @@
 /* eslint-disable prettier/prettier */
 import { cilPeople, cilTrash } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
-import { CRow, CCol, CCard, CCardHeader, CCardBody, CProgress, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CAvatar, CPagination, CPaginationItem, CBadge } from '@coreui/react'
+import { CRow, CCol, CCard, CCardHeader, CCardBody, CProgress, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CAvatar, CPagination, CPaginationItem, CBadge, CFormInput } from '@coreui/react'
 import React, { useState } from 'react'
 import { cifUs, cifBr, cifIn, cifFr, cifEs, cifPl } from '@coreui/icons'
 import { cibCcMastercard, cibCcVisa, cibCcStripe, cibCcPaypal, cibCcApplePay, cibCcAmex } from '@coreui/icons'
@@ -135,10 +135,20 @@ const tableExample = [
     { title: 'Other', icon: cilPeople, value: 18 },
   ]
 
-  const [usersPerPage, setUsersPerPage] = useState(2) // Now stateful
+  const [usersPerPage, setUsersPerPage] = useState(2)
   const [currentPage, setCurrentPage] = useState(1)
-  const [users, setUsers] = useState(tableExample) // Add state for users so you can update the list after delete
-  const totalPages = Math.ceil(users.length / usersPerPage)
+  const [users, setUsers] = useState(tableExample)
+  const [search, setSearch] = useState('')
+
+  // Search filter
+  const filteredUsers = users.filter(
+    (item) =>
+      item.user.name.toLowerCase().includes(search.toLowerCase()) ||
+      item.user.phone_number.toLowerCase().includes(search.toLowerCase()) ||
+      item.user.email.toLowerCase().includes(search.toLowerCase())
+  )
+
+  const totalPages = Math.ceil(filteredUsers.length / usersPerPage)
 
   const handlePageChange = (page) => {
     if (page >= 1 && page <= totalPages) {
@@ -148,10 +158,15 @@ const tableExample = [
 
   const handleUsersPerPageChange = (e) => {
     setUsersPerPage(Number(e.target.value))
-    setCurrentPage(1) // Reset to first page when changing page size
+    setCurrentPage(1)
   }
 
-  const paginatedUsers = users.slice(
+  const handleSearchChange = (e) => {
+    setSearch(e.target.value)
+    setCurrentPage(1)
+  }
+
+  const paginatedUsers = filteredUsers.slice(
     (currentPage - 1) * usersPerPage,
     currentPage * usersPerPage
   )
@@ -165,6 +180,9 @@ const tableExample = [
       setUsers((prev) => prev.filter((_, idx) => idx !== globalIdx))
     }
   }
+
+  const pageOptions = [2, 3, 5, 10, 15, 20, 25, 50].filter(num => num < users.length)
+  if (users.length > 0) pageOptions.push(users.length)
 
   return (
     <div>
@@ -181,9 +199,9 @@ const tableExample = [
                   onChange={handleUsersPerPageChange}
                   className="form-select d-inline-block w-auto"
                 >
-                  {[2, 3, 5, 10, tableExample.length].map((num) => (
+                  {pageOptions.map((num) => (
                     <option key={num} value={num}>
-                      {num === tableExample.length ? 'All' : num}
+                      {num === users.length ? 'All' : num}
                     </option>
                   ))}
                 </select>
@@ -240,7 +258,16 @@ const tableExample = [
               </CRow>
 
               <br />
-
+              
+              <div className="mb-3 d-flex justify-content-end">
+                <CFormInput
+                  type="text"
+                  placeholder="Search by name, phone, or email"
+                  value={search}
+                  onChange={handleSearchChange}
+                  style={{ maxWidth: 300 }}
+                />
+              </div>
               <CTable align="middle" className="mb-0 border" hover responsive>
                 <CTableHead className="text-nowrap">
                   <CTableRow>

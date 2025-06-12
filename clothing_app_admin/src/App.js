@@ -9,7 +9,8 @@ import './scss/style.scss'
 import './scss/examples.scss'
 
 // Containers
-const MainLayout = React.lazy(() => import('./layout/MainLayout'))
+const MainLayout = React.lazy(() => import('./layout/MainLayout'))// ...existing imports...
+
 
 // Pages
 const Login = React.lazy(() => import('./views/pages/login/Login'))
