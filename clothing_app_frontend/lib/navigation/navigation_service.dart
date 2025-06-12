@@ -1,4 +1,4 @@
-import 'package:clothing_app_frontend/authModule/screens/login.dart';
+import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/common_widgets/bottom_nav_bar.dart';
 import 'package:clothing_app_frontend/common_widgets/loading_screen.dart';
@@ -22,7 +22,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return _getPageRoute(OnBoardingScreen1());
 
     case NamedRoute.loginScreen:
-      return _getPageRoute(const LoginScreen());
+      return _getPageRoute(const PhoneNumberScreen());
 
     // case NamedRoute.verifyOtpScreen:
     //   return _getPageRoute(VerifyOtpScreen(
