@@ -3,6 +3,7 @@
 import 'dart:io';
 
 import 'package:clothing_app_frontend/authModule/screens/login.dart';
+import 'package:clothing_app_frontend/categoryModule/screens/category.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -130,7 +131,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           initialRoute: '/',
           onGenerateRoute: generateRoute,
           routes: {
-            '/': (BuildContext context) => const LoginScreen(),
+            '/': (BuildContext context) => const CategoryScreen(),
             // '/': (BuildContext context) =>
             //     HomeScreen(args: HomeScreenArguments()),
           },
