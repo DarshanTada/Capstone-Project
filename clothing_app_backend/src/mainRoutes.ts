@@ -2,6 +2,7 @@ import express, { Router } from 'express';
 
 // import { AuthRoutes } from './utils/generic/auth/auth.routes';
 import { UserRoutes } from './userModule/user.routes';
+// import { UserRoutes } from './userModule/user.routes';
 // import { CafeRoutes } from './cafeModule/cafe.routes';
 // import { LoyalLevelRoutes } from './loyaltyProgramModule/loyalty.routes';
 // import { OffersRoutes } from './offersModule/offers.routes';

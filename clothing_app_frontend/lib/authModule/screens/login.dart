@@ -218,10 +218,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                   phoneNumber: _phoneController.text,
                                   verificationCompleted:
                                       (phoneAuthCredential) {},
-                                  verificationFailed: (error) {},
+                                  verificationFailed: (error) {
+                                    //Show Error message
+                                  },
                                   codeSent:
                                       (verificationId, forceResendingToken) {
-                                        setState(() {});
                                         Navigator.push(
                                           context,
                                           MaterialPageRoute(
