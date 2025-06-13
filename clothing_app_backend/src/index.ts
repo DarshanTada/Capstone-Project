@@ -21,6 +21,8 @@ const eFileUpload = require('express-fileupload');
       parameterLimit: 50000000,
     })
   );
+  app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
   mongoose
     .connect( 
