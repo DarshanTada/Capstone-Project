@@ -21,11 +21,14 @@ const eFileUpload = require('express-fileupload');
       parameterLimit: 50000000,
     })
   );
+  
+
+  const MONGO_URI = process.env.MONGO_URI as string;
 
   mongoose
-    .connect( 
-      'mongodb+srv://darshantada7:gWvTubWMosngksUV@capstone-project.esjmjci.mongodb.net/?retryWrites=true&w=majority&appName=capstone-project',
-    
+    .connect(
+      MONGO_URI,
+      
     )
     .then(() => {
       console.log('Connected to database!');
@@ -36,7 +39,7 @@ const eFileUpload = require('express-fileupload');
 
   mongoose.set('debug', false);
 
-  app.use(eFileUpload());
+  // app.use(eFileUpload());
   app.use('/status', (req, res, next) => {
     res.send({ message: 'Success' });
   });
@@ -51,13 +54,6 @@ const eFileUpload = require('express-fileupload');
   app.use(errorHandler);
 
   const port = process.env.PORT || 3001;
-  // try {
-  //   app.listen(port, () =>
-  //     console.log(`API server started at http://localhost:${port}`)
-  //   );
-  // } catch (err) {
-  //   console.log(err);
-  // }
 
   var server = app.listen(port, () =>
     console.log(`API server started at http://localhost:${port}`)
