@@ -8,11 +8,12 @@
 // export default IntroRoute;
 
 import express from 'express';
-import { createIntro, uploadIntroImage } from '../introModule/intro.controller';
+import { createIntro, uploadIntroImage, getAllIntro } from '../introModule/intro.controller';
 
 export const IntroRoute = express.Router();
 
-IntroRoute.post('/intro', uploadIntroImage, createIntro);
+IntroRoute.post('/intro',uploadIntroImage, createIntro);
+IntroRoute.get('/getIntro', getAllIntro);
 
      
 export default IntroRoute;

@@ -1,35 +1,6 @@
-// import { getModelForClass, prop } from '@typegoose/typegoose';
-// import { ObjectId } from 'mongodb';
-
-// export enum IntroRole {
-//   Intro = 'Intro',
-// }
-
-// export class Intro {
-//   readonly _id: ObjectId;
-
-//   readonly createdAt: Date;
-
-//   readonly updatedAt: Date;
-
-//   @prop({ trim: true })
-//   title: string;
-
-//   @prop({ type: () => [String] })
-//   intro_description: string; 
-
-//   @prop({ type: () => [String] })
-//   image: string; 
-// }
-
-// export const IntroModel = getModelForClass(Intro, {
-//   schemaOptions: { timestamps: true },
-// });
-
-
 import mongoose from "mongoose";
 
-const introchema = new mongoose.Schema(
+const introSchema = new mongoose.Schema(
   {
     title: {
       type: String,
@@ -48,5 +19,5 @@ const introchema = new mongoose.Schema(
   }
 );
 
-const Intro = mongoose.model("Intro", introchema);
+const Intro = mongoose.model("Intro", introSchema);
 export default Intro;
