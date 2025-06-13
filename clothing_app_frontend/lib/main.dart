@@ -2,7 +2,9 @@
 
 import 'dart:io';
 
+
 import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
+
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -14,10 +16,7 @@ import 'package:localstorage/localstorage.dart';
 import 'package:provider/provider.dart';
 
 import 'authModule/providers/auth_provider.dart';
-import 'authModule/screens/splash_screen.dart';
 import 'navigation/navigation_service.dart';
-import 'theme_manager.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
 final LocalStorage storage = LocalStorage('re_household');
@@ -130,7 +129,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           initialRoute: '/',
           onGenerateRoute: generateRoute,
           routes: {
+
             '/': (BuildContext context) => const PhoneNumberScreen(),
+        
             // '/': (BuildContext context) =>
             //     HomeScreen(args: HomeScreenArguments()),
           },
