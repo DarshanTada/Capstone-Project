@@ -1,0 +1,15 @@
+{
+  "name": "clothing-app",
+  "private": true,
+  "scripts": {
+    "dev": "npm-run-all --parallel dev:backend dev:frontend",
+    "dev:backend": "npm --prefix clothing_app_backend run dev",
+    "dev:frontend": "npm --prefix clothing_app_admin run dev"
+  },
+  "devDependencies": {
+    "npm-run-all": "^4.1.5"
+  },
+  "dependencies": {
+    "nodemon": "^3.1.10"
+  }
+}
