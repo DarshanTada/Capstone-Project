@@ -3,6 +3,7 @@ import 'package:clothing_app_frontend/colors.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/custom_text_field.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
+import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
 import 'package:country_flags/country_flags.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
@@ -297,8 +298,7 @@ class VerifyOtpScreen2State extends State<VerifyOtpScreen2> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (context) =>
-                                            VerifyOtpScreen2(),
+                                        builder: (context) => HomeScreen(),
                                       ),
                                     );
                                   }
