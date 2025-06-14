@@ -12,6 +12,7 @@ export const uploadCategoryImage = upload.fields([
 ]);
 
 // Create Category
+
 export const createCategory = async (req: Request, res: Response): Promise<void> => {
   try {
     const { name } = req.body;
