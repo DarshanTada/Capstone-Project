@@ -14,7 +14,6 @@ import CIcon from '@coreui/icons-react'
 import { AppSidebarNav } from './AppSidebarNav'
 
 import { logo } from 'src/assets/brand/logo'
-import logoImg from 'src/assets/brand/logo.png'
 import { sygnet } from 'src/assets/brand/sygnet'
 
 // sidebar nav config
@@ -36,17 +35,10 @@ const AppSidebar = () => {
         dispatch({ type: 'set', sidebarShow: visible })
       }}
     >
-      <CSidebarHeader className="border-bottom d-flex justify-content-center align-items-center">
-        <CSidebarBrand to="/" className="d-flex justify-content-center align-items-center">
-          {/* <CIcon customClassName="sidebar-brand-full" icon={logo} height={32} /> */}
-          <img
-            customClassName="sidebar-brand-full px-2"
-            src={logoImg}
-            alt="yolo chic logo"
-            height={30}
-          />
-          {/* <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} /> */}
-          {/* <CIcon customClassName="sidebar-brand-narrow px-2" icon={logoImg} /> */}
+      <CSidebarHeader className="border-bottom">
+        <CSidebarBrand to="/">
+          <CIcon customClassName="sidebar-brand-full" icon={logo} height={32} />
+          <CIcon customClassName="sidebar-brand-narrow" icon={sygnet} height={32} />
         </CSidebarBrand>
         <CCloseButton
           className="d-lg-none"

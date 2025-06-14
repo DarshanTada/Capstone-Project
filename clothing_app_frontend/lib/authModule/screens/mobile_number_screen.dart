@@ -169,7 +169,7 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
                                 title: language['welcomeTo'],
                                 fontSize: 12,
                               ),
-                              const TextWidget(
+                               TextWidget(
                                 title: ' Iteeha Coffee',
                                 fontWeight: FontWeight.w600,
                                 fontSize: 12,
@@ -228,7 +228,7 @@ class _MobileNumberScreenState extends State<MobileNumberScreen> {
                                       height: 24,
                                     ),
                                     SizedBox(width: dW * 0.02),
-                                    const TextWidget(
+                                     TextWidget(
                                       title: '+91',
                                       fontWeight: FontWeight.w500,
                                     ),

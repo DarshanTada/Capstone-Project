@@ -2,9 +2,6 @@ import express, { Router } from 'express';
 
 // import { AuthRoutes } from './utils/generic/auth/auth.routes';
 import { UserRoutes } from './userModule/user.routes';
-import { IntroRoute } from './introModule/intro.routes';
-import { CategoryRouter } from './categoryModule/category.routes';
-// import { UserRoutes } from './userModule/user.routes';
 // import { CafeRoutes } from './cafeModule/cafe.routes';
 // import { LoyalLevelRoutes } from './loyaltyProgramModule/loyalty.routes';
 // import { OffersRoutes } from './offersModule/offers.routes';
@@ -40,8 +37,6 @@ const app = express();
 
 // // api/user
 app.use('/user', UserRoutes);
-app.use('/intro', IntroRoute);
-app.use('/category', CategoryRouter)
 
 // // api/appConfig
 // app.use('/appConfig', AppConfigRoutes);
