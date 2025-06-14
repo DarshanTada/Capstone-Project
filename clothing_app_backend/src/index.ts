@@ -21,7 +21,6 @@ const eFileUpload = require('express-fileupload');
       parameterLimit: 50000000,
     })
   );
-  
 
   const MONGO_URI = process.env.MONGO_URI as string;
 

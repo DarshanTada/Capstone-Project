@@ -1,332 +1,149 @@
-import { Response, Request, NextFunction } from "express";
-import { UserModel, UserRole } from "./user.model";
+import { Request, Response } from 'express';
+import User from './user.model';
+import jwt from "jsonwebtoken";
+import dotenv from "dotenv";
+import multer from "multer";
 
-import { ObjectId } from "mongodb";
-import { uploadToS3Bucket } from "./../utils/generic/fileUpload";
-import { createAccessToken } from "./../utils/generic/auth/auth.middlewares";
+
+dotenv.config()
+const JWT_SECRET = process.env.JWT_SECRET || "mySuperSecretKey123!";
+const upload = multer()
 
 
-export const register = async (
-    req: any,
-    res: Response,
-    next: NextFunction
-) => {
+export const registerUser = [
+  upload.none(), // ⬅️ This handles form-data with only text fields
+  async (req: Request, res: Response): Promise<void> => {
     try {
-        let { fullName, email, phone, dob, avatar, gender, fcmToken }: any = req.body;
+      const { phone_number } = req.body;
 
-        let userQuery: any = {};
+      if (!phone_number) {
+        res.status(400).json({ success: false, message: "Phone number is required." });
+        return;
+      }
 
+      let user = await User.findOne({ phone_number });
 
-        let existingUser = await UserModel.findOne({ phone: phone, isActive: true, isDeleted: false });
+      if (!user) {
+        user = new User({ phone_number });
+        await user.save();
+      }
 
-        if (existingUser) {
-            return res.status(200).send({
-                success: false,
-                message: 'userWithPhoneExists'
-            });
-        }
+      const token = jwt.sign(
+        { userId: user._id, phone_number: user.phone_number },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+      );
 
-
-        if (req.files != null) {
-            if (Object.keys(req.files).length > 0) {
-                for (const key in req.files) {
-                    let S3Response: any;
-
-                    let userImageFileName = `${req.files[key].name}`;
-                    let userFileData = req.files[key].data;
-
-                    await uploadToS3Bucket(userImageFileName, userFileData).then(
-                        async (data) => {
-                            S3Response = data;
-                        }
-                    );
-
-                    avatar = S3Response.Location;
-                }
-            }
-        }
-
-        userQuery = {
-            fullName,
-            email,
-            phone,
-            dob: new Date(dob),
-            gender,
-            avatar,
-            fcmTokens: fcmToken ? [fcmToken] : [],
-        }
-
-        let newUser = await UserModel.create(userQuery);
-
-
-
-
-
-        return res.status(200).send({
-            success: newUser != null,
-            message: newUser != null ? 'registerSuccess' : 'failedToRegister',
-            result: newUser,
-            accessToken: newUser != null ? await createAccessToken(newUser._id) : null,
-        });
-
-    } catch (error) {
-        return res.status(500).send({
-            success: false,
-            error: error.message,
-            message: 'failedToRegister',
-        });
+      res.status(200).json({
+        success: true,
+        message: "User registered successfully.",
+        token,
+        userId: user._id,
+      });
+    } catch (error: any) {
+      console.error("Register User Error:", error);
+      res.status(500).json({ success: false, message: error.message });
     }
-};
+  }
+];
 
-export const login = async (
-    req: any,
-    res: Response,
-    next: NextFunction
-) => {
+//Update User
+export const updateUser = [
+  upload.none(), // handle form-data
+  async (req: Request, res: Response): Promise<void> => {
     try {
-        let { phone, fcmToken }: any = req.query;
+      const authHeader = req.headers.authorization;
 
-        const user = await UserModel.findOne({ phone: phone, isActive: true, isDeleted: false })
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        res.status(401).json({ success: false, message: "Unauthorized" });
+        return;
+      }
 
-        return res.status(200).send({
-            success: true,
-            login: user != null,
-            result: user,
-            accessToken: user != null ? await createAccessToken(user._id) : null,
-        });
+      const token = authHeader.split(" ")[1];
+      const decoded: any = jwt.verify(token, JWT_SECRET);
 
-    } catch (error) {
-        return res.status(500).send({
-            success: false,
-            login: false,
-            error: error.message,
-        });
+      const userId = decoded.userId;
+
+      const {
+        name,
+        phone_number,
+        email,
+        gender,
+        age,
+        body_type,
+        height,
+        color_palette,
+        size,
+        role,
+      } = req.body;
+
+      const updateFields: any = {
+        ...(name && { name }),
+        ...(phone_number && { phone_number }),
+        ...(email && { email }),
+        ...(gender && { gender }),
+        ...(age && { age }),
+        ...(body_type && { body_type }),
+        ...(height && { height }),
+        ...(color_palette && { color_palette }),
+        ...(size && { size }),
+        ...(role && { role })
+      };
+
+      const updatedUser = await User.findByIdAndUpdate(userId, updateFields, {
+        new: true,
+      });
+
+      if (!updatedUser) {
+        res.status(404).json({ success: false, message: "User not found" });
+        return;
+      }
+
+      res.status(200).json({
+        success: true,
+        message: "User updated successfully",
+        data: updatedUser,
+      });
+    } catch (error: any) {
+      console.error("Update User Error:", error);
+      res.status(500).json({ success: false, message: error.message });
     }
-};
+  },
+];
 
-export const refreshUser = async (
-    req: any,
-    res: Response,
-    next: NextFunction
-) => {
+export const loginUser = [
+  upload.none(), // for form-data with text only
+  async (req: Request, res: Response): Promise<void> => {
     try {
-        let { user } = req.body;
+      const { phone_number } = req.body;
 
-        const refreshedUser = await UserModel.findById(user);
+      if (!phone_number) {
+        res.status(400).json({ success: false, message: "Phone number is required." });
+        return;
+      }
 
-        return res.status(200).send({
-            success: refreshedUser != null,
-            result: refreshedUser,
-            message: refreshUser != null ? '' : 'failedToRefresh',
-        });
+      const user = await User.findOne({ phone_number });
 
-    } catch (error) {
-        return res.status(500).send({
-            success: false,
-            login: false,
-            error: error.message,
-            message: 'failedToRefresh',
-        });
+      if (!user) {
+        res.status(401).json({ success: false, message: "User not found. Please register first." });
+        return;
+      }
+
+      const token = jwt.sign(
+        { userId: user._id, phone_number: user.phone_number },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      res.status(200).json({
+        success: true,
+        message: "Login successful",
+        token,
+        userId: user._id,
+      });
+    } catch (error: any) {
+      console.error("Login User Error:", error);
+      res.status(500).json({ success: false, message: error.message });
     }
-};
-
-
-export const editProfile = async (
-    req: any,
-    res: Response,
-    next: NextFunction
-) => {
-    try {
-        let { fullName, email, dob, avatar, gender, photoRemoved = 'false', user, isLocationAllowed, isNotificationAllowed }: any = req.body;
-        let updatedUser;
-
-        let updateQuery: any = {};
-
-
-        if (JSON.parse(photoRemoved)) {
-
-            updateQuery.avatar = '';
-
-        } else if (req.files != null) {
-            if (Object.keys(req.files).length > 0) {
-                for (const key in req.files) {
-                    let S3Response: any;
-
-                    let userImageFileName = `${req.files[key].name}`;
-                    let userFileData = req.files[key].data;
-
-                    await uploadToS3Bucket(userImageFileName, userFileData).then(
-                        async (data) => {
-                            S3Response = data;
-                        }
-                    );
-                    updateQuery.avatar = S3Response.Location;
-                }
-            }
-        }
-
-
-        if (isLocationAllowed || isNotificationAllowed) {
-            if (isLocationAllowed) {
-                updateQuery.isLocationAllowed = isLocationAllowed;
-            }
-
-            if (isNotificationAllowed) {
-                updateQuery.isNotificationAllowed = isNotificationAllowed;
-            }
-        } else {
-            updateQuery = {
-                fullName,
-                isLocationAllowed,
-                isNotificationAllowed,
-                email,
-                dob: new Date(dob),
-                gender,
-                ...updateQuery
-            }
-        }
-
-
-        updatedUser = await UserModel.findByIdAndUpdate(user,
-            updateQuery, { new: true });
-
-
-
-        return res.status(200).send({
-            success: updatedUser != null,
-            message: updatedUser != null ? 'profileUpdateSuccess' : 'failedToSave',
-            result: updatedUser,
-        });
-
-    } catch (error) {
-        return res.status(500).send({
-            success: false,
-            error: error.message,
-            message: 'failedToSave',
-        });
-    }
-};
-
-
-// export const updateAddress = async (
-//     req: any,
-//     res: Response,
-//     next: NextFunction
-// ) => {
-//     try {
-//         const { user, existingAddress, newAddress } = req.body;
-
-
-//         const newAddressToMap = await EndUserAddressModel.findById(newAddress);
-
-//         if (newAddressToMap && newAddressToMap.user) {
-//             return res.status(200).send({
-//                 success: false,
-//                 message: 'addressAlreadyAssigned',
-//             });
-//         }
-
-//         const existingUpdatedAddr = await EndUserAddressModel.findByIdAndUpdate(existingAddress, { $unset: { user: 1 } });
-//         const newUpdatedAddr: any = await EndUserAddressModel.findByIdAndUpdate(newAddress, { user }, { new: true });
-
-//         let updatedUser = await UserModel.findByIdAndUpdate(user, { address: [new ObjectId(newAddress)] });
-//         updatedUser = await UserModel.findById(user);
-
-//         if (newUpdatedAddr) {
-//             newUpdatedAddr._doc['user'] = updatedUser;
-//         }
-
-//         return res.status(200).send({
-//             success: newUpdatedAddr != null,
-//             message: newUpdatedAddr != null ? 'addressUpdatedSuccess' : 'failedToUpdateAddress',
-//             result: newUpdatedAddr,
-//         });
-
-//     } catch (error) {
-//         return res.status(500).send({
-//             success: false,
-//             error: error.message,
-//             message: 'failedToUpdateAddress',
-//         });
-//     }
-// };
-
-
-
-// export const deleteFCMToken = async (
-//     req: any,
-//     res: Response,
-//     next: NextFunction
-// ) => {
-//     try {
-//         let { user, userRole, fcmToken } = req.body;
-
-
-//         if (userRole == UserRole.User) {
-//             const updatedUser = await UserModel.findOneAndUpdate(
-//                 { _id: user },
-//                 { $pull: { fcmTokens: fcmToken } }
-//             );
-//         } else {
-//             // user = await EmployeeModel.findOneAndUpdate(
-//             //   { _id: req.body.user },
-//             //   { $pull: { fcmTokens: fcmToken } },
-//             //   { new: true, runValidators: true }
-//             // );
-//         }
-
-//         if (user) {
-//             res.status(200).json({
-//                 message: "Deletd FCM token Successfully",
-//                 success: true,
-//                 result: user,
-//             });
-//         } else {
-//             res.status(400).json({
-//                 message: "Failed to delete token",
-//                 success: false,
-//             });
-//         }
-//     } catch (e) {
-//         res.status(400).json({
-//             message: "Failed to delete token",
-//             success: false,
-//         });
-//     }
-// };
-
-
-// export const deleteAccount = async (
-//     req: any,
-//     res: Response,
-//     next: NextFunction
-// ) => {
-//     try {
-//         let { user, userRole } = req.body;
-
-//         const deletedUser = await UserModel.findByIdAndUpdate(
-//             user,
-//             { isActive: false, isDeleted: true, fcmTokens: [] }
-//         );
-
-
-//         if (deletedUser) {
-//             res.status(200).json({
-//                 message: "accountDeleted",
-//                 success: true,
-//                 result: deletedUser,
-//             });
-
-//         } else {
-//             res.status(400).json({
-//                 message: "deleteAccountFail",
-//                 success: false,
-//             });
-//         }
-//     } catch (e) {
-//         res.status(400).json({
-//             message: "deleteAccountFail",
-//             success: false,
-//         });
-//     }
-// };
+  },
+];
