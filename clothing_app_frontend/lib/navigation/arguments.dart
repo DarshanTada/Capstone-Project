@@ -16,10 +16,6 @@ class VerifyOtpArguments {
   VerifyOtpArguments({required this.mobileNo, required this.verificationId});
 }
 
-class VerifyOtp2Arguments {
-
-}
-
 class RegistrationArguments {
   final String mobileNo;
   RegistrationArguments({required this.mobileNo});

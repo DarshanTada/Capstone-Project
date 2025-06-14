@@ -4,23 +4,23 @@ import 'package:clothing_app_frontend/colors.dart';
 class TextWidget extends StatelessWidget {
   final String title;
   final Color? color;
-  double fontSize;
+  final double fontSize;
   final FontWeight fontWeight;
-  final String? fontFamily;
+final String? fontFamily;
   final double letterSpacing;
   final int? maxLines;
   final TextOverflow? textOverflow;
   final TextAlign? textAlign;
   final TextDecoration textDecoration;
 
-  TextWidget({
+  const TextWidget({
     super.key,
     required this.title,
     this.color,
     this.fontFamily,
     this.fontSize = 14,
     this.fontWeight = FontWeight.normal,
-    this.letterSpacing = 0.1,
+    this.letterSpacing = 0.25,
     this.maxLines,
     this.textOverflow,
     this.textAlign,

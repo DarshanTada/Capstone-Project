@@ -103,7 +103,7 @@ class VerifyOtpScreenState extends State<VerifyOtpScreen> {
           arguments: BottomNavArgumnets(),
         );
       } else if (!response['success']) {
-        showSnackbar(language['somethingWentWrong']);
+        showSnackbar("somethingWentWrong");
       } else if (!response['login']) {
         pushAndRemoveUntil(
           NamedRoute.registerUserScreen,
@@ -146,7 +146,7 @@ class VerifyOtpScreenState extends State<VerifyOtpScreen> {
           listen: false,
         ).resendOTPtoUser(widget.args.mobileNo.toString(), 'text');
         if (data != "success") {
-          showSnackbar(language['somethingWentWrong'], Colors.red);
+          showSnackbar("somethingWentWrong", Colors.red);
         }
       }
     } catch (e) {
@@ -200,14 +200,14 @@ class VerifyOtpScreenState extends State<VerifyOtpScreen> {
                         ),
                         SizedBox(height: dW * 0.1),
                         TextWidget(
-                          title: language['otpVerification'],
+                          title: "otpVerification",
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                           color: const Color(0xff6B6C75),
                         ),
                         SizedBox(height: dW * 0.03),
                         TextWidget(
-                          title: language['enterTheOtpSendTo'],
+                          title: "enterTheOtpSendTo",
                           fontWeight: FontWeight.w600,
                           color: const Color(0xff6B6C75),
                           fontSize: 16,
@@ -270,7 +270,7 @@ class VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                           : otpSentCount > 3
                                           ? () {
                                               showSnackbar(
-                                                language['outOfAttempts'],
+                                                "outOfAttempts",
                                                 Colors.red,
                                               );
                                               return;
@@ -283,7 +283,7 @@ class VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                         text: TextSpan(
                                           children: [
                                             TextSpan(
-                                              text: language['didntGetOtp'],
+                                              text: "didntGetOtp",
                                               style: TextStyle(
                                                 fontWeight: FontWeight.w500,
                                                 fontSize: tS * 12,
@@ -292,7 +292,7 @@ class VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                               ),
                                             ),
                                             TextSpan(
-                                              text: language['resend'],
+                                              text: "resend",
                                               style: TextStyle(
                                                 fontSize: tS * 12,
                                                 fontWeight: FontWeight.w600,
@@ -305,8 +305,8 @@ class VerifyOtpScreenState extends State<VerifyOtpScreen> {
                                                 text: _start == 0
                                                     ? '0:00'
                                                     : _start > 9
-                                                    ? " ${language['in']} : 0:$_start Sec"
-                                                    : " ${language['in']} : 0:0$_start Sec",
+                                                    ? " ${['in']} : 0:$_start Sec"
+                                                    : " ${['in']} : 0:0$_start Sec",
                                                 style: TextStyle(
                                                   fontWeight: FontWeight.w600,
                                                   fontSize: tS * 12,
@@ -334,7 +334,7 @@ class VerifyOtpScreenState extends State<VerifyOtpScreen> {
                   alignment: WrapAlignment.center,
                   children: [
                     TextWidget(
-                      title: language['byContinuingYouAgreeToThe'],
+                      title: "byContinuingYouAgreeToThe",
                       fontSize: 12,
                       color: const Color(0xff6B6C75),
                     ),
@@ -343,13 +343,13 @@ class VerifyOtpScreenState extends State<VerifyOtpScreen> {
                         push(
                           NamedRoute.privacyPolicyAndTcScreen,
                           arguments: PrivacyPolicyAndTcScreenArguments(
-                            title: language['tos'],
+                            title: "tos",
                             contentType: 'TERMSANDCONDITIONS',
                           ),
                         );
                       },
                       child: Text(
-                        language['tos'],
+                        "tos",
                         style: const TextStyle(
                           fontSize: 12,
                           fontFamily: 'Montserrat',
@@ -359,7 +359,7 @@ class VerifyOtpScreenState extends State<VerifyOtpScreen> {
                       ),
                     ),
                     TextWidget(
-                      title: language['and'],
+                      title: "and",
                       fontSize: 12,
                       color: const Color(0xff6B6C75),
                     ),
@@ -368,13 +368,13 @@ class VerifyOtpScreenState extends State<VerifyOtpScreen> {
                         push(
                           NamedRoute.privacyPolicyAndTcScreen,
                           arguments: PrivacyPolicyAndTcScreenArguments(
-                            title: language['privacyPolicy'],
+                            title: "privacyPolicy",
                             contentType: 'PRIVACYPOLICY',
                           ),
                         );
                       },
                       child: Text(
-                        language['privacyPolicy'],
+                        "privacyPolicy",
                         style: const TextStyle(
                           fontSize: 12,
                           fontFamily: 'Montserrat',
@@ -391,7 +391,7 @@ class VerifyOtpScreenState extends State<VerifyOtpScreen> {
                   height: dW * 0.12,
                   isLoading: _isLoading,
                   radius: 8,
-                  buttonText: language['continue'],
+                  buttonText: "continue",
                   buttonTextSyle: Theme.of(context).textTheme.displayLarge!
                       .copyWith(
                         fontSize: tS * 18,
