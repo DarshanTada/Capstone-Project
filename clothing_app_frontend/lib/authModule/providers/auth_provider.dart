@@ -34,7 +34,6 @@ class AuthProvider with ChangeNotifier {
     "signIn": "Sign In",
     "yourStyleYourWay": "Your Style, Your Way",
     "phoneNumber": "000-000-0000",
-    "otpVerification": "OTP Verification",
 
     //Home Screen
 

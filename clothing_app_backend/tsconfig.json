@@ -40,5 +40,5 @@
       "./src/**/*.tsx",
       "./src/**/*.ts",
       "./src/**/*.html"
-, "src/introModule/intro.controller.js", "src/introModule/intro.routes.js"    ]
+    ]
   }
