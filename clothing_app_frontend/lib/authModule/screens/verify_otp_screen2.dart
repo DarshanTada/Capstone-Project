@@ -1,5 +1,4 @@
 import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen.dart';
-import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
 import 'package:clothing_app_frontend/colors.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/custom_text_field.dart';
@@ -10,21 +9,24 @@ import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
+import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
-class PhoneNumberScreen extends StatefulWidget {
-  const PhoneNumberScreen({super.key});
+class VerifyOtpScreen2 extends StatefulWidget {
+  const VerifyOtpScreen2({super.key});
 
   @override
-  State<PhoneNumberScreen> createState() => PhoneNumberScreenState();
+  State<VerifyOtpScreen2> createState() => VerifyOtpScreen2State();
 }
 
-class PhoneNumberScreenState extends State<PhoneNumberScreen> {
+class VerifyOtpScreen2State extends State<VerifyOtpScreen2> {
   //
   late VideoPlayerController _controller;
-  final TextEditingController _phoneController = TextEditingController();
+  final _otpEditingController = TextEditingController();
+  bool validateotp = false;
+
   final FirebaseAnalytics analytic = FirebaseAnalytics.instance;
   bool _termsAccepted = false;
 
@@ -32,12 +34,100 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
   double dW = 0.0;
   double tS = 0.0;
   double dH = 0.0;
+  String otp = '123456';
+
   TextTheme get textTheme => Theme.of(context).textTheme;
   // final VideoPlayerController controller = VideoPlayerController.asset(
   //   'assets/videos/v_login.mp4',
   //   // viewType: widget.viewType,
   // );
   late VideoViewType viewType;
+
+  //   void startTimer() {
+  //   _start = 30;
+  //   const oneSec = Duration(seconds: 1);
+  //   _timer = Timer.periodic(oneSec, (Timer timer) {
+  //     if (_start == 0) {
+  //       setState(() {
+  //         timer.cancel();
+  //         isReadyToResend = true;
+  //       });
+  //     } else {
+  //       setState(() {
+  //         _start--;
+  //       });
+  //     }
+  //   });
+  // }
+
+  String? validateOtp(String value) {
+    if (value.isEmpty) {
+      validateotp = false;
+      return 'Please enter OTP';
+      return null;
+    } else if (value.length < 6) {
+      validateotp = false;
+      // return showSnackbar('Please enter valid OTP');
+      return 'Please enter valid OTP';
+      return null;
+      // } else if (value != otp) {
+      //   validateotp = false;
+      //   // return showSnackbar('Please enter valid OTP');
+      //   // return 'Please enter valid OTP';
+      //   return null;
+    }
+    // else if (value != otp) {
+    //   validateotp = false;
+    //   // return showSnackbar('Please enter valid OTP');
+    //   // return 'Please enter valid OTP';
+    //   return null;
+    // }
+    validateotp = true;
+    return null;
+  }
+
+  // Future<void> verifyOTP() async {
+  //   // if(_otpEditingController.text.trim() == otp ) {}
+  //   final data = await Provider.of<AuthProvider>(context, listen: false)
+  //       .verifyOTPofUser(
+  //         widget.args.mobileNo.toString(),
+  //         _otpEditingController.text,
+  //       );
+  //   if (data == 'success') {
+  //     final response = await Provider.of<AuthProvider>(
+  //       context,
+  //       listen: false,
+  //     ).login(query: '?phone=${widget.args.mobileNo}');
+
+  //     if (response['success'] && response['login']) {
+  //       pushAndRemoveUntil(
+  //         NamedRoute.bottomNavBarScreen,
+  //         arguments: BottomNavArgumnets(),
+  //       );
+  //     } else if (!response['success']) {
+  //       showSnackbar(language['somethingWentWrong']);
+  //     } else if (!response['login']) {
+  //       pushAndRemoveUntil(
+  //         NamedRoute.registerUserScreen,
+  //         arguments: RegistrationArguments(mobileNo: widget.args.mobileNo),
+  //       );
+  //     }
+
+  //     //
+  //   } else {
+  //     showSnackbar('Incorrect OTP', Colors.red);
+
+  //     setState(() {
+  //       inCorrect = true;
+  //     });
+  //   }
+
+  //   if (mounted) {
+  //     setState(() {
+  //       _isLoading = false;
+  //     });
+  //   }
+  // }
 
   @override
   void initState() {
@@ -165,63 +255,44 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                             children: [
                               // const SizedBox(width: 10),
                               Expanded(
-                                child: CustomTextFieldWithLabel(
-                                  controller: _phoneController,
-                                  hintText: "000-000-0000",
-                                  prefixIcon: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      SizedBox(width: dW * 0.04),
-                                      ClipRRect(
-                                        borderRadius: BorderRadius.circular(
-                                          20,
-                                        ), // half of height/width to make it round
-                                        child: CountryFlag.fromCountryCode(
-                                          'CA',
-                                          height: 30,
-                                          width:
-                                              30, // make width and height equal for perfect circle
-                                        ),
-                                      ),
-                                      SizedBox(width: dW * 0.02),
-                                      TextWidget(
-                                        title: '+1',
-                                        color: getGreyColor(),
-                                        fontSize: tS * 20,
-                                      ),
-                                      SizedBox(width: dW * 0.04),
-                                    ],
+                                child: PinCodeTextField(
+                                  errorTextMargin: EdgeInsets.only(
+                                    left: dW * 0.025,
+                                    top: dW * 0.025,
                                   ),
-                                  label: "Phone Number",
-                                  hintFS: 20,
+                                  appContext: context,
+                                  length: 6,
+                                  onChanged: (value) {
+                                    setState(() {
+                                      validateotp = validateOtp(value) != null;
+                                    });
+                                  },
+                                  controller: _otpEditingController,
+                                  keyboardType: TextInputType.number,
+                                  cursorColor: Colors.black,
+                                  validator: (v) => validateOtp(v!),
+                                  pinTheme: PinTheme(
+                                    shape: PinCodeFieldShape.box,
+                                    activeColor: const Color(0xffBFC0C8),
+                                    inactiveColor: const Color(0xffBFC0C8),
+                                    selectedFillColor: const Color(0xffBFC0C8),
+                                    disabledColor: const Color(0xffBFC0C8),
+                                    borderWidth: 1,
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceAround,
                                 ),
                               ),
                             ],
                           ),
-                          Row(
-                            children: [
-                              Checkbox(
-                                value: _termsAccepted,
-                                onChanged: (val) => setState(
-                                  () => _termsAccepted = val ?? false,
-                                ),
-                              ),
-                              TextWidget(
-                                title: "I accept the ",
-                                color: getGreyColor(),
-                              ),
-                              GestureDetector(
-                                onTap: () {},
-                                child: TextWidget(
-                                  title: "Terms and Conditions",
-                                  // letterSpacing: 0.1,
-                                ),
-                              ),
-                            ],
+                          TextWidget(
+                            title: "Resend Code",
+                            color: getGreyColor(),
                           ),
                           SizedBox(height: dW * 0.075),
                           ElevatedButton(
-                            onPressed: _termsAccepted
+                            onPressed: _otpEditingController.text == otp
                                 ? () {
                                     Navigator.push(
                                       context,
@@ -231,43 +302,6 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                                       ),
                                     );
                                   }
-                                // () async {
-                                //     // Send OTP logic
-                                //     if (_phoneController.text != "") {
-                                //       await FirebaseAuth.instance.verifyPhoneNumber(
-                                //         phoneNumber: _phoneController.text,
-                                //         verificationCompleted:
-                                //             (phoneAuthCredential) {},
-                                //         verificationFailed: (error) {},
-                                //         codeSent:
-                                //             (
-                                //               verificationId,
-                                //               forceResendingToken,
-                                //             ) {
-                                //               setState(() {});
-                                //               Navigator.push(
-                                //                 context,
-                                //                 MaterialPageRoute(
-                                //                   builder: (context) =>
-                                //                       VerifyOtpScreen(
-                                //                         args: VerifyOtpArguments(
-                                //                           mobileNo:
-                                //                               _phoneController
-                                //                                   .text,
-                                //                           verificationId:
-                                //                               verificationId,
-                                //                         ),
-                                //                       ),
-                                //                 ),
-                                //               );
-                                //             },
-                                //         codeAutoRetrievalTimeout:
-                                //             (verificationId) {},
-                                //       );
-                                //     } else {
-                                //       //Set alert message
-                                //     }
-                                //   }
                                 : null,
                             style: ElevatedButton.styleFrom(
                               backgroundColor: Colors.black,
