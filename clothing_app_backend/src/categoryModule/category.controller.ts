@@ -12,9 +12,10 @@ export const uploadCategoryImage = upload.fields([
 ]);
 
 // Create Category
+
 export const createCategory = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name } = req.body; 
+    const { name } = req.body;
 
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
     const imageBuffer = files?.['image']?.[0]?.buffer;
