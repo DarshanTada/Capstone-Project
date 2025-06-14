@@ -314,7 +314,7 @@ class VerifyOtpScreen2State extends State<VerifyOtpScreen2> {
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Text(
-                                  "Send OTP",
+                                  "Verify",
                                   style: TextStyle(
                                     fontSize: 16,
                                     color: getOffWhiteColor(),
