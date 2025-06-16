@@ -1,4 +1,5 @@
 import 'package:clothing_app_frontend/authModule/screens/login.dart';
+import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:flutter/material.dart';
 
 class IntroScreen3 extends StatelessWidget {
@@ -129,7 +130,7 @@ class IntroScreen3 extends StatelessWidget {
               onTap: () {
                 Navigator.push(
                   context,
-                  MaterialPageRoute(builder: (context) => LoginScreen()),
+                  MaterialPageRoute(builder: (context) => PhoneNumberScreen()),
                 );
               },
               child: Container(
