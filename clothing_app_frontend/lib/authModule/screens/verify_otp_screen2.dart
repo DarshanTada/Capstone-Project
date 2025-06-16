@@ -3,6 +3,10 @@ import 'package:clothing_app_frontend/colors.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/custom_text_field.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
+<<<<<<< HEAD
+=======
+import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
+>>>>>>> cb87906f84f511c0a4bbeb891f70574f3e56f418
 import 'package:clothing_app_frontend/navigation/arguments.dart';
 import 'package:country_flags/country_flags.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
