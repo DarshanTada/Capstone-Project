@@ -1,4 +1,14 @@
+import 'dart:convert';
+
+import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
+import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
+import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
+import 'package:clothing_app_frontend/navigation/arguments.dart';
+import 'package:clothing_app_frontend/navigation/navigators.dart';
+import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:flutter/material.dart';
+import 'package:localstorage/localstorage.dart';
+import 'package:provider/provider.dart';
 import 'intro_screen_1.dart';
 
 class SplashScreenMain extends StatefulWidget {
@@ -12,19 +22,48 @@ class _SplashScreenState extends State<SplashScreenMain>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _animation;
+  final LocalStorage storage = LocalStorage('yolochec');
+
+  getLanguage() async {
+    await storage.ready;
+    var languageMap = storage.getItem('language');
+    String language = 'english';
+
+    if (languageMap != null) {
+      languageMap = json.decode(languageMap);
+      language = languageMap['language'];
+    } else {
+      Provider.of<AuthProvider>(
+        context,
+        listen: false,
+      ).setLanguageInStorage(language);
+    }
+
+    final response = await Provider.of<AuthProvider>(
+      context,
+      listen: false,
+    ).getAppConfig(['user-$language', 'delete_feature']);
+
+    return response;
+  }
+
+  makeStorage() async {
+    await storage.ready;
+  }
 
   @override
   void initState() {
     super.initState();
-
+    makeStorage();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     )..repeat(reverse: true);
 
-    _animation = Tween<double>(begin: 0.9, end: 1.1).animate(
-      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
-    );
+    _animation = Tween<double>(
+      begin: 0.9,
+      end: 1.1,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
 
     _loadApp(); // Start loading app resources
   }
@@ -35,7 +74,7 @@ class _SplashScreenState extends State<SplashScreenMain>
 
     if (!mounted) return;
     Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const IntroScreen1()),
+      MaterialPageRoute(builder: (context) => const VerifyOtpScreen2()),
     );
   }
 

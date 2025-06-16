@@ -37,7 +37,15 @@ class AuthProvider with ChangeNotifier {
     "otpVerification": "OTP Verification",
 
     //Home Screen
-
+    "sizeChart": "Size Chart",
+    'jeans': 'Jeans',
+    'shirts': 'Shirts',
+    'pants': 'Pants',
+'home': 'Home',
+'shop': 'Shop',
+    'cart': 'Cart',
+    'profile': 'Profile', 
+    'search': 'Search',
     // Wallet Screen
 
     // Offer Screen

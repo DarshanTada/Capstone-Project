@@ -3,6 +3,9 @@ import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 
 import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
+import 'package:clothing_app_frontend/navigation/arguments.dart';
+import 'package:clothing_app_frontend/navigation/navigators.dart';
+import 'package:clothing_app_frontend/navigation/routes.dart';
 
 import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:flutter/material.dart';
@@ -290,12 +293,16 @@ class VerifyOtpScreen2State extends State<VerifyOtpScreen2> {
                           ElevatedButton(
                             onPressed: _otpEditingController.text == otp
                                 ? () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (context) => HomeScreen(),
-                                      ),
+                                    pushAndRemoveUntil(
+                                      NamedRoute.bottomNavBarScreen,
+                                      arguments: BottomNavArgumnets(index: 0),
                                     );
+                                    // Navigator.push(
+                                    //   context,
+                                    //   MaterialPageRoute(
+                                    //     builder: (context) => HomeScreen(),
+                                    //   ),
+                                    // );
                                   }
                                 : null,
                             style: ElevatedButton.styleFrom(

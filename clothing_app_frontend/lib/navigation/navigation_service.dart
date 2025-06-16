@@ -1,4 +1,6 @@
 import 'package:clothing_app_frontend/authModule/screens/login.dart';
+import 'package:clothing_app_frontend/authModule/screens/splash.dart';
+import 'package:clothing_app_frontend/homeModule/screens/size_chart_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/common_widgets/bottom_nav_bar.dart';
 import 'package:clothing_app_frontend/common_widgets/loading_screen.dart';
@@ -10,8 +12,8 @@ import 'routes.dart';
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
     // Auth Screens
-    case NamedRoute.onBoardingScreen:
-      return _getPageRoute(const SplashScreen());
+    // case NamedRoute.onBoardingScreen:
+    //   return _getPageRoute(const SplashScreen());
 
     case NamedRoute.loadingScreen:
       return _getPageRoute(
@@ -20,10 +22,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     // case NamedRoute.onBoardingScreen1:
     //   return _getPageRoute(OnBoardingScreen1());
-    
 
     case NamedRoute.loginScreen:
       return _getPageRoute(const LoginScreen());
+
+    case NamedRoute.sizeChartScreen:
+      return _getPageRoute(const SizeChartScreen());
 
     // case NamedRoute.verifyOtpScreen:
     //   return _getPageRoute(VerifyOtpScreen(
@@ -43,10 +47,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     //   return _getPageRoute(const TermsOfServicesScreen());
 
     // Home Screen
-    // case NamedRoute.bottomNavBarScreen:
-    //   return _getPageRoute(BottomNavBar(
-    //     args: settings.arguments as BottomNavArgumnets,
-    //   ));
+    case NamedRoute.bottomNavBarScreen:
+      return _getPageRoute(
+        BottomNavBar(args: settings.arguments as BottomNavArgumnets),
+      );
 
     // case NamedRoute.walletScreen:
     //   return _getPageRoute(const WalletScreen());
@@ -61,7 +65,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     //       FaqsScreen(args: settings.arguments as FaqsScreenArguments));
 
     default:
-      return _getPageRoute(const SplashScreen());
+      return _getPageRoute(const SplashScreenMain());
   }
 }
 
