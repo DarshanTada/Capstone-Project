@@ -6,13 +6,13 @@ import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class ScreenLayout extends StatefulWidget {
-  const ScreenLayout({Key? key}) : super(key: key);
-  @override
-  ScreenLayoutState createState() => ScreenLayoutState();
-}
 
-class ScreenLayoutState extends State<ScreenLayout> {
+class CartScreen extends StatefulWidget {
+  const CartScreen({Key? key}) : super(key: key);
+  @override
+  CartScreenState createState() => CartScreenState();
+}
+class CartScreenState extends State<CartScreen> {
   double dH = 0.0;
   double dW = 0.0;
   double tS = 0.0;
@@ -25,7 +25,6 @@ class ScreenLayoutState extends State<ScreenLayout> {
     super.initState();
     fetchData();
   }
-
   @override
   Widget build(BuildContext context) {
     dH = MediaQuery.of(context).size.height;
@@ -38,7 +37,6 @@ class ScreenLayoutState extends State<ScreenLayout> {
       body: iOSCondition(dH) ? screenBody() : SafeArea(child: screenBody()),
     );
   }
-
   screenBody() {
     return SizedBox(
       height: dH,
@@ -51,11 +49,12 @@ class ScreenLayoutState extends State<ScreenLayout> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  SizedBox(height: dW * 0.05),
-                  TextWidget(title: ''),
+                  SizedBox(height: dW * 0.05),TextWidget(title: 'cart...')
+
                 ],
               ),
             ),
     );
   }
 }
+

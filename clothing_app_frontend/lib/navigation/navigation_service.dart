@@ -1,5 +1,7 @@
 import 'package:clothing_app_frontend/authModule/screens/login.dart';
 import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
+import 'package:clothing_app_frontend/authModule/screens/splash.dart';
+import 'package:clothing_app_frontend/homeModule/screens/size_chart_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/common_widgets/bottom_nav_bar.dart';
 import 'package:clothing_app_frontend/common_widgets/loading_screen.dart';
@@ -26,6 +28,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case NamedRoute.loginScreen:
       return _getPageRoute(const PhoneNumberScreen());
 
+    case NamedRoute.sizeChartScreen:
+      return _getPageRoute(const SizeChartScreen());
+
     // case NamedRoute.verifyOtpScreen:
     //   return _getPageRoute(VerifyOtpScreen(
     //     args: settings.arguments as VerifyOtpArguments,
@@ -44,10 +49,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     //   return _getPageRoute(const TermsOfServicesScreen());
 
     // Home Screen
-    // case NamedRoute.bottomNavBarScreen:
-    //   return _getPageRoute(BottomNavBar(
-    //     args: settings.arguments as BottomNavArgumnets,
-    //   ));
+    case NamedRoute.bottomNavBarScreen:
+      return _getPageRoute(
+        BottomNavBar(args: settings.arguments as BottomNavArgumnets),
+      );
 
     // case NamedRoute.walletScreen:
     //   return _getPageRoute(const WalletScreen());

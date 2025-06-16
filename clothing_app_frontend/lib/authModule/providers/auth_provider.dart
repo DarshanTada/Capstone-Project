@@ -31,6 +31,26 @@ class AuthProvider with ChangeNotifier {
     "yourStyleYourWay": "Your Style, Your Way",
     "phoneNumber": "000-000-0000",
     "otpVerification": "OTP Verification",
+
+    //Home Screen
+    "sizeChart": "Size Chart",
+    'jeans': 'Jeans',
+    'shirts': 'Shirts',
+    'pants': 'Pants',
+    'home': 'Home',
+    'shop': 'Shop',
+    'cart': 'Cart',
+    'profile': 'Profile',
+    'search': 'Search',
+    // Wallet Screen
+
+    // Offer Screen
+
+    // Cafe Images Screen
+
+    // Cafe Details Screen
+
+    // All Cafes Screen
   };
 
   late User user;

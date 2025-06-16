@@ -216,11 +216,15 @@
 //           SizedBox(
 //             height: dH,
 //             width: dW,
-//             child: Image.asset(
+
+//             child: 
+//             Image.asset(
 //               'assets/images/splash_screen_logo.png',
 //               width: dW,
 //               fit: BoxFit.fill,
 //             ),
+
+
 //           ),
 
 //           // if (locationLoading)
@@ -230,7 +234,9 @@
 //           //     bottom: dH * 0.3,
 //           //     child: const CircularLoader(),
 //           //   ),
-//         ],
+
+
+// ],
 //       ),
 //     );
 //   }
