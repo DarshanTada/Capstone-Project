@@ -3,7 +3,7 @@ import 'dart:ffi';
 import 'package:clothing_app_frontend/common_widgets/asset_svg_icon.dart';
 import 'package:flutter/material.dart';
 
-class CustomSmallProductCardGrid extends StatelessWidget {
+class CustomBigProductCardGrid extends StatelessWidget {
   final String imageUrl;
   final VoidCallback onTap;
   final String price;
@@ -11,7 +11,7 @@ class CustomSmallProductCardGrid extends StatelessWidget {
 
   double dW = 0.0;
 
-  CustomSmallProductCardGrid({
+  CustomBigProductCardGrid({
     super.key,
     required this.imageUrl,
     required this.price,
@@ -31,10 +31,15 @@ class CustomSmallProductCardGrid extends StatelessWidget {
           children: [
             // Product Image
             // AssetSvgIcon(imageUrl, width: 116, height: 116),
-            Image.network(imageUrl, fit: BoxFit.cover, width: 110, height: 116),
+            Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              width: dW * 0.59,
+              height: dW * 0.605,
+            ),
             // Gradient Overlay
             Container(
-              width: dW * 0.29,
+              width: dW * 0.59,
               alignment: Alignment.bottomCenter,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               decoration: const BoxDecoration(
