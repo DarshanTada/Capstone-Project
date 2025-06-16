@@ -1,4 +1,5 @@
 import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen.dart';
+import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
 import 'package:clothing_app_frontend/colors.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/custom_text_field.dart';
@@ -221,43 +222,52 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                             SizedBox(height: dW * 0.075),
                             ElevatedButton(
                               onPressed: _termsAccepted
-                                  ? () async {
-                                      // Send OTP logic
-                                      if (_phoneController.text != "") {
-                                        await FirebaseAuth.instance.verifyPhoneNumber(
-                                          phoneNumber: _phoneController.text,
-                                          verificationCompleted:
-                                              (phoneAuthCredential) {},
-                                          verificationFailed: (error) {},
-                                          codeSent:
-                                              (
-                                                verificationId,
-                                                forceResendingToken,
-                                              ) {
-                                                setState(() {});
-                                                Navigator.push(
+                                  ?() {
+                                      Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
                                                     builder: (context) =>
-                                                        VerifyOtpScreen(
-                                                          args: VerifyOtpArguments(
-                                                            mobileNo:
-                                                                _phoneController
-                                                                    .text,
-                                                            verificationId:
-                                                                verificationId,
-                                                          ),
-                                                        ),
+                                                       VerifyOtpScreen2()
                                                   ),
                                                 );
-                                              },
-                                          codeAutoRetrievalTimeout:
-                                              (verificationId) {},
-                                        );
-                                      } else {
-                                        //Set alert message
-                                      }
-                                    }
+  }
+                                  //  () async {
+                                  //     // Send OTP logic
+                                  //     if (_phoneController.text != "") {
+                                  //       await FirebaseAuth.instance.verifyPhoneNumber(
+                                  //         phoneNumber: _phoneController.text,
+                                  //         verificationCompleted:
+                                  //             (phoneAuthCredential) {},
+                                  //         verificationFailed: (error) {},
+                                  //         codeSent:
+                                  //             (
+                                  //               verificationId,
+                                  //               forceResendingToken,
+                                  //             ) {
+                                  //               setState(() {});
+                                  //               Navigator.push(
+                                  //                 context,
+                                  //                 MaterialPageRoute(
+                                  //                   builder: (context) =>
+                                  //                       VerifyOtpScreen(
+                                  //                         args: VerifyOtpArguments(
+                                  //                           mobileNo:
+                                  //                               _phoneController
+                                  //                                   .text,
+                                  //                           verificationId:
+                                  //                               verificationId,
+                                  //                         ),
+                                  //                       ),
+                                  //                 ),
+                                  //               );
+                                  //             },
+                                  //         codeAutoRetrievalTimeout:
+                                  //             (verificationId) {},
+                                  //       );
+                                  //     } else {
+                                  //       //Set alert message
+                                  //     }
+                                  //   }
                                   : null,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.black,
