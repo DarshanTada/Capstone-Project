@@ -1,9 +1,6 @@
 import 'dart:ffi';
 
-<<<<<<< HEAD
 import 'package:clothing_app_frontend/common_widgets/asset_svg_icon.dart';
-=======
->>>>>>> 4a4da36f0112d446b97bc2369b1858820091e63c
 import 'package:flutter/material.dart';
 
 class CustomSmallProductCardGrid extends StatelessWidget {
@@ -33,18 +30,11 @@ class CustomSmallProductCardGrid extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           children: [
             // Product Image
-<<<<<<< HEAD
             // AssetSvgIcon(imageUrl, width: 116, height: 116),
             Image.network(imageUrl, fit: BoxFit.cover, width: 110, height: 116),
             // Gradient Overlay
             Container(
               width: dW * 0.29,
-=======
-            Image.network(imageUrl, fit: BoxFit.cover, width: 116, height: 116),
-            // Gradient Overlay
-            Container(
-              width: 116,
->>>>>>> 4a4da36f0112d446b97bc2369b1858820091e63c
               alignment: Alignment.bottomCenter,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               decoration: const BoxDecoration(
