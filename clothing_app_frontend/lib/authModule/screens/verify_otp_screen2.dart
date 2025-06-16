@@ -1,22 +1,15 @@
-import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen.dart';
 import 'package:clothing_app_frontend/colors.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
-import 'package:clothing_app_frontend/common_widgets/custom_text_field.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
-<<<<<<< HEAD
-=======
+
 import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
->>>>>>> cb87906f84f511c0a4bbeb891f70574f3e56f418
-import 'package:clothing_app_frontend/navigation/arguments.dart';
-import 'package:country_flags/country_flags.dart';
+
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
-import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
 class VerifyOtpScreen2 extends StatefulWidget {
   const VerifyOtpScreen2({super.key});
@@ -32,7 +25,6 @@ class VerifyOtpScreen2State extends State<VerifyOtpScreen2> {
   bool validateotp = false;
 
   final FirebaseAnalytics analytic = FirebaseAnalytics.instance;
-  bool _termsAccepted = false;
 
   Map language = {};
   double dW = 0.0;
@@ -68,12 +60,12 @@ class VerifyOtpScreen2State extends State<VerifyOtpScreen2> {
     if (value.isEmpty) {
       validateotp = false;
       return 'Please enter OTP';
-      return null;
+      // return null;
     } else if (value.length < 6) {
       validateotp = false;
       // return showSnackbar('Please enter valid OTP');
       return 'Please enter valid OTP';
-      return null;
+      // return null;
       // } else if (value != otp) {
       //   validateotp = false;
       //   // return showSnackbar('Please enter valid OTP');
