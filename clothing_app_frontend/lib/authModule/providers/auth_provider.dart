@@ -1,9 +1,5 @@
 import 'dart:io';
 
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:geolocator/geolocator.dart';
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-
 import 'dart:convert';
 import '../../http_helper.dart';
 import '../model/user_model.dart';
@@ -12,7 +8,7 @@ import 'package:localstorage/localstorage.dart';
 import '../../api.dart';
 
 class AuthProvider with ChangeNotifier {
-  final LocalStorage storage = LocalStorage('re_household');
+  final LocalStorage storage = LocalStorage('yolochic');
   List availableLanguages = [];
 
   String razorpayId = 'rzp_test_T4eGUVSdlEPgNm';
@@ -59,56 +55,97 @@ class AuthProvider with ChangeNotifier {
     user = User(isGuest: true, id: '');
   }
 
-  void updatePermission({
-    required String permissionType,
-    required bool newValue,
-  }) {
-    if (permissionType == 'location') {
-      user.isLocationAllowed = newValue;
-    } else {
-      user.isNotificationAllowed = newValue;
-    }
-    notifyListeners();
-  }
+  // void updatePermission({
+  //   required String permissionType,
+  //   required bool newValue,
+  // }) {
+  //   if (permissionType == 'location') {
+  //     user.isLocationAllowed = newValue;
+  //   } else {
+  //     user.isNotificationAllowed = newValue;
+  //   }
+  //   notifyListeners();
+  // }
 
-  refreshUser() async {
-    final String url = '${webApi['domain']}${endPoint['refreshUser']}';
+  // API Call
+  Future<Map<String, dynamic>> loginUser(
+    BuildContext context,
+    String phoneNumber,
+  ) async {
+    final String url = '${webApi['domain']}${endPoint['login']}';
+    Map<String, String> body = {'phone_number': phoneNumber};
+
     try {
       final response = await RemoteServices.httpRequest(
-        method: 'GET',
+        method: 'POST',
         url: url,
-        accessToken: user.accessToken,
+        body: body,
       );
 
-      if (response['success']) {
-        user = User.jsonToUser(
-          response['result'],
-          accessToken: user.accessToken,
+      print('Status code: ${response.statusCode}');
+      print('Response body: ${response.body}');
+
+      final responseData = response.body;
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        final user = User(
+          id: responseData['userId'],
+          phone: phoneNumber,
+          token: responseData['token'],
         );
 
-        notifyListeners();
-      }
+        await user.saveToPrefs();
 
-      notifyListeners();
-      return response;
-    } catch (e) {
-      return {'success': false, 'message': 'failedToRefresh'};
+        return {'status': true, 'data': user};
+      } else {
+        return {
+          'status': false,
+          'message': responseData['message'] ?? 'Login or registration failed',
+        };
+      }
+    } catch (error) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error: $error')));
+      return {'status': false, 'message': 'Unexpected error occurred'};
     }
   }
 
-  fetchMyLocation() async {
-    late LatLng coord;
-    final location =
-        await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.low,
-        ).catchError((e) {
-          print(e);
-        });
-    coord = LatLng(location.latitude, location.longitude);
-    user.coordinates = coord;
-    notifyListeners();
-    return true;
-  }
+  // refreshUser() async {
+  //   final String url = '${webApi['domain']}${endPoint['refreshUser']}';
+  //   try {
+  //     final response = await RemoteServices.httpRequest(
+  //       method: 'GET',
+  //       url: url,
+  //       accessToken: user.token,
+  //     );
+
+  //     if (response['success']) {
+  //       user = User.jsonToUser(response['result'], token: user.token);
+
+  //       notifyListeners();
+  //     }
+
+  //     notifyListeners();
+  //     return response;
+  //   } catch (e) {
+  //     return {'success': false, 'message': 'failedToRefresh'};
+  //   }
+  // }
+
+  // fetchMyLocation() async {
+  //   late LatLng coord;
+  //   final location =
+  //       await Geolocator.getCurrentPosition(
+  //         desiredAccuracy: LocationAccuracy.low,
+  //       ).catchError((e) {
+  //         print(e);
+  //       });
+  //   coord = LatLng(location.latitude, location.longitude);
+  //   user.coordinates = coord;
+  //   notifyListeners();
+  //   return true;
+  // }
 
   sendOTPtoUser(String mobileNo, {bool business = false}) async {
     final url = '${webApi['domain']}${endPoint['sendOTPtoUser']}';
@@ -126,71 +163,71 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  resendOTPtoUser(String mobileNo, String type) async {
-    final url = '${webApi['domain']}${endPoint['resendOTPtoUser']}';
-    Map body = {'mobileNo': mobileNo, "type": type};
-    try {
-      final response = await RemoteServices.httpRequest(
-        method: 'POST',
-        url: url,
-        body: body,
-      );
+  // resendOTPtoUser(String mobileNo, String type) async {
+  //   final url = '${webApi['domain']}${endPoint['resendOTPtoUser']}';
+  //   Map body = {'mobileNo': mobileNo, "type": type};
+  //   try {
+  //     final response = await RemoteServices.httpRequest(
+  //       method: 'POST',
+  //       url: url,
+  //       body: body,
+  //     );
 
-      return response['result']['type'];
-    } catch (error) {
-      return {'success': false, 'login': false};
-    }
-  }
+  //     return response['result']['type'];
+  //   } catch (error) {
+  //     return {'success': false, 'login': false};
+  //   }
+  // }
 
-  verifyOTPofUser(String mobileNo, String otp) async {
-    final url = '${webApi['domain']}${endPoint['verifyOTPofUser']}';
-    Map body = {'mobileNo': mobileNo, "otp": otp};
-    try {
-      final response = await RemoteServices.httpRequest(
-        method: 'POST',
-        url: url,
-        body: body,
-      );
+  // verifyOTPofUser(String mobileNo, String otp) async {
+  //   final url = '${webApi['domain']}${endPoint['verifyOTPofUser']}';
+  //   Map body = {'mobileNo': mobileNo, "otp": otp};
+  //   try {
+  //     final response = await RemoteServices.httpRequest(
+  //       method: 'POST',
+  //       url: url,
+  //       body: body,
+  //     );
 
-      return response['result']['type'];
-    } catch (error) {
-      return {'success': false, 'login': false};
-    }
-  }
+  //     return response['result']['type'];
+  //   } catch (error) {
+  //     return {'success': false, 'login': false};
+  //   }
+  // }
 
   // get app config from DBDB
-  getAppConfig(List<String> types) async {
-    final url = '${webApi['domain']}${endPoint['getAppConfigs']}';
+  // getAppConfig(List<String> types) async {
+  //   final url = '${webApi['domain']}${endPoint['getAppConfigs']}';
 
-    try {
-      final response = await RemoteServices.httpRequest(
-        method: 'POST',
-        url: url,
-        body: {"types": types},
-      );
-      if (response['success']) {
-        (response['result'] as List).forEach((config) {
-          if (config['type'].contains("user_availableLanguages")) {
-            availableLanguages = config['value'];
-          } else if (config['type'].contains("user-")) {
-            // selectedLanguage = config['value'];
-          } else if (config['type'] == 'delete_feature') {
-            deleteFeature = Platform.isAndroid
-                ? config['value']['android']
-                : config['value']['iOS'];
-          } else if (config['type'] == 'Razorpay') {
-            razorpayId = config['value'];
-          } else if (config['type'] == 'helpAndSuppWhatsApp') {
-            helpAndSuppWhatsApp = config['value'];
-          }
-        });
-      }
-      return response;
-      //
-    } catch (error) {
-      return {'success': false, 'message': 'Failed to get data'};
-    }
-  }
+  //   try {
+  //     final response = await RemoteServices.httpRequest(
+  //       method: 'POST',
+  //       url: url,
+  //       body: {"types": types},
+  //     );
+  //     if (response['success']) {
+  //       (response['result'] as List).forEach((config) {
+  //         if (config['type'].contains("user_availableLanguages")) {
+  //           availableLanguages = config['value'];
+  //         } else if (config['type'].contains("user-")) {
+  //           // selectedLanguage = config['value'];
+  //         } else if (config['type'] == 'delete_feature') {
+  //           deleteFeature = Platform.isAndroid
+  //               ? config['value']['android']
+  //               : config['value']['iOS'];
+  //         } else if (config['type'] == 'Razorpay') {
+  //           razorpayId = config['value'];
+  //         } else if (config['type'] == 'helpAndSuppWhatsApp') {
+  //           helpAndSuppWhatsApp = config['value'];
+  //         }
+  //       });
+  //     }
+  //     return response;
+  //     //
+  //   } catch (error) {
+  //     return {'success': false, 'message': 'Failed to get data'};
+  //   }
+  // }
 
   setLanguageInStorage(String language) async {
     await storage.ready;
@@ -198,39 +235,39 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  Future login({required String query}) async {
-    // String? fcmToken = await FirebaseMessaging.instance.getToken();
-    // if (fcmToken != null && fcmToken != '') {
-    //   query += '&fcmToken=$fcmToken';
-    // }
+  // Future login({required String query}) async {
+  //   // String? fcmToken = await FirebaseMessaging.instance.getToken();
+  //   // if (fcmToken != null && fcmToken != '') {
+  //   //   query += '&fcmToken=$fcmToken';
+  //   // }
 
-    try {
-      final url = '${webApi['domain']}${endPoint['login']}$query';
-      final response = await RemoteServices.httpRequest(
-        method: 'GET',
-        url: url,
-      );
+  //   try {
+  //     final url = '${webApi['domain']}${endPoint['login']}$query';
+  //     final response = await RemoteServices.httpRequest(
+  //       method: 'GET',
+  //       url: url,
+  //     );
 
-      if (response['success'] && response['login']) {
-        user = User.jsonToUser(
-          response['result'],
-          accessToken: response['accessToken'],
-        );
+  //     if (response['success'] && response['login']) {
+  //       user = User.jsonToUser(
+  //         response['result'],
+  //         // token: response['accessToken'],
+  //       );
 
-        // user.fcmToken = fcmToken ?? '';
+  //       // user.fcmToken = fcmToken ?? '';
 
-        await storage.ready;
-        await storage.setItem(
-          'accessToken',
-          json.encode({"token": user.accessToken, "phone": user.phone}),
-        );
-      }
-      notifyListeners();
-      return response;
-    } catch (error) {
-      return {'success': false, 'login': false};
-    }
-  }
+  //       await storage.ready;
+  //       await storage.setItem(
+  //         'accessToken',
+  //         json.encode({"token": user.accessToken, "phone": user.phone}),
+  //       );
+  //     }
+  //     notifyListeners();
+  //     return response;
+  //   } catch (error) {
+  //     return {'success': false, 'login': false};
+  //   }
+  // }
 
   Future register({
     required Map<String, String> body,
@@ -253,7 +290,7 @@ class AuthProvider with ChangeNotifier {
       if (response['success']) {
         user = User.jsonToUser(
           response['result'],
-          accessToken: response['accessToken'],
+          // token: response['accessToken'],
         );
 
         // user.fcmToken = fcmToken ?? '';
@@ -271,43 +308,43 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  Future editProfile({
-    required Map<String, String> body,
-    required Map<String, String> files,
-    // bool isLocationActive = true,
-    // bool isNotificationActive = true,
-  }) async {
-    try {
-      // body['isLocationActive'] = isLocationActive.toString();
-      // body['isNotificationActive'] = isNotificationActive.toString();
+  // Future editProfile({
+  //   required Map<String, String> body,
+  //   required Map<String, String> files,
+  //   // bool isLocationActive = true,
+  //   // bool isNotificationActive = true,
+  // }) async {
+  //   try {
+  //     // body['isLocationActive'] = isLocationActive.toString();
+  //     // body['isNotificationActive'] = isNotificationActive.toString();
 
-      final url = '${webApi['domain']}${endPoint['editProfile']}';
-      final response = await RemoteServices.formDataRequest(
-        method: 'PUT',
-        url: url,
-        body: body,
-        files: files,
-        accessToken: user.accessToken,
-      );
+  //     final url = '${webApi['domain']}${endPoint['editProfile']}';
+  //     final response = await RemoteServices.formDataRequest(
+  //       method: 'PUT',
+  //       url: url,
+  //       body: body,
+  //       files: files,
+  //       accessToken: user.token,
+  //     );
 
-      if (response['success']) {
-        if (body['isLocationAllowed'] != null) {
-          user.isLocationAllowed = body['isLocationAllowed'] == 'true';
-        } else if (body['isNotificationAllowed'] != null) {
-          user.isNotificationAllowed = body['isNotificationAllowed'] == 'true';
-        } else {
-          user = User.jsonToUser(
-            response['result'],
-            accessToken: user.accessToken,
-          );
-        }
-      }
-      notifyListeners();
-      return response;
-    } catch (error) {
-      return {'success': false, 'message': 'failedToSave'};
-    }
-  }
+  //     if (response['success']) {
+  //       if (body['isLocationAllowed'] != null) {
+  //         user.isLocationAllowed = body['isLocationAllowed'] == 'true';
+  //       } else if (body['isNotificationAllowed'] != null) {
+  //         user.isNotificationAllowed = body['isNotificationAllowed'] == 'true';
+  //       } else {
+  //         user = User.jsonToUser(
+  //           response['result'],
+  //           accessToken: user.accessToken,
+  //         );
+  //       }
+  //     }
+  //     notifyListeners();
+  //     return response;
+  //   } catch (error) {
+  //     return {'success': false, 'message': 'failedToSave'};
+  //   }
+  // }
 
   logout() async {
     // user = null;
@@ -317,69 +354,69 @@ class AuthProvider with ChangeNotifier {
     return true;
   }
 
-  deleteFCMToken() async {
-    Map<String, String> body = {'fcmToken': user.fcmToken};
+  // deleteFCMToken() async {
+  //   Map<String, String> body = {'fcmToken': user.fcmToken};
 
-    final String url = '${webApi['domain']}${endPoint['deleteFCMToken']}';
-    try {
-      final response = await RemoteServices.httpRequest(
-        method: 'PUT',
-        url: url,
-        body: body,
-        accessToken: user.accessToken,
-      );
+  //   final String url = '${webApi['domain']}${endPoint['deleteFCMToken']}';
+  //   try {
+  //     final response = await RemoteServices.httpRequest(
+  //       method: 'PUT',
+  //       url: url,
+  //       body: body,
+  //       accessToken: user.accessToken,
+  //     );
 
-      if (!response['success']) {
-      } else {
-        notifyListeners();
-        return;
-      }
-    } catch (e) {
-      debugPrint(e.toString());
-    }
-  }
+  //     if (!response['success']) {
+  //     } else {
+  //       notifyListeners();
+  //       return;
+  //     }
+  //   } catch (e) {
+  //     debugPrint(e.toString());
+  //   }
+  // }
 
-  fetchPolicy(String type) async {
-    final url = '${webApi['domain']}${endPoint['getAppConfigs']}';
-    try {
-      final response = await RemoteServices.httpRequest(
-        method: 'POST',
-        url: url,
-        body: {
-          "types": [type],
-        },
-      );
-      if (response['success'] && response['result'] != null) {
-        return response['result'][0];
-      } else {
-        return null;
-      }
-    } catch (error) {
-      return null;
-    }
-  }
+  // fetchPolicy(String type) async {
+  //   final url = '${webApi['domain']}${endPoint['getAppConfigs']}';
+  //   try {
+  //     final response = await RemoteServices.httpRequest(
+  //       method: 'POST',
+  //       url: url,
+  //       body: {
+  //         "types": [type],
+  //       },
+  //     );
+  //     if (response['success'] && response['result'] != null) {
+  //       return response['result'][0];
+  //     } else {
+  //       return null;
+  //     }
+  //   } catch (error) {
+  //     return null;
+  //   }
+  // }
 
-  deleteAccount() async {
-    final String url = '${webApi['domain']}${endPoint['deleteAccount']}';
-    try {
-      final response = await RemoteServices.httpRequest(
-        method: 'PUT',
-        url: url,
-        accessToken: user.accessToken,
-      );
+  // deleteAccount() async {
+  //   final String url = '${webApi['domain']}${endPoint['deleteAccount']}';
+  //   try {
+  //     final response = await RemoteServices.httpRequest(
+  //       method: 'PUT',
+  //       url: url,
+  //       accessToken: user.token,
+  //     );
 
-      if (!response['success']) {
-      } else {}
+  //     if (!response['success']) {
+  //     } else {}
 
-      notifyListeners();
-      return response;
-    } catch (e) {
-      return {'success': false, 'message': 'deleteAccountFail'};
-    }
-  }
+  //     notifyListeners();
+  //     return response;
+  //   } catch (e) {
+  //     return {'success': false, 'message': 'deleteAccountFail'};
+  //   }
+  // }
 
-  updateWalletBalance(num walletBalance) {
-    user.walletBalance = walletBalance;
-    notifyListeners();
-  }
+  // updateWalletBalance(num walletBalance) {
+  //   user.walletBalance = walletBalance;
+  //   notifyListeners();
+  // }
 }

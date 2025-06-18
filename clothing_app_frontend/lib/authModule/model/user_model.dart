@@ -1,66 +1,110 @@
-import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:clothing_app_frontend/common_functions.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class User {
-  final String id;
-  String fullName;
-  String phone;
-  String countryCode;
-  String avatar;
-  String email;
-  DateTime? dob;
-  String gender;
-  num totalSavings;
-  num walletBalance;
-  String walletId;
-  String accessToken;
-  String fcmToken;
-  bool isActive;
+  final String? id;
+  final String? phone;
+  final String? role;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
+  final int? age;
+  final String? colorPalette;
+  final String? email;
+  final String? gender;
+  final double? height;
+  final String? fullName;
+  final String? size;
+  final String? accessToken;
+  final String? userId;
+  final String? token;
   bool isGuest;
   bool isLocationAllowed;
   bool isNotificationAllowed;
-  LatLng? coordinates;
 
   User({
-    required this.id,
-    this.fullName = '',
-    this.email = '',
-    this.dob,
-    this.phone = '',
-    this.countryCode = '',
-    this.avatar = '',
-    this.gender = '',
-    this.totalSavings = 00,
-    this.walletBalance = 00,
-    this.walletId = '',
-    this.accessToken = '',
-    this.fcmToken = '',
-    this.isActive = false,
-    // required this.fcmToken,
+    this.id,
+    this.phone,
+    this.role,
+    this.createdAt,
+    this.updatedAt,
+    this.age,
+    this.colorPalette,
+    this.email,
+    this.gender,
+    this.height,
+    this.fullName,
+    this.size,
+    this.accessToken,
+    this.userId,
+    this.token,
     this.isGuest = false,
     this.isLocationAllowed = false,
     this.isNotificationAllowed = false,
-    this.coordinates,
   });
 
-  static User jsonToUser(Map user, {required String accessToken}) => User(
-    id: user['_id'],
-    fullName: user['fullName'],
-    phone: user['phone'],
-    countryCode: user['countryCode'],
-    gender: user['gender'],
-    email: user['email'],
-    dob: getParseDate(user['dob'])!,
-    // dob: DateTime.parse(user['dob']).toLocal(),
-    avatar: user['avatar'] ?? '',
-    totalSavings: user['totalSavings'] ?? 0,
-    walletBalance: user['walletBalance'] ?? 0,
-    walletId: user['walletId'] ?? '',
-    accessToken: accessToken,
-    isActive: user['isActive'] ?? true,
-    isLocationAllowed: user['isLocationAllowed'] ?? false,
-    isNotificationAllowed: user['isNotificationAllowed'] ?? false,
+  static User jsonToUser(Map<String, dynamic> user) {
+    return User(
+      id: user['_id'],
+      phone: user['phone_number'],
+      role: user['role'],
+      createdAt: user['createdAt'] != null
+          ? DateTime.parse(user['createdAt']).toLocal()
+          : null,
+      updatedAt: user['updatedAt'] != null
+          ? DateTime.parse(user['updatedAt']).toLocal()
+          : null,
+      age: user['age'],
+      colorPalette: user['color_palette'],
+      email: user['email'],
+      gender: user['gender'],
+      height: (user['height'] is int)
+          ? (user['height'] as int).toDouble()
+          : user['height'],
+      fullName: user['name'],
+      size: user['size'],
+      userId: user['userId'],
+      token: user['token'],
+      isLocationAllowed: user['isLocationAllowed'] ?? false,
+      isNotificationAllowed: user['isNotificationAllowed'] ?? false,
+    );
+  }
+}
 
-    // fcmToken: user['fcmToken'] ?? '',
-  );
+extension UserPrefs on User {
+  Future<void> saveToPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final userMap = {
+      '_id': id,
+      'phone_number': phone,
+      'role': role,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+      'age': age,
+      'color_palette': colorPalette,
+      'email': email,
+      'gender': gender,
+      'height': height,
+      'name': fullName,
+      'size': size,
+      'userId': userId,
+      'token': token,
+      'isLocationAllowed': isLocationAllowed,
+      'isNotificationAllowed': isNotificationAllowed,
+      'isGuest': isGuest,
+    };
+    await prefs.setString('user_data', jsonEncode(userMap));
+  }
+
+  static Future<User?> loadFromPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    final jsonString = prefs.getString('user_data');
+    if (jsonString == null) return null;
+    final userMap = jsonDecode(jsonString) as Map<String, dynamic>;
+    return User.jsonToUser(userMap)..isGuest = userMap['isGuest'] ?? false;
+  }
+
+  static Future<void> clearPrefs() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.remove('user_data');
+  }
 }

@@ -1,9 +1,9 @@
 import express, { Router } from "express";
 export const UserRoutes: Router = express.Router();
-import { registerUser, updateUser, loginUser } from '../userModule/user.controller'
+import { loginOrRegisterUser, updateUser, loginUser } from '../userModule/user.controller'
 
 // api/user/register
-UserRoutes.post('/register',registerUser);
+UserRoutes.post('/loginOrRegisterUser',loginOrRegisterUser);
 
 UserRoutes.put('/updateUser',updateUser);
 
