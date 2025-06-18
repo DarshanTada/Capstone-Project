@@ -330,16 +330,16 @@ class RegisterUserScreenState extends State<RegisterUserScreen> {
 
       showSnackbar(language[response['message']]);
     } else {
-      if (Provider.of<AuthProvider>(
-        context,
-        listen: false,
-      ).user.isLocationAllowed) {
-        // checkAndGetLocationPermission();
-      } else {
-        setState(() => isLoading = false);
+      // if (Provider.of<AuthProvider>(
+      //   context,
+      //   listen: false,
+      // ).user.isLocationAllowed) {
+      //   // checkAndGetLocationPermission();
+      // } else {
+      //   setState(() => isLoading = false);
 
-        push(NamedRoute.locationScreen);
-      }
+      //   push(NamedRoute.locationScreen);
+      // }
     }
   }
 

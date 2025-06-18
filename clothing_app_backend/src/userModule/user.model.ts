@@ -10,8 +10,6 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
-      
-      unique: true,
     },
     gender: {
       type: String,
@@ -54,6 +52,9 @@ const userSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Address", // assuming you have an Address model
     },
+    token: {
+      type: String
+    }
   },
   {
     timestamps: true,

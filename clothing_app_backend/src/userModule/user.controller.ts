@@ -10,8 +10,8 @@ const JWT_SECRET = process.env.JWT_SECRET || "mySuperSecretKey123!";
 const upload = multer()
 
 
-export const registerUser = [
-  upload.none(), // ⬅️ This handles form-data with only text fields
+export const loginOrRegisterUser = [
+  upload.none(), // Handles form-data with only text fields
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { phone_number } = req.body;
@@ -21,13 +21,19 @@ export const registerUser = [
         return;
       }
 
+      // Try to find the user
       let user = await User.findOne({ phone_number });
 
+      let isNewUser = false;
+
+      // If user doesn't exist, register them
       if (!user) {
         user = new User({ phone_number });
         await user.save();
+        isNewUser = true;
       }
 
+      // Create JWT token
       const token = jwt.sign(
         { userId: user._id, phone_number: user.phone_number },
         JWT_SECRET,
@@ -36,16 +42,17 @@ export const registerUser = [
 
       res.status(200).json({
         success: true,
-        message: "User registered successfully.",
+        message: isNewUser ? "User registered successfully." : "Login successful.",
         token,
         userId: user._id,
       });
     } catch (error: any) {
-      console.error("Register User Error:", error);
+      console.error("User Auth Error:", error);
       res.status(500).json({ success: false, message: error.message });
     }
   }
 ];
+
 
 //Update User
 export const updateUser = [

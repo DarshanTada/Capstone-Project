@@ -1,4 +1,5 @@
 import 'package:clothing_app_frontend/authModule/screens/login.dart';
+import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/common_widgets/bottom_nav_bar.dart';
 import 'package:clothing_app_frontend/common_widgets/loading_screen.dart';
@@ -11,7 +12,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
     // Auth Screens
     case NamedRoute.onBoardingScreen:
-      return _getPageRoute(const SplashScreen());
+      // TODO It used to be splash screen
+      return _getPageRoute(const PhoneNumberScreen());
 
     case NamedRoute.loadingScreen:
       return _getPageRoute(
@@ -20,10 +22,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     // case NamedRoute.onBoardingScreen1:
     //   return _getPageRoute(OnBoardingScreen1());
-    
 
     case NamedRoute.loginScreen:
-      return _getPageRoute(const LoginScreen());
+      return _getPageRoute(const PhoneNumberScreen());
 
     // case NamedRoute.verifyOtpScreen:
     //   return _getPageRoute(VerifyOtpScreen(
@@ -61,7 +62,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     //       FaqsScreen(args: settings.arguments as FaqsScreenArguments));
 
     default:
-      return _getPageRoute(const SplashScreen());
+      return _getPageRoute(const PhoneNumberScreen());
   }
 }
 
