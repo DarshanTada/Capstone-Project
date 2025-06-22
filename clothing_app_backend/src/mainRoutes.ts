@@ -4,6 +4,8 @@ import express, { Router } from 'express';
 import { UserRoutes } from './userModule/user.routes';
 import { IntroRoute } from './introModule/intro.routes';
 import { CategoryRouter } from './categoryModule/category.routes';
+import { LlavaRoute } from './llavaModule/llava.routes'
+
 // import { UserRoutes } from './userModule/user.routes';
 // import { CafeRoutes } from './cafeModule/cafe.routes';
 // import { LoyalLevelRoutes } from './loyaltyProgramModule/loyalty.routes';
@@ -42,6 +44,7 @@ const app = express();
 app.use('/user', UserRoutes);
 app.use('/intro', IntroRoute);
 app.use('/category', CategoryRouter)
+app.use('/llava', LlavaRoute)
 
 // // api/appConfig
 // app.use('/appConfig', AppConfigRoutes);
