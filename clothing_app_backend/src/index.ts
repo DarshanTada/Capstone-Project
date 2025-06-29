@@ -5,10 +5,9 @@ import helmet from 'helmet';
 import { errorHandler } from './utils/middleware/error.middleware';
 import { mongoose } from '@typegoose/typegoose';
 const eFileUpload = require('express-fileupload');
+import mainRoutes from './mainRoutes';
 
 (async () => {
-  const mainRoutes = require('./mainRoutes');
-
   const app: Application = express();
 
   app.use(cors({ origin: '*' }));
