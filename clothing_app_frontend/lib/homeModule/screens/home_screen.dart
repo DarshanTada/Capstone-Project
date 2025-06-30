@@ -1,5 +1,7 @@
+import 'package:clothing_app_frontend/colors.dart';
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
 import 'package:clothing_app_frontend/common_widgets/custom_app_bar.dart';
+import 'package:clothing_app_frontend/common_widgets/custom_text_field.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -35,7 +37,8 @@ class HomeScreenState extends State<HomeScreen> {
     language = Provider.of<AuthProvider>(context).selectedLanguage;
     customTextTheme = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: CustomAppBar(title: 'Title', dW: dW),
+      backgroundColor:  Colors.white,
+      // appBar: CustomAppBar(title: 'Title', dW: dW),
       body: iOSCondition(dH) ? screenBody() : SafeArea(child: screenBody()),
     );
   }
@@ -53,7 +56,31 @@ class HomeScreenState extends State<HomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SizedBox(height: dW * 0.05),
-                  TextWidget(title: 'Home Screen...'),
+          Row( children: [
+            Expanded(
+              child: CustomTextFieldWithLabel(
+                border: 25,
+              backgroundColor: Color(0xffF2F2F2),
+              borderColor: Colors.transparent,
+              prefixIcon: const Icon(Icons.search, color: Colors.grey)  ,
+                label: '',
+                hintText: 'Personalized Search',
+                onChanged: (value) {
+                  
+                },
+              ),
+            ),
+            SizedBox(width: dW * 0.025),
+            CircleAvatar(
+              backgroundColor: Colors.black,
+              radius: 22,
+              child: Icon(Icons.menu, color: Colors.white, size: 25),),
+                SizedBox(width: dW * 0.025),
+            CircleAvatar(
+              backgroundColor: Colors.black,
+              radius: 22,
+              child: Icon(Icons.person, color: Colors.white, size: 25),),
+          ],),
                 ],
               ),
             ),
