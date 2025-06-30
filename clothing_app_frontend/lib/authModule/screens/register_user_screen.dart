@@ -69,18 +69,16 @@ class RegisterUserScreenState extends State<RegisterUserScreen> {
       },
     );
 
-    if (newSelectedDate != null) {
-      _selectedDate = newSelectedDate;
-      _dateEditingController
-        ..text = DateFormat.yMMMd().format(_selectedDate!)
-        ..selection = TextSelection.fromPosition(
-          TextPosition(
-            offset: _dateEditingController.text.length,
-            affinity: TextAffinity.upstream,
-          ),
-        );
+    _selectedDate = newSelectedDate;
+    _dateEditingController
+      ..text = DateFormat.yMMMd().format(_selectedDate!)
+      ..selection = TextSelection.fromPosition(
+        TextPosition(
+          offset: _dateEditingController.text.length,
+          affinity: TextAffinity.upstream,
+        ),
+      );
     }
-  }
 
   String? validateName(String? value) {
     if (value!.isEmpty) {

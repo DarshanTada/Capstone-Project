@@ -85,6 +85,7 @@ dependencies:
   country_flags: ^3.3.0
   flutterfire_cli: ^1.2.0
   firebase_auth: ^5.1.2
+  webview_flutter: ^4.13.0
   # # chewie: ^1.2.2
   # # share: ^2.0.4
   # # firebase_dynamic_links: 
@@ -125,6 +126,8 @@ flutter:
     - assets/images/
     - assets/images/corousel/
     - assets/svgIcons/
+    - assets/iframe.html
+    - assets/viewer.html
     # - assets/placeholders/
     - assets/
 
