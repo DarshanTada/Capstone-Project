@@ -73,9 +73,10 @@ class _SplashScreenState extends State<SplashScreenMain>
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (context) => const VerifyOtpScreen2()),
-    );
+    pushAndRemoveUntil(
+                                      NamedRoute.bottomNavBarScreen,
+                                      arguments: BottomNavArgumnets(index: 0),
+                                    );
   }
 
   @override
