@@ -41,11 +41,20 @@ class AuthProvider with ChangeNotifier {
     'jeans': 'Jeans',
     'shirts': 'Shirts',
     'pants': 'Pants',
-'home': 'Home',
-'shop': 'Shop',
+    'home': 'Home',
+    'shop': 'Shop',
     'cart': 'Cart',
-    'profile': 'Profile', 
+    'profile': 'Profile',
     'search': 'Search',
+    "personalizedSearch": "Personalized Search",
+    "all": "ALL",
+    "men": "MEN",
+    "women": "WOMEN",
+    "boys": "BOYS",
+    "girls": "GIRLS",
+    "popularProducts": "Popular Products",
+    "viewAll": "View All",
+    "chicStartsHere": "Chic Starts Here",
     // Wallet Screen
 
     // Offer Screen
