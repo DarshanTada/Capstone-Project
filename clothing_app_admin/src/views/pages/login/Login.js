@@ -39,7 +39,6 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
 
-    // Reset error state
     setError('');
 
     // Validate input fields
@@ -59,15 +58,15 @@ const Login = () => {
       return;
     }
 
-    if (password.length < 6) {
-      setError('Password must be at least 6 characters');
+    if (password.length < 4) {
+      setError('Password must be at least 4 characters');
       return;
     }
 
-    setIsProcessing(true); 
+    setIsProcessing(true);
 
     try {
-      const response = await fetch('/api/user/login', {
+      const response = await fetch('http://localhost:3001/api/user/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: username, password }),
@@ -76,16 +75,20 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        console.log('Login successful:', data);
+        // Store token and user info
         localStorage.setItem('token', data.accessToken);
-        localStorage.setItem('user', JSON.stringify(data.user)); // Store user data
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('role', data.user.role); // Store role for RBAC
 
-        // Update the UserContext state
-        setUser(data.user);  // This will trigger a re-render and display user data immediately
-
-        router.push('/');  // Redirect to home
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
       } else {
-        setError(data.message || 'Invalid username or password');
+        // Check for specific backend error message
+        if (data.message && data.message.toLowerCase().includes('not found')) {
+          setError('User is not registered. Please sign up first.');
+        } else {
+          setError(data.message || 'Invalid username or password');
+        }
       }
     } catch (error) {
       console.error('Error logging in:', error);
@@ -140,13 +143,12 @@ const Login = () => {
                   </CForm>
                 </CCardBody>
               </CCard>
-              {/* <CCard className="text-white bg-primary py-5" style={{ width: '44%' }}>
+              <CCard className="text-white bg-primary py-5" style={{ width: '44%' }}>
                 <CCardBody className="text-center">
                   <div>
                     <h2>Sign up</h2>
                     <p>
-                      Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                      tempor incididunt ut labore et dolore magna aliqua.
+                      Don't have an admin account yet? Register now to get access to the admin dashboard and manage your store efficiently.
                     </p>
                     <Link to="/register">
                       <CButton color="primary" className="mt-3" active tabIndex={-1}>
@@ -155,7 +157,7 @@ const Login = () => {
                     </Link>
                   </div>
                 </CCardBody>
-              </CCard> */}
+              </CCard>
             </CCardGroup>
           </CCol>
         </CRow>
