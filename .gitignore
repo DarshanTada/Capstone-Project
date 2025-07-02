@@ -4,6 +4,7 @@
 /clothing_app_backend/node_modules
 /package-lock.json
 /yarn.lock
+/venv
 
 # production build
 /dist
