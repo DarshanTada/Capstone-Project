@@ -2,12 +2,14 @@ import { Request, Response } from 'express';
 import User from './user.model';
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
-import multer from "multer";
+// import multer from "multer";
+import { upload } from '../utils/common/multer'
 
 
 dotenv.config()
 const JWT_SECRET = process.env.JWT_SECRET || "mySuperSecretKey123!";
-const upload = multer()
+// const upload = multer({ dest: "uploads/" });
+
 
 
 export const loginOrRegisterUser = [
@@ -156,7 +158,7 @@ export const loginUser = [
 ];
 
 export const registerUser = [
-  upload.none(), // handle form-data
+  upload.single("photo"), // Allow one optional photo file
   async (req: Request, res: Response): Promise<void> => {
     try {
       const {
@@ -189,7 +191,7 @@ export const registerUser = [
         return;
       }
 
-      // Handle optional photo
+      // Handle optional photo upload
       const photo_url = req.file ? req.file.path : undefined;
 
       // Create new user
@@ -221,13 +223,14 @@ export const registerUser = [
         { expiresIn: "7d" }
       );
 
-      // Save token to user
+      // Save token in user
       newUser.token = token;
       await newUser.save();
 
-      let userObj = typeof newUser.toObject === 'function' ? newUser.toObject() : newUser;
+      // Convert to plain object
+      let userObj = typeof newUser.toObject === "function" ? newUser.toObject() : newUser;
 
-      // Safely delete __v field
+      // Remove internal fields
       delete (userObj as { [key: string]: any }).__v;
 
       res.status(201).json({
@@ -240,5 +243,5 @@ export const registerUser = [
       console.error("Register Error:", error);
       res.status(500).json({ success: false, message: error.message });
     }
-  },
+  }
 ];

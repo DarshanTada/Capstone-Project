@@ -1,14 +1,15 @@
 import multer from 'multer';
 import path from 'path';
 
-// Simple disk storage config (change destination as needed)
+// Configure disk storage
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, 'uploads/'); // folder to save uploads
+  destination: function (req, file, cb) {
+    cb(null, "uploads/"); // Create this folder if not exists
   },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + '-' + file.originalname);
+  filename: function (req, file, cb) {
+    cb(null, Date.now() + path.extname(file.originalname));
   },
 });
+
 
 export const upload = multer({ storage });
