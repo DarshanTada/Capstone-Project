@@ -6,7 +6,7 @@ import {
   deleteFestival
 } from './festival.controller';
 
-const router = express.Router();
+export const router = express.Router();
 
 router.post('/createFestivals', createFestival);
 router.get('/getFestivals', getAllFestivals);

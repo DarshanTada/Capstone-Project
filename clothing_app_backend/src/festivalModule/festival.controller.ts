@@ -1,28 +1,40 @@
 import { Request, Response, NextFunction } from 'express';
 import Festival from '../festivalModule/festival.model';
 import dotenv from "dotenv";
+import { upload } from '../utils/common/multer';
 
 dotenv.config()
-
 // Create Festival
-export const createFestival = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const { festival_name, isEnable } = req.body;
+export const createFestival = [
+  upload.none(), // Handles form-data with only text fields
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { festival_name, isEnable } = req.body;
 
-    if (!festival_name || isEnable === undefined) {
-      res.status(400).json({ success: false, message: 'festival_name and isEnable are required.' });
-      return;
+      if (!festival_name || isEnable === undefined) {
+        res
+          .status(400)
+          .json({
+            success: false,
+            message: "festival_name and isEnable are required.",
+          });
+        return;
+      }
+
+      const newFestival = new Festival({
+        festival_name,
+        isEnable,
+      });
+
+      await newFestival.save();
+
+      res.status(201).json({ success: true, data: newFestival });
+    } catch (error: any) {
+      console.error("Create Festival Error:", error);
+      res.status(500).json({ success: false, message: error.message });
     }
-
-    const newFestival = new Festival({ festival_name, isEnable });
-    await newFestival.save();
-
-    res.status(201).json({ success: true, data: newFestival });
-  } catch (error: any) {
-    console.error('Create Festival Error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
+  },
+];
 
 // Get All Festivals
 export const getAllFestivals = async (_req: Request, res: Response): Promise<void> => {
@@ -36,7 +48,9 @@ export const getAllFestivals = async (_req: Request, res: Response): Promise<voi
 };
 
 // Update Festival
-export const updateFestival = async (req: Request, res: Response): Promise<void> => {
+export const updateFestival = [
+  upload.none(), // Handles form-data with only text fields
+  async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const { festival_name, isEnable } = req.body;
@@ -57,7 +71,8 @@ export const updateFestival = async (req: Request, res: Response): Promise<void>
     console.error('Update Festival Error:', error);
     res.status(500).json({ success: false, message: error.message });
   }
-};
+}
+];
 
 // Delete Festival
 export const deleteFestival = async (req: Request, res: Response): Promise<void> => {
