@@ -10,5 +10,5 @@ UserRoutes.put('/updateUser',updateUser);
 
 UserRoutes.put('/login',loginUser);
 
-UserRoutes.post("/register", upload.single("photo"), registerUser);
+UserRoutes.post("/register", registerUser)
 
