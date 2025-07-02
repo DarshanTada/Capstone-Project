@@ -1,0 +1,41 @@
+{
+  "info": {
+    "name": "File Upload API",
+    "_postman_id": "1234-5678-90ab-cdef",
+    "description": "Upload file to RAG server",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Upload File",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": ""
+            }
+          ]
+        },
+        "url": {
+          "raw": "https://naturally-giving-chow.ngrok-free.app/upload/",
+          "protocol": "https",
+          "host": [
+            "naturally-giving-chow",
+            "ngrok-free",
+            "app"
+          ],
+          "path": [
+            "upload",
+            ""
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
