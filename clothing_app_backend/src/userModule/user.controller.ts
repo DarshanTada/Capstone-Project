@@ -154,3 +154,91 @@ export const loginUser = [
     }
   },
 ];
+
+export const registerUser = [
+  upload.none(), // handle form-data
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const {
+        name,
+        username,
+        phone_number,
+        email,
+        gender,
+        age,
+        festival_objectId,
+        body_type,
+        height,
+        color_palette,
+        relation_objectId,
+        size,
+        role,
+        addressObjectId,
+      } = req.body;
+
+      // Validate phone_number
+      if (!phone_number) {
+        res.status(400).json({ success: false, message: "Phone number is required." });
+        return;
+      }
+
+      // Check if user already exists
+      const existingUser = await User.findOne({ phone_number });
+      if (existingUser) {
+        res.status(409).json({ success: false, message: "User already exists." });
+        return;
+      }
+
+      // Handle optional photo
+      const photo_url = req.file ? req.file.path : undefined;
+
+      // Create new user
+      const newUser = new User({
+        name,
+        username,
+        phone_number,
+        email,
+        gender,
+        age,
+        festival_objectId,
+        body_type,
+        height,
+        color_palette,
+        relation_objectId,
+        size,
+        addressObjectId,
+        role: role || "user",
+        ...(photo_url && { photo_url }),
+      });
+
+      // Save user
+      await newUser.save();
+
+      // Generate JWT token
+      const token = jwt.sign(
+        { userId: newUser._id, phone_number: newUser.phone_number },
+        JWT_SECRET,
+        { expiresIn: "7d" }
+      );
+
+      // Save token to user
+      newUser.token = token;
+      await newUser.save();
+
+      let userObj = typeof newUser.toObject === 'function' ? newUser.toObject() : newUser;
+
+      // Safely delete __v field
+      delete (userObj as { [key: string]: any }).__v;
+
+      res.status(201).json({
+        success: true,
+        message: "User registered successfully.",
+        token,
+        user: userObj,
+      });
+    } catch (error: any) {
+      console.error("Register Error:", error);
+      res.status(500).json({ success: false, message: error.message });
+    }
+  },
+];
