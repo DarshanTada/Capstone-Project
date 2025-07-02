@@ -2,10 +2,11 @@
 import { cilPeople, cilTrash } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
 import { CRow, CCol, CCard, CCardHeader, CCardBody, CProgress, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CAvatar, CPagination, CPaginationItem, CBadge, CFormInput } from '@coreui/react'
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import { cifUs, cifBr, cifIn, cifFr, cifEs, cifPl } from '@coreui/icons'
 import { cibCcMastercard, cibCcVisa, cibCcStripe, cibCcPaypal, cibCcApplePay, cibCcAmex } from '@coreui/icons'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 
 
 import avatar1 from 'src/assets/images/avatars/1.jpg'
@@ -140,12 +141,28 @@ const tableExample = [
   const [users, setUsers] = useState(tableExample)
   const [search, setSearch] = useState('')
 
+  useEffect(() => {
+    axios.get('http://localhost:3001/api/user/list')
+      .then(res => {
+        if (res.data.success) {
+          setUsers(res.data.users)
+        }
+      })
+      .catch(err => {
+        console.error('Failed to fetch users:', err)
+      })
+  }, [])
+
   // Search filter
   const filteredUsers = users.filter(
     (item) =>
-      item.user.name.toLowerCase().includes(search.toLowerCase()) ||
-      item.user.phone_number.toLowerCase().includes(search.toLowerCase()) ||
-      item.user.email.toLowerCase().includes(search.toLowerCase())
+      item &&
+      item.user &&
+      (
+        (item.user.name && item.user.name.toLowerCase().includes(search.toLowerCase())) ||
+        (item.user.phone_number && item.user.phone_number.toLowerCase().includes(search.toLowerCase())) ||
+        (item.user.email && item.user.email.toLowerCase().includes(search.toLowerCase()))
+      )
   )
 
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage)
@@ -285,28 +302,27 @@ const tableExample = [
                 <CTableBody>
                   {paginatedUsers.map((item, index) => (
                     <CTableRow
-                      key={index + (currentPage - 1) * usersPerPage}
+                      key={item._id || item.id || index + (currentPage - 1) * usersPerPage}
                       style={{ cursor: 'pointer' }}
                       onClick={(e) => {
-                        // Prevent row click when clicking delete
                         if (e.target.closest('.delete-icon')) return
-                        navigate(`/users/${index + (currentPage - 1) * usersPerPage}`)
+                        navigate(`/users/${item._id || item.id || index + (currentPage - 1) * usersPerPage}`)
                       }}
                     >
                       <CTableDataCell className="text-center">
-                        <CAvatar size="md" src={item.avatar.src} />
+                        <CAvatar size="md" src={item.avatar?.src || avatar1} />
                       </CTableDataCell>
                       <CTableDataCell>
-                        <div>{item.user.name}</div>
+                        <div>{item.user?.name || item.name || 'N/A'}</div>
                         <div className="small text-body-secondary text-nowrap">
-                          <span>{item.user.new ? 'New' : 'Recurring'}</span> | Registered: {item.user.registered}
+                          <span>{item.user?.new ? 'New' : 'Recurring'}</span> | Registered: {item.user?.registered || 'N/A'}
                         </div>
                       </CTableDataCell>
                       <CTableDataCell>
-                        <div>{item.user.phone_number}</div>
+                        <div>{item.user?.phone_number || item.phone_number || 'N/A'}</div>
                       </CTableDataCell>
                       <CTableDataCell>
-                        <div>{item.user.email}</div>
+                        <div>{item.user?.email || item.email || 'N/A'}</div>
                       </CTableDataCell>
                       <CTableDataCell className="text-center">
                         <CIcon

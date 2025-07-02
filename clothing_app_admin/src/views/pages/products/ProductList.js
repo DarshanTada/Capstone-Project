@@ -6,6 +6,7 @@ import {
 import { useNavigate } from 'react-router-dom'
 import tshirtImg from 'src/assets/images/products/T-Shirt.png'
 import ProductUpload from 'src/components/ProductUpload'
+import { ROLE, hasPermission } from 'src/roles/permissions'
 
 const dummyProducts = [
   {
@@ -57,6 +58,9 @@ const ProductList = () => {
   const [productsPerPage, setProductsPerPage] = useState(5)
   const [currentPage, setCurrentPage] = useState(1)
   const navigate = useNavigate()
+
+  // Get the current user's role (from localStorage, context, or props)
+  const role = localStorage.getItem('role') || ROLE.PRODUCT_MANAGER // fallback for demo
 
   // Filter products by search
   const filteredProducts = products.filter(
@@ -115,9 +119,11 @@ const ProductList = () => {
               </option>
             ))}
           </select>
-          <CButton color="primary" className="float-end ms-3" onClick={() => navigate('/products/add')}>
-            Add Product
-          </CButton>
+          {hasPermission(role, 'manage_products') && (
+            <CButton color="primary" className="float-end ms-3" onClick={() => navigate('/products/add')}>
+              Add Product
+            </CButton>
+          )}
         </div>
       </CCardHeader>
       <CCardBody>
@@ -139,7 +145,7 @@ const ProductList = () => {
               <CTableHeaderCell>Category</CTableHeaderCell>
               <CTableHeaderCell>Price</CTableHeaderCell>
               <CTableHeaderCell>Stock</CTableHeaderCell>
-              <CTableHeaderCell>Actions</CTableHeaderCell>
+              {hasPermission(role, 'manage_products') && <CTableHeaderCell>Actions</CTableHeaderCell>}
             </CTableRow>
           </CTableHead>
           <CTableBody>
@@ -163,19 +169,21 @@ const ProductList = () => {
                   <CTableDataCell>{product.category}</CTableDataCell>
                   <CTableDataCell>${product.price.toFixed(2)}</CTableDataCell>
                   <CTableDataCell>{product.stock}</CTableDataCell>
-                  <CTableDataCell>
-                    <CButton
-                      color="info"
-                      size="sm"
-                      className="me-2"
-                      onClick={() => navigate(`/products/${product.id}`)}
-                    >
-                      View Product
-                    </CButton>
-                    <CButton color="danger" size="sm" onClick={() => handleDelete(product.id)}>
-                      Delete
-                    </CButton>
-                  </CTableDataCell>
+                  {hasPermission(role, 'manage_products') && (
+                    <CTableDataCell>
+                      <CButton
+                        color="info"
+                        size="sm"
+                        className="me-2"
+                        onClick={() => navigate(`/products/${product.id}`)}
+                      >
+                        View Product
+                      </CButton>
+                      <CButton color="danger" size="sm" onClick={() => handleDelete(product.id)}>
+                        Delete
+                      </CButton>
+                    </CTableDataCell>
+                  )}
                 </CTableRow>
               ))
             )}

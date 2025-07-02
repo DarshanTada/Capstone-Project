@@ -25,15 +25,75 @@ const Login = () => {
   const [error, setError] = useState('')
   const dispatch = useDispatch()
 
-  const handleLogin = (e) => {
-    e.preventDefault()
-    if (username === 'yolochic.admin@gmail.com' && password === 'admin') {
-      dispatch({ type: 'LOGIN_SUCCESS' })
-      window.location.hash = '#/dashboard'
-    } else {
-      setError('Invalid credentials')
+  // const handleLogin = (e) => {
+  //   e.preventDefault()
+  //   if (username === 'yolochic.admin@gmail.com' && password === 'admin') {
+  //     dispatch({ type: 'LOGIN_SUCCESS' })
+  //     window.location.hash = '#/dashboard'
+  //   } else {
+  //     setError('Invalid credentials')
+  //   }
+  // }
+
+  
+  const handleLogin = async (e) => {
+    e.preventDefault();
+
+    // Reset error state
+    setError('');
+
+    // Validate input fields
+    if (username.trim() === '') {
+      setError('Username is required');
+      return;
     }
-  }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailPattern.test(username)) {
+      setError('Please enter a valid email address');
+      return;
+    }
+
+    if (password.trim() === '') {
+      setError('Password is required');
+      return;
+    }
+
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters');
+      return;
+    }
+
+    setIsProcessing(true); 
+
+    try {
+      const response = await fetch('/api/user/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: username, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        console.log('Login successful:', data);
+        localStorage.setItem('token', data.accessToken);
+        localStorage.setItem('user', JSON.stringify(data.user)); // Store user data
+
+        // Update the UserContext state
+        setUser(data.user);  // This will trigger a re-render and display user data immediately
+
+        router.push('/');  // Redirect to home
+      } else {
+        setError(data.message || 'Invalid username or password');
+      }
+    } catch (error) {
+      console.error('Error logging in:', error);
+      setError('Server error. Please try again later.');
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
