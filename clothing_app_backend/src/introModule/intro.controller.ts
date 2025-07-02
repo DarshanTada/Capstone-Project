@@ -8,7 +8,6 @@ const upload = multer({ storage });
 export const uploadIntroImage = upload.fields([{ name: 'image', maxCount: 1 }]);
 
 export const createIntro = async (req: Request, res: Response): Promise<void> => {
-  console.error('Adeesh First');
   try {
 
     const { title, intro_description } = req.body;

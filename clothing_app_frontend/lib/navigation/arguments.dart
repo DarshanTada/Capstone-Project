@@ -12,8 +12,9 @@ class BottomNavArgumnets {
 
 class VerifyOtpArguments {
   final String mobileNo;
-  final String verificationId;
-  VerifyOtpArguments({required this.mobileNo, required this.verificationId});
+  // final String verificationId;
+  // , required this.verificationId
+  VerifyOtpArguments({required this.mobileNo});
 }
 
 class RegistrationArguments {
