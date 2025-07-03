@@ -1,5 +1,7 @@
+import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/login.dart';
 import 'package:clothing_app_frontend/authModule/screens/splash.dart';
+import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen.dart';
 import 'package:clothing_app_frontend/homeModule/screens/size_chart_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/common_widgets/bottom_nav_bar.dart';
@@ -23,16 +25,19 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     // case NamedRoute.onBoardingScreen1:
     //   return _getPageRoute(OnBoardingScreen1());
 
-    case NamedRoute.loginScreen:
-      return _getPageRoute(const LoginScreen());
+    // case NamedRoute.loginScreen:
+    //   return _getPageRoute(const LoginScreen());
 
     case NamedRoute.sizeChartScreen:
       return _getPageRoute(const SizeChartScreen());
 
-    // case NamedRoute.verifyOtpScreen:
-    //   return _getPageRoute(VerifyOtpScreen(
-    //     args: settings.arguments as VerifyOtpArguments,
-    //   ));
+    case NamedRoute.verifyOtpScreen:
+      return _getPageRoute(VerifyOtpScreen(
+        args: settings.arguments as VerifyOtpArguments,
+      ));
+
+    case NamedRoute.captureFaceScreen:
+      return _getPageRoute(CaptureFaceScreen());
 
     // case NamedRoute.registerUserScreen:
     //   return _getPageRoute(RegisterUserScreen(

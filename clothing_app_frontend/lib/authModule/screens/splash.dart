@@ -1,15 +1,12 @@
 import 'dart:convert';
 
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
-import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
-import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
 import 'package:clothing_app_frontend/navigation/navigators.dart';
 import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:localstorage/localstorage.dart';
 import 'package:provider/provider.dart';
-import 'intro_screen_1.dart';
 
 class SplashScreenMain extends StatefulWidget {
   const SplashScreenMain({super.key});
@@ -74,9 +71,13 @@ class _SplashScreenState extends State<SplashScreenMain>
 
     if (!mounted) return;
     pushAndRemoveUntil(
-                                      NamedRoute.bottomNavBarScreen,
-                                      arguments: BottomNavArgumnets(index: 0),
-                                    );
+      NamedRoute.verifyOtpScreen,
+      arguments: VerifyOtpArguments(mobileNo: '1234567890', verificationId: ''),
+    );
+    // pushAndRemoveUntil(
+    //                                   NamedRoute.bottomNavBarScreen,
+    //                                   arguments: BottomNavArgumnets(index: 0),
+    //                                 );
   }
 
   @override
