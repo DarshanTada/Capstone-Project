@@ -11,6 +11,8 @@ class NamedRoute {
   // static const String termsOfServicesScreen = '/termsOfServicesScreen';
 
   static const String addAddressManually = '/addAddressManually';
+  static const String captureFaceScreen = '/captureFaceScreen';
+
   static const String searchCafeScreen = '/searchCafeScreen';
   static const String loginScreen = '/loginScreen';
   static const String verifyOtpScreen = "/verifyOtpScreen";

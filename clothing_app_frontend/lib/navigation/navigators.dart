@@ -1,7 +1,7 @@
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:flutter/material.dart';
 
-// import '../main.dart';
+import '../main.dart';
 
 Future<dynamic> push(String routeName, {Object? arguments}) async {
   return navigatorKey.currentState?.pushNamed(routeName, arguments: arguments);

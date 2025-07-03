@@ -10,6 +10,7 @@ import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart'
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/preferenceModule/screen/preference_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:face_camera/face_camera.dart';
 import 'package:firebase_core/firebase_core.dart';
 // import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -45,6 +46,7 @@ awaitStorageReady() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await FaceCamera.initialize();
   if (Platform.isAndroid) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -112,7 +114,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-
+  
     // myInit();
   }
 
