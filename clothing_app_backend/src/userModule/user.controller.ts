@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
 // import multer from "multer";
 import { upload } from '../utils/common/multer'
+import bcrypt from 'bcryptjs'
 
 
 dotenv.config()
@@ -157,7 +158,7 @@ export const loginUser = [
   },
 ];
 
-export const registerUser = [
+export const registerAdmin = [
   upload.single("photo"), // Allow one optional photo file
   async (req: Request, res: Response): Promise<void> => {
     try {
@@ -166,6 +167,7 @@ export const registerUser = [
         username,
         phone_number,
         email,
+        password,
         gender,
         age,
         festival_objectId,
@@ -178,14 +180,10 @@ export const registerUser = [
         addressObjectId,
       } = req.body;
 
-      // Validate phone_number
-      if (!phone_number) {
-        res.status(400).json({ success: false, message: "Phone number is required." });
-        return;
-      }
+    
 
       // Check if user already exists
-      const existingUser = await User.findOne({ phone_number });
+      const existingUser = await User.findOne({ email });
       if (existingUser) {
         res.status(409).json({ success: false, message: "User already exists." });
         return;
@@ -200,6 +198,7 @@ export const registerUser = [
         username,
         phone_number,
         email,
+        password: password ? await bcrypt.hash(password, 10) : undefined, // Hash password if provided
         gender,
         age,
         festival_objectId,
@@ -209,16 +208,22 @@ export const registerUser = [
         relation_objectId,
         size,
         addressObjectId,
-        role: role || "user",
+        role: role ,
         ...(photo_url && { photo_url }),
       });
 
       // Save user
       await newUser.save();
 
+      // Validate phone_number
+      if (!role) {
+        res.status(400).json({ success: false, message: "Role is required." });
+        return;
+      }
+
       // Generate JWT token
       const token = jwt.sign(
-        { userId: newUser._id, phone_number: newUser.phone_number },
+        { userId: newUser._id, email: newUser.email },
         JWT_SECRET,
         { expiresIn: "7d" }
       );
@@ -245,3 +250,37 @@ export const registerUser = [
     }
   }
 ];
+
+
+// Admin Login
+export const loginAdmin = [
+  upload.none(),
+   async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { email, password } = req.body
+      const user = await User.findOne({ email })
+      if (!user) {
+        res.status(401).json({ message: 'User not found. Please register first.' });
+        return;
+      }
+      const isMatch = await bcrypt.compare(password, user.password)
+      if (!isMatch) {
+        res.status(401).json({ message: 'Invalid password.' });
+        return;
+      }
+      const token = jwt.sign(
+        { userId: user._id, email: user.email, role: user.role },
+        JWT_SECRET,
+        { expiresIn: '1d' }
+      )
+      res.status(200).json({
+        message: 'Login successful',
+        accessToken: token,
+        user: { _id: user._id, email: user.email, role: user.role, name: user.name },
+      })
+    } catch (err: any) {
+      res.status(500).json({ message: err.message })
+      return;
+    }
+  }
+]

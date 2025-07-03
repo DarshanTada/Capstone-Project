@@ -66,7 +66,7 @@ const Login = () => {
     setIsProcessing(true);
 
     try {
-      const response = await fetch('http://localhost:3001/api/user/login', {
+      const response = await fetch('/api/user/loginAdmin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: username, password }),
@@ -75,15 +75,11 @@ const Login = () => {
       const data = await response.json();
 
       if (response.ok) {
-        // Store token and user info
         localStorage.setItem('token', data.accessToken);
         localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('role', data.user.role); // Store role for RBAC
-
-        // Redirect to dashboard
+        localStorage.setItem('role', data.user.role);
         window.location.href = '/dashboard';
       } else {
-        // Check for specific backend error message
         if (data.message && data.message.toLowerCase().includes('not found')) {
           setError('User is not registered. Please sign up first.');
         } else {
