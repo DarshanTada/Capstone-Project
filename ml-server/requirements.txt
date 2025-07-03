@@ -1,14 +1,23 @@
-fastapi==0.110.2
-uvicorn==0.29.0
-langchain==0.2.2
+# LangChain ecosystem
+langchain
 langchain-community
-sentence-transformers==2.6.1
-faiss-cpu==1.8.0
+langchain-huggingface
+
+# Vector DB & embeddings
+faiss-cpu
+sentence-transformers
+
+# File loaders and format support
+unstructured==0.12.5
 pypdf==4.2.0
-python-docx==1.1.2
+python-docx==1.1.0
 docx2txt==0.8
-unstructured
 pandas==2.2.2
+
+# FastAPI server
+fastapi==0.111.0
+uvicorn==0.29.0
 python-multipart==0.0.9
-requests==2.32.3
-pydantic==2.7.1
+
+# Networking
+requests==2.31.0

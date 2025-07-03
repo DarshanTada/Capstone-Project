@@ -26,16 +26,24 @@ export const uploadFile = async (req: Request, res: Response) => {
 };
 
 export const askQuestion = async (req: Request, res: Response) => {
-  const { question, system_prompt } = req.body;
+  const { question, system_prompt, image } = req.body;
 
   if (!question) return res.status(400).json({ error: "Question is required." });
 
   try {
-    const response = await axios.post(`${baseURL}/ask/`, { question, system_prompt });
+    const response = await axios.post(
+      `${baseURL}/ask/`,
+      {
+        question,
+        system_prompt: system_prompt || "",
+        image_base64: image || null, // <-- key changed here
+      },
+      { timeout: 120000 }
+    );
     res.status(200).json(response.data);
     return;
   } catch (err: any) {
-    console.error(err.message);
+    console.error(err);
     res.status(500).json({ error: "Query failed." });
     return;
   }

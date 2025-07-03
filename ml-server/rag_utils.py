@@ -1,11 +1,12 @@
-from langchain.embeddings import SentenceTransformerEmbeddings
-from langchain.vectorstores import FAISS
-from langchain.document_loaders import (
+from langchain_community.embeddings import SentenceTransformerEmbeddings
+from langchain_community.vectorstores import FAISS
+from langchain_community.document_loaders import (
     PyPDFLoader, TextLoader, CSVLoader, UnstructuredWordDocumentLoader
 )
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.chains import RetrievalQA
-from langchain.llms import Ollama
+from langchain_community.llms import Ollama
+# from langchain_huggingface import HuggingFaceEmbeddings
 import os
 
 embeddings = SentenceTransformerEmbeddings(model_name="all-MiniLM-L6-v2")
@@ -36,7 +37,7 @@ def get_qa_chain(system_prompt: str = None):
         retriever = vectorstore.as_retriever()
 
         llm = Ollama(
-            model="llama3",
+            model="llava",
             base_url="http://localhost:11434",
             system=system_prompt
         )
