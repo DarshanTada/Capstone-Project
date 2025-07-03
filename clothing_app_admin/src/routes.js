@@ -3,7 +3,10 @@ import React from 'react'
 
 const Dashboard = React.lazy(() => import('./views/dashboard/Dashboard'))
 const Users = React.lazy(() => import('./views/pages/users/UserList'))
-const UserDetail = React.lazy(() => import('./views/pages/users/UserDetail')) // <-- Add this
+const UserDetail = React.lazy(() => import('./views/pages/users/UserDetail'))
+const ProductList = React.lazy(() => import('./views/pages/products/ProductList'))
+const ProductDetail = React.lazy(() => import('./views/pages/products/ProductDetail'))
+const AddProduct = React.lazy(() => import('./views/pages/products/AddProduct'))
 const Colors = React.lazy(() => import('./views/theme/colors/Colors'))
 const Typography = React.lazy(() => import('./views/theme/typography/Typography'))
 
@@ -58,7 +61,10 @@ const routes = [
   // { path: '/', exact: true, name: 'Dashboard', element: Dashboard },
   { path: '/dashboard', exact: true, name: 'Dashboard', element: Dashboard },
   { path: '/users', exact: true, name: 'Users', element: Users },
-  { path: '/users/:id', name: 'User Detail', element: UserDetail }, // <-- Add this
+  { path: '/users/:id', name: 'User Detail', element: UserDetail }, 
+  { path: '/products', name: 'Products', element: ProductList },
+  { path: '/products/:id', name: 'Product Detail', element: ProductDetail },
+  { path: '/products/add', name: 'Add Product', element: AddProduct },
   { path: '/theme', name: 'Theme', element: Colors, exact: true },
   { path: '/theme/colors', name: 'Colors', element: Colors },
   { path: '/theme/typography', name: 'Typography', element: Typography },

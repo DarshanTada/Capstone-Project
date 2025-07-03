@@ -13,6 +13,8 @@ const userSchema = new mongoose.Schema(
     },
     email: {
       type: String,
+      required: true, // For admin panel users
+      unique: true,
     },
     gender: {
       type: String,
@@ -48,7 +50,7 @@ const userSchema = new mongoose.Schema(
     },
     role: {
       type: String,
-      enum: ["user", "admin"],
+      enum: ["user", "admin", "super_admin", "product_manager", "order_manager", "marketing_manager"],
       default: "user",
     },
     addressObjectId: {
@@ -57,7 +59,11 @@ const userSchema = new mongoose.Schema(
     },
     token: {
       type: String
-    }
+    },
+    password: {
+      type: String,
+      required: true, // For admin panel users
+    },
   },
   {
     timestamps: true,
