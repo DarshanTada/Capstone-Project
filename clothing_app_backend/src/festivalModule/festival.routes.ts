@@ -6,11 +6,11 @@ import {
   deleteFestival
 } from './festival.controller';
 
-export const router = express.Router();
+export const FestivalRouter = express.Router();
 
-router.post('/createFestivals', createFestival);
-router.get('/getFestivals', getAllFestivals);
-router.put('/updateFestivals/:id', updateFestival);
-router.delete('/deleteFestivals/:id', deleteFestival);
+FestivalRouter.post('/createFestivals', createFestival);
+FestivalRouter.get('/getFestivals', getAllFestivals);
+FestivalRouter.put('/updateFestivals/:id', updateFestival);
+FestivalRouter.delete('/deleteFestivals/:id', deleteFestival);
 
-export default router;
+export default FestivalRouter;
