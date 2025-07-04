@@ -6,7 +6,7 @@ import { IntroRoute } from './introModule/intro.routes';
 import { CategoryRouter } from './categoryModule/category.routes';
 import { MlRoutes } from './mlModule/ml.routes';
 import { SeasonRoute } from './seasonModule/season.routes';
-
+import { PreferenceRoute } from './preferenceModule/preference.routes';
 // import { UserRoutes } from './userModule/user.routes';
 // import { CafeRoutes } from './cafeModule/cafe.routes';
 // import { LoyalLevelRoutes } from './loyaltyProgramModule/loyalty.routes';
@@ -47,7 +47,7 @@ app.use('/intro', IntroRoute);
 app.use('/category', CategoryRouter);
 app.use('/ml', MlRoutes);
 app.use('/seasons', SeasonRoute);
-
+app.use('/preferences', PreferenceRoute);
 // // api/appConfig
 // app.use('/appConfig', AppConfigRoutes);
 
