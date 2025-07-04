@@ -52,7 +52,7 @@ hideKeyBoard() =>
 double horizontalPaddingFactor = 0.06;
 
 navigateTo(LatLng coords) async {
-  var uri;
+  Uri uri;
   if (Platform.isIOS) {
     uri = Uri.parse(
       'comgooglemaps://?saddr=&daddr=${coords.latitude},${coords.longitude}&directionsmode=driving',
@@ -82,8 +82,9 @@ handlePermissionsFunction() async {
           statuses.containsValue(PermissionStatus.denied)) {
         // showSnackbar('Please enable location', Colors.red);
         return false;
-      } else
+      } else {
         return true;
+      }
     } else {
       statuses = await [Permission.location].request();
 
@@ -92,8 +93,9 @@ handlePermissionsFunction() async {
               PermissionStatus.permanentlyDenied)) {
         // showSnackbar('Please enable location', Colors.red);
         return false;
-      } else
+      } else {
         return true;
+      }
     }
   } catch (e) {
     return false;
@@ -178,7 +180,7 @@ String amountText(double amount) {
 
   if (amountString.split('.')[1][1] == '0') {
     amountString =
-        amountString.split('.')[0] + '.' + amountString.split('.')[1][0];
+        '${amountString.split('.')[0]}.${amountString.split('.')[1][0]}';
     if (amountString.split('.')[1][0] == '0') {
       amountString = amountString.split('.')[0];
     }
@@ -189,7 +191,7 @@ String amountText(double amount) {
 BorderSide get dividerBorder => const BorderSide(color: dividerColor, width: 1);
 
 String convertAmountString(double amount) {
-  var strToReturn;
+  String strToReturn;
   String aS = amount.round().toStringAsFixed(0);
   // if (amount < 100000) {
   //   return regExpText(aS);
@@ -202,18 +204,18 @@ String convertAmountString(double amount) {
   } else if (length == 6) {
     String trail = aS.substring(length - 5, length);
     String lead = aS.substring(0, length - 5);
-    if (trail[0] != '0') lead = lead + '.${trail[0]}';
-    strToReturn = lead + 'L';
+    if (trail[0] != '0') lead = '$lead.${trail[0]}';
+    strToReturn = '${lead}L';
   } else if (length == 7) {
     String trail = aS.substring(length - 6, length);
-    String lead = aS.substring(0, length - 6) + '0';
-    if (trail[0] != '0') lead = lead + '.${trail[0]}';
-    strToReturn = lead + 'L';
+    String lead = '${aS.substring(0, length - 6)}0';
+    if (trail[0] != '0') lead = '$lead.${trail[0]}';
+    strToReturn = '${lead}L';
   } else if (length > 7) {
     String trail = aS.substring(length - 7, length);
     String lead = aS.substring(0, length - 7);
-    if (trail[0] != '0') lead = lead + '.${trail[0]}';
-    strToReturn = lead + 'Cr';
+    if (trail[0] != '0') lead = '$lead.${trail[0]}';
+    strToReturn = '${lead}Cr';
   }
   return strToReturn;
 }
@@ -232,11 +234,6 @@ pickImage(ImageSource source) async {
 void showSnackbar(String msg, [Color color = Colors.red, int duration = 2]) {
   // final context = navigatorKey.currentContext;
   final context = navigatorKey.currentContext!;
-
-  if (context == null) {
-    debugPrint("⚠️ Cannot show snackbar: navigatorKey.currentContext is null");
-    return;
-  }
 
   final textTheme = Theme.of(context).textTheme;
   final mediaQuery = MediaQuery.of(context);
