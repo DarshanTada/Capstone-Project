@@ -64,6 +64,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true, // For admin panel users
     },
+    preferenceObjectId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Preference", // assuming you have an Preference model
+    },
   },
   {
     timestamps: true,

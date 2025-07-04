@@ -48,6 +48,31 @@ export const getAllPreferences = async (_req: Request, res: Response): Promise<v
   }
 };
 
+// Get Preferences by User ID
+export const getPreferencesByUserId = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+
+    if (!userId) {
+      res.status(400).json({ success: false, message: 'userId is required in params.' });
+      return;
+    }
+
+    const prefs = await Preference.find({ user_objectId: userId });
+
+    if (prefs.length === 0) {
+      res.status(404).json({ success: false, message: 'No preferences found for this user.' });
+      return;
+    }
+
+    res.status(200).json({ success: true, data: prefs });
+  } catch (error: any) {
+    console.error('Get Preferences by User ID Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
 // Update Preference
 export const updatePreference = [
   upload.none(),
