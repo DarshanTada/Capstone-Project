@@ -7,6 +7,7 @@ import 'package:clothing_app_frontend/authModule/screens/login.dart';
 import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:clothing_app_frontend/categoryModule/screens/category.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
+import 'package:clothing_app_frontend/preferenceModule/screen/preference_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:firebase_core/firebase_core.dart';
 // import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
@@ -135,6 +136,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           routes: {
             '/': (BuildContext context) => PhoneNumberScreen(),
             // LoginScreen(),
+            // PreferenceScreen()
 
             // '/': (BuildContext context) =>
             //     HomeScreen(args: HomeScreenArguments()),
