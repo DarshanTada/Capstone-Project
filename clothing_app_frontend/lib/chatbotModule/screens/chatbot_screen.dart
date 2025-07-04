@@ -67,7 +67,8 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     // Call backend API
     try {
       final response = await http.post(
-        Uri.parse('http://localhost:3001/api/ml/ask'),
+        // Uri.parse('http://10.0.0.85:3001/api/ml/ask'),
+        Uri.parse('https://naturally-giving-chow.ngrok-free.app/ask/'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           "question": text,
