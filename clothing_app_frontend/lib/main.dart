@@ -1,9 +1,12 @@
 // ignore_for_file: depend_on_referenced_packages
 
 import 'dart:io';
-import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
-import 'package:clothing_app_frontend/authModule/screens/splash.dart';
-import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
+
+import 'package:clothing_app_frontend/authModule/screens/intro_screen_1.dart';
+import 'package:clothing_app_frontend/authModule/screens/login.dart';
+import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
+import 'package:clothing_app_frontend/categoryModule/screens/category.dart';
+import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
 
@@ -157,8 +160,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           initialRoute: '/',
           onGenerateRoute: generateRoute,
           routes: {
-            // '/': (BuildContext context) => const TestScreen(),
-            '/': (BuildContext context) => const SplashScreenMain(),
+            '/': (BuildContext context) => const ChatbotScreen(),
             // LoginScreen(),
             // PreferenceScreen(),
 
