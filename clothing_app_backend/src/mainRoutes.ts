@@ -7,8 +7,7 @@ import { CategoryRouter } from './categoryModule/category.routes';
 import { MlRoutes } from './mlModule/ml.routes';
 import { SeasonRoute } from './seasonModule/season.routes';
 import { PreferenceRoute } from './preferenceModule/preference.routes';
-import { FestivalRouter } from './festivalModule/festival.routes'
-import { LlavaRoute } from './llavaModule/llava.routes'
+import { FestivalRouter } from './festivalModule/festival.routes';
 // import { UserRoutes } from './userModule/user.routes';
 // import { CafeRoutes } from './cafeModule/cafe.routes';
 // import { LoyalLevelRoutes } from './loyaltyProgramModule/loyalty.routes';
@@ -51,7 +50,6 @@ app.use('/ml', MlRoutes);
 app.use('/seasons', SeasonRoute);
 app.use('/preferences', PreferenceRoute);
 app.use('/festival', FestivalRouter);
-app.use('/llava', LlavaRoute)
 // // api/appConfig
 // app.use('/appConfig', AppConfigRoutes);
 

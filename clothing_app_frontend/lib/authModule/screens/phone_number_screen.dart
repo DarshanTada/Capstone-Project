@@ -1,20 +1,14 @@
 import 'package:clothing_app_frontend/authModule/providers/auth_service_firebase.dart';
-import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen.dart';
 import 'package:clothing_app_frontend/colors.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/custom_text_field.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
-import 'package:clothing_app_frontend/navigation/arguments.dart';
-import 'package:clothing_app_frontend/navigation/navigators.dart';
-import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:country_flags/country_flags.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
-import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
 class PhoneNumberScreen extends StatefulWidget {
   const PhoneNumberScreen({super.key});

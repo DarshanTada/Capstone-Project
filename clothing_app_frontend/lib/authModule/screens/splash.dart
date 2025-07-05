@@ -1,7 +1,6 @@
 import 'dart:convert';
 
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
-import 'package:clothing_app_frontend/navigation/arguments.dart';
 import 'package:clothing_app_frontend/navigation/navigators.dart';
 import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:flutter/material.dart';
@@ -36,10 +35,8 @@ class _SplashScreenState extends State<SplashScreenMain>
       ).setLanguageInStorage(language);
     }
 
-    final response = await Provider.of<AuthProvider>(
-      context,
-      listen: false,
-    ).getAppConfig(['user-$language', 'delete_feature']);
+    final response = await Provider.of<AuthProvider>(context, listen: false);
+    // .getAppConfig(['user-$language', 'delete_feature']);
 
     return response;
   }
@@ -70,14 +67,7 @@ class _SplashScreenState extends State<SplashScreenMain>
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
-    pushAndRemoveUntil(
-      NamedRoute.verifyOtpScreen,
-      arguments: VerifyOtpArguments(mobileNo: '1234567890', verificationId: ''),
-    );
-    // pushAndRemoveUntil(
-    //                                   NamedRoute.bottomNavBarScreen,
-    //                                   arguments: BottomNavArgumnets(index: 0),
-    //                                 );
+    pushAndRemoveUntil(NamedRoute.phoneNumberScreen);
   }
 
   @override

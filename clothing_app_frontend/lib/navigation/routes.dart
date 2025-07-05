@@ -5,7 +5,7 @@ class NamedRoute {
   // Auth Module
   static const String onBoardingScreen = '/onboardScreen';
   static const String onBoardingScreen1 = '/onboardScreen1';
-  static const String mobileNumberScreen = '/mobileNumberScreen';
+  static const String phoneNumberScreen = '/phoneNumberScreen';
   static const String locationScreen = '/locationScreen';
   static const String privacyPolicyAndTcScreen = '/privacyPolicyAndTcScreen';
   // static const String termsOfServicesScreen = '/termsOfServicesScreen';
