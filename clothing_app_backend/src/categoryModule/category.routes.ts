@@ -10,8 +10,9 @@ import {
 
 export const CategoryRouter = express.Router();
 
-CategoryRouter.post('/createcategory',uploadCategoryImage,  createCategory);
-CategoryRouter.get('/getcategory', getAllCategories);
+// api/category/getCategory
+CategoryRouter.post('/createCategory',uploadCategoryImage,  createCategory);
+CategoryRouter.get('/getCategory', getAllCategories);
 CategoryRouter.put('/updateCategory/:id',uploadUpdateCategoryImage, updateCategory);
 
 export default CategoryRouter;
