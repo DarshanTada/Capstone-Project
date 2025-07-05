@@ -190,35 +190,35 @@ String amountText(double amount) {
 
 BorderSide get dividerBorder => const BorderSide(color: dividerColor, width: 1);
 
-String convertAmountString(double amount) {
-  String strToReturn;
-  String aS = amount.round().toStringAsFixed(0);
-  // if (amount < 100000) {
-  //   return regExpText(aS);
-  // }
-  final list = aS.split('.');
-  aS = list[0];
-  final length = aS.length;
-  if (length < 6) {
-    strToReturn = amountText(amount);
-  } else if (length == 6) {
-    String trail = aS.substring(length - 5, length);
-    String lead = aS.substring(0, length - 5);
-    if (trail[0] != '0') lead = '$lead.${trail[0]}';
-    strToReturn = '${lead}L';
-  } else if (length == 7) {
-    String trail = aS.substring(length - 6, length);
-    String lead = '${aS.substring(0, length - 6)}0';
-    if (trail[0] != '0') lead = '$lead.${trail[0]}';
-    strToReturn = '${lead}L';
-  } else if (length > 7) {
-    String trail = aS.substring(length - 7, length);
-    String lead = aS.substring(0, length - 7);
-    if (trail[0] != '0') lead = '$lead.${trail[0]}';
-    strToReturn = '${lead}Cr';
-  }
-  return strToReturn;
-}
+// String convertAmountString(double amount) {
+//   String strToReturn;
+//   String aS = amount.round().toStringAsFixed(0);
+//   // if (amount < 100000) {
+//   //   return regExpText(aS);
+//   // }
+//   final list = aS.split('.');
+//   aS = list[0];
+//   final length = aS.length;
+//   if (length < 6) {
+//     strToReturn = amountText(amount);
+//   } else if (length == 6) {
+//     String trail = aS.substring(length - 5, length);
+//     String lead = aS.substring(0, length - 5);
+//     if (trail[0] != '0') lead = '$lead.${trail[0]}';
+//     strToReturn = '${lead}L';
+//   } else if (length == 7) {
+//     String trail = aS.substring(length - 6, length);
+//     String lead = '${aS.substring(0, length - 6)}0';
+//     if (trail[0] != '0') lead = '$lead.${trail[0]}';
+//     strToReturn = '${lead}L';
+//   } else if (length > 7) {
+//     String trail = aS.substring(length - 7, length);
+//     String lead = aS.substring(0, length - 7);
+//     if (trail[0] != '0') lead = '$lead.${trail[0]}';
+//     strToReturn = '${lead}Cr';
+//   }
+//   return strToReturn;
+// }
 
 pickImage(ImageSource source) async {
   try {
