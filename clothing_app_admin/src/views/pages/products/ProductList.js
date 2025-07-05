@@ -5,7 +5,6 @@ import {
 } from '@coreui/react'
 import { useNavigate } from 'react-router-dom'
 import tshirtImg from 'src/assets/images/products/T-Shirt.png'
-import ProductUpload from 'src/components/ProductUpload'
 import { ROLE, hasPermission } from 'src/roles/permissions'
 
 const dummyProducts = [
@@ -212,11 +211,11 @@ const ProductList = () => {
             Next
           </CPaginationItem>
         </CPagination>
-        <ProductUpload onDataParsed={(data) => {
+        {/* <ProductUpload onDataParsed={(data) => {
           // data is an array of product objects from the file
           // You can merge with your state or send to your backend API
           setProducts([...products, ...data])
-        }} accept=".csv,.xls,.xlsx" />
+        }} accept=".csv,.xls,.xlsx" /> */}
       </CCardBody>
     </CCard>
   )
