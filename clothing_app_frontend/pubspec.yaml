@@ -61,6 +61,7 @@ dependencies:
   google_mlkit_face_detection: ^0.12.0
   cupertino_icons: ^1.0.8
   face_camera: ^0.1.4
+  # speech_to_text: ^6.3.0
   # pin_code_fields: 
   # flutter_svg: 
   # localstorage:

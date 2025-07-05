@@ -23,6 +23,7 @@ class HomeScreenState extends State<HomeScreen> {
   Map language = {};
   bool isLoading = false;
   int selectedCategoryIndex = 0;
+  final TextEditingController searchController = TextEditingController();
   final List<String> categories = ['all', 'men', 'women', 'boys', 'girls'];
   final List<String> productImages = [
     'assets/images/g1.png',
@@ -78,6 +79,7 @@ class HomeScreenState extends State<HomeScreen> {
                         children: [
                           Expanded(
                             child: CustomTextFieldWithLabel(
+                              controller: searchController,
                               border: 25,
                               backgroundColor: Color(0xffF2F2F2),
                               borderColor: Colors.transparent,

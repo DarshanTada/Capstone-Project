@@ -7,6 +7,8 @@ class NamedRoute {
   static const String onBoardingScreen1 = '/onboardScreen1';
   static const String phoneNumberScreen = '/phoneNumberScreen';
   static const String locationScreen = '/locationScreen';
+  static const String preferenceScreen= '/preferenceScreen';
+
   static const String privacyPolicyAndTcScreen = '/privacyPolicyAndTcScreen';
   // static const String termsOfServicesScreen = '/termsOfServicesScreen';
 

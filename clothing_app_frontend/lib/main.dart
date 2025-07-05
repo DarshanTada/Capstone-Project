@@ -1,8 +1,15 @@
 // ignore_for_file: depend_on_referenced_packages
 
 import 'dart:io';
+import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
+import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
 import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
+import 'package:clothing_app_frontend/common_widgets/bottom_nav_bar.dart';
+import 'package:clothing_app_frontend/navigation/arguments.dart';
+import 'package:clothing_app_frontend/navigation/navigators.dart';
+import 'package:clothing_app_frontend/navigation/routes.dart';
+import 'package:clothing_app_frontend/preferenceModule/screen/preference_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:face_camera/face_camera.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -125,9 +132,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           initialRoute: '/',
           onGenerateRoute: generateRoute,
           routes: {
-            '/': (BuildContext context) => const ChatbotScreen(),
+            '/': (BuildContext context) => 
+            CaptureFaceScreen()
+          //  BottomNavBar(
+          //     args: BottomNavArgumnets(),
+          //   ),
+            // CaptureFaceScreen()
+            //  ChatbotScreen(),
             // LoginScreen(),
-            // PreferenceScreen()
+            // PreferenceScreen(),
 
             // '/': (BuildContext context) =>
             //     HomeScreen(args: HomeScreenArguments()),

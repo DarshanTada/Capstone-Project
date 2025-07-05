@@ -280,8 +280,8 @@ class BottomNavBarState extends State<BottomNavBar> {
                 BottomNavigationBarItem(
                   icon: navbarItemContent(
                     label: language['search'],
-                    colouredsvg: 'iteeha',
-                    svg: 'iteeha',
+                    colouredsvg: 'search',
+                    svg: 'search',
                     isSelected: _currentIndex == 2,
                   ),
                   label: '',
