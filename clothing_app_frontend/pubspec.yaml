@@ -58,7 +58,9 @@ dependencies:
   app_settings: ^5.1.1
   shimmer: ^3.0.0
   device_info_plus: ^11.4.0
+  google_mlkit_face_detection: ^0.12.0
   cupertino_icons: ^1.0.8
+  face_camera: ^0.1.4
   # pin_code_fields: 
   # flutter_svg: 
   # localstorage:
@@ -85,6 +87,7 @@ dependencies:
   country_flags: ^3.3.0
   flutterfire_cli: ^1.2.0
   firebase_auth: ^5.1.2
+  webview_flutter: ^4.13.0
   # # chewie: ^1.2.2
   # # share: ^2.0.4
   # # firebase_dynamic_links: 
@@ -123,9 +126,11 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
-    - assets/videos/
-    - assets/fonts/
-    - assets/icons/
+    - assets/images/corousel/
+    - assets/svgIcons/
+    - assets/iframe.html
+    - assets/viewer.html
+    # - assets/placeholders/
     - assets/
 
 

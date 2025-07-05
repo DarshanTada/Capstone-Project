@@ -1,9 +1,7 @@
-import 'dart:ffi';
-
-import 'package:clothing_app_frontend/common_widgets/asset_svg_icon.dart';
+import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:flutter/material.dart';
 
-class CustomBigProductCardGrid extends StatelessWidget {
+class CustomSmallProductCardGrid extends StatelessWidget {
   final String imageUrl;
   final VoidCallback onTap;
   final String price;
@@ -11,7 +9,7 @@ class CustomBigProductCardGrid extends StatelessWidget {
 
   double dW = 0.0;
 
-  CustomBigProductCardGrid({
+  CustomSmallProductCardGrid({
     super.key,
     required this.imageUrl,
     required this.price,
@@ -31,15 +29,10 @@ class CustomBigProductCardGrid extends StatelessWidget {
           children: [
             // Product Image
             // AssetSvgIcon(imageUrl, width: 116, height: 116),
-            Image.network(
-              imageUrl,
-              fit: BoxFit.cover,
-              width: dW * 0.59,
-              height: dW * 0.605,
-            ),
+            Image.network(imageUrl, fit: BoxFit.cover, width: 110, height: 116),
             // Gradient Overlay
             Container(
-              width: dW * 0.59,
+              width: dW * 0.29,
               alignment: Alignment.bottomCenter,
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 10),
               decoration: const BoxDecoration(
@@ -57,15 +50,16 @@ class CustomBigProductCardGrid extends StatelessWidget {
                     style: const TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.bold,
-                      fontSize: 16,
+                      fontSize: 10,
                     ),
                   ),
                   Row(
                     children: [
-                      const Icon(Icons.star, color: Colors.yellow, size: 16),
-                      Text(
-                        rating.toString(),
-                        style: const TextStyle(color: Colors.white),
+                      const Icon(Icons.star, color: Colors.yellow, size: 10),
+                      TextWidget(
+                        title: rating.toString(),
+                        fontSize: 10,
+                        color: Colors.white,
                       ),
                     ],
                   ),

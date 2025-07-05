@@ -1,7 +1,7 @@
 import 'dart:ffi';
 
 import 'package:clothing_app_frontend/common_widgets/base_screen.dart';
-import 'package:clothing_app_frontend/common_widgets/custom_small_product_card_grid.dart';
+import 'package:clothing_app_frontend/homeModule/widgets/custom_small_product_card_grid.dart';
 import 'package:flutter/material.dart';
 
 class CategoryScreen extends BaseScreen {
