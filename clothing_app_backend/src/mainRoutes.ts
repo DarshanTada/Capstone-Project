@@ -8,6 +8,7 @@ import { MlRoutes } from './mlModule/ml.routes';
 import { SeasonRoute } from './seasonModule/season.routes';
 import { PreferenceRoute } from './preferenceModule/preference.routes';
 import { FestivalRouter } from './festivalModule/festival.routes';
+import { SubCategoryRoute } from './subCategoryModule/subCategory.routes';
 // import { UserRoutes } from './userModule/user.routes';
 // import { CafeRoutes } from './cafeModule/cafe.routes';
 // import { LoyalLevelRoutes } from './loyaltyProgramModule/loyalty.routes';
@@ -50,6 +51,7 @@ app.use('/ml', MlRoutes);
 app.use('/seasons', SeasonRoute);
 app.use('/preferences', PreferenceRoute);
 app.use('/festival', FestivalRouter);
+app.use('/subCategory', SubCategoryRoute);
 // // api/appConfig
 // app.use('/appConfig', AppConfigRoutes);
 

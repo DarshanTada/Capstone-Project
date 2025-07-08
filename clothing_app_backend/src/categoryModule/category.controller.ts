@@ -1,10 +1,7 @@
 import { Request, Response } from 'express';
 import Category from './category.model';
 import multer from 'multer';
-
-// Setup multer to use memory storage
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+import { upload } from '../utils/common/multer';
 
 // Export middleware
 export const uploadCategoryImage = upload.fields([
