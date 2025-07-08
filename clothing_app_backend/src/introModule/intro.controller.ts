@@ -1,9 +1,6 @@
 import { Request, Response } from 'express';
 import Intro from './intro.model';
-import multer from 'multer';
-
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+import { upload } from '../utils/common/multer';
 
 export const uploadIntroImage = upload.fields([{ name: 'image', maxCount: 1 }]);
 
