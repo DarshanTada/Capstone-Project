@@ -1,11 +1,17 @@
+import Product, { BODYTYPE } from '../productModule/product.model';
 import mongoose from "mongoose";
 
 const preferenceSchema = new mongoose.Schema({
-  user_objectId: { type: Number, required: true },
+  user_objectId: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
   gender: String,
   age: Number,
   height: Number,
-  body_type: String,
+  body_type: {
+    type: String,
+    enum: Object.values(BODYTYPE),
+    default: BODYTYPE.HOURGLASS,
+    required: true,
+  },
   skin_tone: String,
   style: [String],
   occasion: [String],

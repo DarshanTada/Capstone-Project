@@ -11,9 +11,7 @@ export default defineConfig(() => {
     },
     css: {
       postcss: {
-        plugins: [
-          autoprefixer({}), // add options if needed
-        ],
+        plugins: [autoprefixer()],
       },
     },
     esbuild: {
@@ -42,7 +40,11 @@ export default defineConfig(() => {
     server: {
       port: 3000,
       proxy: {
-        // https://vitejs.dev/config/server-options.html
+        '/api': {
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, '/api'), // Optional if prefix matches
+        },
       },
     },
   }
