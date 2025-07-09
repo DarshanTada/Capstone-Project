@@ -254,7 +254,6 @@ export const registerAdmin = [
 
 // Admin Login
 export const loginAdmin = [
-  upload.none(),
    async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password } = req.body

@@ -4,7 +4,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import { errorHandler } from './utils/middleware/error.middleware';
 import { mongoose } from '@typegoose/typegoose';
-const eFileUpload = require('express-fileupload');
+// const eFileUpload = require('express-fileupload');
 import mainRoutes from './mainRoutes';
 
 (async () => {

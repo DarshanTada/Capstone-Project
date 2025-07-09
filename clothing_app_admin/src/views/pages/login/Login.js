@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   CButton,
   CCard,
@@ -23,76 +23,69 @@ const Login = () => {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [isProcessing, setIsProcessing] = useState(false)
+
   const dispatch = useDispatch()
+  const navigate = useNavigate()
 
-  // const handleLogin = (e) => {
-  //   e.preventDefault()
-  //   if (username === 'yolochic.admin@gmail.com' && password === 'admin') {
-  //     dispatch({ type: 'LOGIN_SUCCESS' })
-  //     window.location.hash = '#/dashboard'
-  //   } else {
-  //     setError('Invalid credentials')
-  //   }
-  // }
-
-  
   const handleLogin = async (e) => {
-    e.preventDefault();
-
-    setError('');
+    e.preventDefault()
+    setError('')
 
     // Validate input fields
     if (username.trim() === '') {
-      setError('Username is required');
-      return;
+      setError('Username is required')
+      return
     }
 
-    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
     if (!emailPattern.test(username)) {
-      setError('Please enter a valid email address');
-      return;
+      setError('Please enter a valid email address')
+      return
     }
 
     if (password.trim() === '') {
-      setError('Password is required');
-      return;
+      setError('Password is required')
+      return
     }
 
     if (password.length < 4) {
-      setError('Password must be at least 4 characters');
-      return;
+      setError('Password must be at least 4 characters')
+      return
     }
 
-    setIsProcessing(true);
+    setIsProcessing(true)
 
     try {
       const response = await fetch('/api/user/loginAdmin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: username, password }),
-      });
+      })
 
-      const data = await response.json();
+      const data = await response.json()
 
       if (response.ok) {
-        localStorage.setItem('token', data.accessToken);
-        localStorage.setItem('user', JSON.stringify(data.user));
-        localStorage.setItem('role', data.user.role);
-        window.location.href = '/dashboard';
+        localStorage.setItem('token', data.accessToken)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        localStorage.setItem('role', data.user.role)
+
+        dispatch({ type: 'LOGIN_SUCCESS', payload: data.user }) // optional
+        navigate('/dashboard') 
       } else {
         if (data.message && data.message.toLowerCase().includes('not found')) {
-          setError('User is not registered. Please sign up first.');
+          setError('User is not registered. Please sign up first.')
         } else {
-          setError(data.message || 'Invalid username or password');
+          setError(data.message || 'Invalid username or password')
         }
       }
     } catch (error) {
-      console.error('Error logging in:', error);
-      setError('Server error. Please try again later.');
+      console.error('Error logging in:', error)
+      setError('Server error. Please try again later.')
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
   return (
     <div className="bg-body-tertiary min-vh-100 d-flex flex-row align-items-center">
@@ -131,8 +124,8 @@ const Login = () => {
                     </CInputGroup>
                     <CRow>
                       <CCol xs={12}>
-                        <CButton color="primary" className="px-4" type="submit" block>
-                          Login
+                        <CButton color="primary" className="px-4" type="submit" block disabled={isProcessing}>
+                          {isProcessing ? 'Logging in...' : 'Login'}
                         </CButton>
                       </CCol>
                     </CRow>
