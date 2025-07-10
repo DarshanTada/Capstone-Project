@@ -8,8 +8,8 @@ export const GENDER = {
 
 export const BODYTYPE = {
   HOURGLASS: "Hourglass",
-  TRIANGLE: "triangle",
-  ROUND: "round",
+  TRIANGLE: "Triangle",
+  ROUND: "Round",
   STRIGHT: "Straight",
   INVERTED_TRIANGLE: "Inverted Triangle",
   ECTOMORPH: "Ectomorph",
