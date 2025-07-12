@@ -11,3 +11,6 @@ export const uploadUpdateCategoryImage = upload.single('image');
 export const uploadCareImage = multer({ storage: multer.memoryStorage() }).fields([
   { name: 'image', maxCount: 1 }
 ]);
+export const uploadBannerImage = multer({ storage: multer.memoryStorage() }).fields([
+  { name: 'image', maxCount: 1 }
+]);
