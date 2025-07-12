@@ -27,7 +27,7 @@ const productSchema = new mongoose.Schema(
     name: String,
     description: String,
     fabric_type: String,
-    category_id: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
+    category_id: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
     reviewObjectId: { type: mongoose.Schema.Types.ObjectId, ref: "Review" },
     gender: {
       type: String,
@@ -49,15 +49,16 @@ const productSchema = new mongoose.Schema(
     care_instruction_objectId: [{
       type: mongoose.Schema.Types.ObjectId,
       ref: "CareInstruction",
+      required: true
     }],
-    weight: String,
+    height: String,
     productType: {
       type: String,
       enum: Object.values(PRODUCTTYPE),
       default: PRODUCTTYPE.TOP,
       required: true,
     },
-    style: [String],
+    style: [String]
   },
   { timestamps: true }
 );
