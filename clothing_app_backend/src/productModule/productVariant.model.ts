@@ -29,6 +29,7 @@ const productVariantSchema = new mongoose.Schema(
       default: AVAILABLE_STATUS.IN_STOCK,
       required: true,
     },
+    ageGroup: String,
     skin_tone:[String],
     under_tone:[String],
     color: String,

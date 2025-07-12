@@ -9,6 +9,8 @@ import { SeasonRoute } from './seasonModule/season.routes';
 import { PreferenceRoute } from './preferenceModule/preference.routes';
 import { FestivalRouter } from './festivalModule/festival.routes';
 import { SubCategoryRoute } from './subCategoryModule/subCategory.routes';
+import { CareInstructorRouter } from './careInstructionModule/careInstruction.router';
+import { ProductRouter } from './productModule/product.routes';
 // import { UserRoutes } from './userModule/user.routes';
 // import { CafeRoutes } from './cafeModule/cafe.routes';
 // import { LoyalLevelRoutes } from './loyaltyProgramModule/loyalty.routes';
@@ -52,6 +54,8 @@ app.use('/seasons', SeasonRoute);
 app.use('/preferences', PreferenceRoute);
 app.use('/festival', FestivalRouter);
 app.use('/subCategory', SubCategoryRoute);
+app.use('/careInstruction', CareInstructorRouter);
+app.use('/product', ProductRouter);
 // // api/appConfig
 // app.use('/appConfig', AppConfigRoutes);
 
