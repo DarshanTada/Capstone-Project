@@ -11,6 +11,8 @@ import { FestivalRouter } from './festivalModule/festival.routes';
 import { SubCategoryRoute } from './subCategoryModule/subCategory.routes';
 import { CareInstructorRouter } from './careInstructionModule/careInstruction.router';
 import { ProductRouter } from './productModule/product.routes';
+import { BannerRouter } from './bannerModule/banner.router';
+
 // import { UserRoutes } from './userModule/user.routes';
 // import { CafeRoutes } from './cafeModule/cafe.routes';
 // import { LoyalLevelRoutes } from './loyaltyProgramModule/loyalty.routes';
@@ -56,6 +58,7 @@ app.use('/festival', FestivalRouter);
 app.use('/subCategory', SubCategoryRoute);
 app.use('/careInstruction', CareInstructorRouter);
 app.use('/product', ProductRouter);
+app.use('/banner', BannerRouter);
 // // api/appConfig
 // app.use('/appConfig', AppConfigRoutes);
 
