@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:flutter/services.dart';
 
 class ChatbotScreen extends StatefulWidget {
   const ChatbotScreen({Key? key}) : super(key: key);
@@ -118,18 +119,18 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             backgroundImage: AssetImage('assets/images/ai_avatar.png'),
           );
 
-    final bubbleColor = isUser ? Colors.grey[200] : Colors.blue[100];
-    final align = isUser ? CrossAxisAlignment.start : CrossAxisAlignment.end;
+    final bubbleColor = isUser ? Colors.blue[100] : Colors.grey[200];
+    final align = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
     final margin = isUser
-        ? const EdgeInsets.only(right: 60, top: 8, left: 8)
-        : const EdgeInsets.only(left: 60, top: 8, right: 8);
+        ? const EdgeInsets.only(left: 60, top: 8, right: 8)
+        : const EdgeInsets.only(right: 60, top: 8, left: 8);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment:
-          isUser ? MainAxisAlignment.start : MainAxisAlignment.end,
+          isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
-        if (isUser) avatar,
+        if (!isUser) avatar,
         Expanded(
           child: Container(
             margin: margin,
@@ -154,20 +155,47 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                       ),
                     ),
                   ),
-                Text(
-                  msg.text,
-                  style: TextStyle(
-                    color: Colors.black87,
-                    fontSize: 16,
-                  ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: SelectableText(
+                        msg.text,
+                        style: const TextStyle(
+                          color: Colors.black87,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: const Icon(Icons.copy, size: 18),
+                      tooltip: 'Copy',
+                      onPressed: () {
+                        Clipboard.setData(ClipboardData(text: msg.text));
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Message copied!')),
+                        );
+                      },
+                    ),
+                  ],
                 ),
               ],
             ),
           ),
         ),
-        if (!isUser) avatar,
+        if (isUser) avatar,
       ],
     );
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Add initial chatbot message
+    _messages.add(_ChatMessage(
+      text: "Hi I am YOLO Bot. How can I help you with your fashion needs?",
+      isUser: false,
+    ));
   }
 
   @override
@@ -187,6 +215,32 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               itemBuilder: (context, idx) => _buildMessage(_messages[idx]),
             ),
           ),
+          if (_pickedImage != null)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Stack(
+                alignment: Alignment.topRight,
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.file(
+                      _pickedImage!,
+                      width: 100,
+                      height: 100,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.close, color: Colors.red),
+                    onPressed: () {
+                      setState(() {
+                        _pickedImage = null;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
           if (_isLoading)
             const Padding(
               padding: EdgeInsets.all(8.0),
@@ -214,7 +268,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
               child: TextField(
                 controller: _controller,
                 decoration: const InputDecoration(
-                  hintText: "Ask me anything fashion!",
+                  hintText: "Enter your message...",
                   border: InputBorder.none,
                 ),
                 onSubmitted: (_) => _sendMessage(),
