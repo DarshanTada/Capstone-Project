@@ -7,6 +7,7 @@ import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart
 import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/categoryModule/screens/category_screen.dart';
+import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
 import 'package:clothing_app_frontend/homeModule/screens/size_chart_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:face_camera/face_camera.dart';
@@ -114,7 +115,14 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      providers: [ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => CategoryProvider()),
+        // ChangeNotifierProvider(create: (_) => CafeProvider()),
+        // ChangeNotifierProvider(create: (_) => CartProvider()),
+        // ChangeNotifierProvider(create: (_) => OrderProvider()),
+      
+      
+      ],
       child: Consumer(
         builder: (context, theme, _) => MaterialApp(
           navigatorKey: navigatorKey,

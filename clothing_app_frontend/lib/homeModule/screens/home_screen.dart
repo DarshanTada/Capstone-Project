@@ -40,20 +40,21 @@ class HomeScreenState extends State<HomeScreen> {
     'assets/images/g2.png',
     'assets/images/g3.png',
   ];
-fetchCafes() async {
-   
-
-    final response =
-        await Provider.of<CategoryProvider>(context, listen: false).fetchCafe(
-      accessToken: user.accessToken,
-      query: '&coordinates=$coordString&fetchNearby=true',
-    );
+  fetchCategories() async {
+    final response = await Provider.of<CategoryProvider>(context, listen: false)
+        .fetchCategory(
+          // accessToken: User.accessToken,
+          query: 'page=1&limit=10',
+        );
     if (!response['success']) {
       showSnackbar(response['message']);
     }
   }
- 
-  fetchData() async {}
+
+  fetchData() async {
+    await fetchCategories();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -75,6 +76,7 @@ fetchCafes() async {
   }
 
   screenBody() {
+    final categories = Provider.of<CategoryProvider>(context).categories;
     return SizedBox(
       height: dH,
       width: dW,
@@ -109,6 +111,11 @@ fetchCafes() async {
                             ),
                           ),
                           SizedBox(width: dW * 0.025),
+                          TextWidget(
+                            title: categories.first.name,
+                            fontSize: tS * 20,
+                            fontWeight: FontWeight.w500,
+                          ),
                           CircleAvatar(
                             backgroundColor: Colors.black,
                             radius: 22,

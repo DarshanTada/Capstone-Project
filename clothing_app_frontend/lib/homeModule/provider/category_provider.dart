@@ -19,39 +19,30 @@ class CategoryProvider with ChangeNotifier {
   // }
 
   fetchCategory({
-    required String accessToken,
+    // required String accessToken,
     required String query,
   }) async {
     try {
-      final url =
-          '${webApi['domain']}${endPoint['fetchCategory']}';
+      final url = '${webApi['domain']}${endPoint['getCategory']}?$query';
 
       final response = await RemoteServices.httpRequest(
         method: 'GET',
         url: url,
-        accessToken: accessToken,
+        // accessToken: accessToken,
       );
 
       if (response['success']) {
-        
-          List<Category> fetchedCategories = (response['data'] as List)
-              .map((category) => Category.jsonToCategory(category))
-              .toList();
+        List<Category> fetchedCategories = (response['data'] as List)
+            .map((category) => Category.jsonToCategory(category))
+            .toList();
 
-          
-            _categories = fetchedCategories;
-          
-        
-
+        _categories = fetchedCategories;
         notifyListeners();
       }
 
       return response;
     } catch (error) {
-      return {
-        'success': false,
-        'message': 'failedGetCategories',
-      };
+      return {'success': false, 'message': 'failedGetCategories'};
     }
   }
 
@@ -110,9 +101,4 @@ class CategoryProvider with ChangeNotifier {
   //     };
   //   }
   // }
-
-
-
-
-
 }
