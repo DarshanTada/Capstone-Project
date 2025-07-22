@@ -3,6 +3,10 @@ import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
 import 'package:clothing_app_frontend/common_widgets/custom_app_bar.dart';
 import 'package:clothing_app_frontend/common_widgets/custom_text_field.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
+import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
+import 'package:clothing_app_frontend/homeModule/screens/product_list_screen.dart';
+import 'package:clothing_app_frontend/homeModule/widgets/custom_big_product_card_grid.dart';
+import 'package:clothing_app_frontend/homeModule/widgets/custom_small_product_card_grid.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -36,7 +40,19 @@ class HomeScreenState extends State<HomeScreen> {
     'assets/images/g2.png',
     'assets/images/g3.png',
   ];
+fetchCafes() async {
+   
 
+    final response =
+        await Provider.of<CategoryProvider>(context, listen: false).fetchCafe(
+      accessToken: user.accessToken,
+      query: '&coordinates=$coordString&fetchNearby=true',
+    );
+    if (!response['success']) {
+      showSnackbar(response['message']);
+    }
+  }
+ 
   fetchData() async {}
   @override
   void initState() {
@@ -344,9 +360,115 @@ class HomeScreenState extends State<HomeScreen> {
                         children: [
                           Image.asset("assets/images/b1.png"),
                           SizedBox(width: dW * 0.03),
-                          Image.asset("assets/images/b2.png"),
+                          Image.asset("assets/images/b4.png"),
                         ],
                       ),
+                    ),
+                    SizedBox(height: dW * 0.05),
+                    Column(
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: dW * 0.05),
+                          child: Column(
+                            children: [
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  TextWidget(
+                                    title: 'You may like',
+                                    fontWeight: FontWeight.w500,
+                                    fontSize: 20,
+                                  ),
+                                  Spacer(),
+                                  GestureDetector(
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              ProductListScreen(),
+                                        ),
+                                      );
+                                    },
+                                    child: Row(
+                                      children: [
+                                        TextWidget(
+                                          title: "View all",
+                                          fontSize: 15,
+                                        ),
+                                        SizedBox(width: dW * 0.01),
+                                        Icon(Icons.arrow_forward_ios, size: 14),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: dW * 0.05),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  CustomSmallProductCardGrid(
+                                    imageUrl: 'https://tinyurl.com/42s53ezd',
+                                    price: '50',
+                                    rating: 3.9,
+                                    onTap: () {},
+                                  ),
+                                  CustomSmallProductCardGrid(
+                                    imageUrl: 'https://tinyurl.com/5n8zedmz',
+                                    price: '44',
+                                    rating: 4.7,
+                                    onTap: () {},
+                                  ),
+                                  CustomSmallProductCardGrid(
+                                    imageUrl:
+                                        'https://m.media-amazon.com/images/I/61emW3sXLOL._AC_SX679_.jpg',
+                                    price: '90',
+                                    rating: 4.5,
+                                    onTap: () {},
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: dW * 0.02),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  Column(
+                                    children: [
+                                      CustomSmallProductCardGrid(
+                                        imageUrl:
+                                            'https://tinyurl.com/ek2mf8hb',
+                                        price: '90',
+                                        rating: 4.5,
+                                        onTap: () {},
+                                      ),
+                                      SizedBox(height: dW * 0.02),
+
+                                      CustomSmallProductCardGrid(
+                                        imageUrl:
+                                            'https://tinyurl.com/2jjbmthn',
+                                        price: '90',
+                                        rating: 4.5,
+                                        onTap: () {},
+                                      ),
+                                    ],
+                                  ),
+                                  SizedBox(width: dW * 0.01),
+                                  CustomBigProductCardGridWidget(
+                                    productName: 'Charcoal Fade Jeans',
+                                    imageUrl: 'https://tinyurl.com/2jjbmthn',
+                                    price: '90',
+                                    rating: 4.5,
+                                    onTap: () {},
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: dW * 0.05),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),

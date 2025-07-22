@@ -1,7 +1,7 @@
 // ignore_for_file: unused_import, depend_on_referenced_packages
 
 import 'package:clothing_app_frontend/cartModule/screens/cart_screen.dart';
-import 'package:clothing_app_frontend/categoryModule/screens/category.dart';
+import 'package:clothing_app_frontend/categoryModule/screens/category_screen.dart';
 import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
 import 'package:clothing_app_frontend/profileModule/screens/profile_screen.dart';
 import 'package:clothing_app_frontend/searchModule/screens/search_screen.dart';
