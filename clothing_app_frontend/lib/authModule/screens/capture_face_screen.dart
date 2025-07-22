@@ -1,497 +1,2479 @@
-// import 'dart:io';
-
-// import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
-// import 'package:clothing_app_frontend/colors.dart';
-// import 'package:clothing_app_frontend/common_functions.dart';
-// import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
-// import 'package:clothing_app_frontend/common_widgets/custom_app_bar.dart';
-// import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 // import 'package:clothing_app_frontend/navigation/navigators.dart';
-// import 'package:face_camera/face_camera.dart';
+// import 'package:clothing_app_frontend/navigation/routes.dart';
 // import 'package:flutter/material.dart';
+// import 'package:camera/camera.dart';
+// import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 // import 'package:image_picker/image_picker.dart';
-// import 'package:provider/provider.dart';
+// import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:path_provider/path_provider.dart';
+// import 'dart:io';
+// import 'dart:async';
 
 // class CaptureFaceScreen extends StatefulWidget {
 //   const CaptureFaceScreen({Key? key}) : super(key: key);
+
 //   @override
-//   CaptureFaceScreenState createState() => CaptureFaceScreenState();
+//   State<CaptureFaceScreen> createState() => _CaptureFaceScreenState();
 // }
 
-// class CaptureFaceScreenState extends State<CaptureFaceScreen> {
-//   double dH = 0.0;
-//   double dW = 0.0;
-//   double tS = 0.0;
-//   TextTheme customTextTheme = const TextTheme();
-//   Map language = {};
-//   bool isLoading = false;
-//   String imgPath = '';
-//   late FaceCameraController _faceCameraController;
+// class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
+//   String _selectedMode = ''; // 'camera' or 'gallery'
 
-//   fetchData() async {}
+//   @override
+//   Widget build(BuildContext context) {
+//     if (_selectedMode.isEmpty) {
+//       return _buildSelectionScreen();
+//     } else if (_selectedMode == 'camera') {
+//       return CameraCaptureScreen(
+//         onBack: () {
+//           setState(() {
+//             _selectedMode = '';
+//           });
+//         },
+//         onPhotoSaved: (String savedPath) {
+//           _handlePhotoSaved(savedPath);
+//         },
+//       );
+//     } else {
+//       return GallerySelectionScreen(
+//         onBack: () {
+//           setState(() {
+//             _selectedMode = '';
+//           });
+//         },
+//         onPhotoSaved: (String savedPath) {
+//           _handlePhotoSaved(savedPath);
+//         },
+//       );
+//     }
+//   }
 
-//   pickImage(ImageSource source) async {
+//   void _handlePhotoSaved(String savedPath) {
+//     // Handle the saved photo path - you can navigate to next screen,
+//     // update user profile, etc.
+//     ScaffoldMessenger.of(context).showSnackBar(
+//       SnackBar(
+//         content: Text('Selfie saved successfully!'),
+//         backgroundColor: Colors.green,
+//       ),
+//     );
+
+//     Navigator.pushNamed(context, NamedRoute.preferenceScreen);
+//   }
+
+//   Widget _buildSelectionScreen() {
+//     return Scaffold(
+//       backgroundColor: const Color(0xFF2D2D2D),
+//       body: SafeArea(
+//         child: Padding(
+//           padding: const EdgeInsets.all(24.0),
+//           child: Column(
+//             children: [
+//               // Header
+//               const SizedBox(height: 40),
+//               const Text(
+//                 'Add Your Selfie',
+//                 style: TextStyle(
+//                   color: Colors.white,
+//                   fontSize: 28,
+//                   fontWeight: FontWeight.bold,
+//                 ),
+//               ),
+//               const SizedBox(height: 16),
+//               Text(
+//                 'Choose how you\'d like to add your selfie photo',
+//                 textAlign: TextAlign.center,
+//                 style: TextStyle(
+//                   color: Colors.grey[300],
+//                   fontSize: 16,
+//                   height: 1.4,
+//                 ),
+//               ),
+
+//               const SizedBox(height: 60),
+
+//               // Camera option
+//               GestureDetector(
+//                 onTap: () {
+//                   setState(() {
+//                     _selectedMode = 'camera';
+//                   });
+//                 },
+//                 child: Container(
+//                   width: double.infinity,
+//                   padding: const EdgeInsets.all(24),
+//                   decoration: BoxDecoration(
+//                     color: Colors.blue.withOpacity(0.1),
+//                     borderRadius: BorderRadius.circular(16),
+//                     border: Border.all(
+//                       color: Colors.blue.withOpacity(0.3),
+//                       width: 2,
+//                     ),
+//                   ),
+//                   child: Column(
+//                     children: [
+//                       Container(
+//                         width: 80,
+//                         height: 80,
+//                         decoration: BoxDecoration(
+//                           color: Colors.blue,
+//                           borderRadius: BorderRadius.circular(40),
+//                         ),
+//                         child: const Icon(
+//                           Icons.camera_alt,
+//                           color: Colors.white,
+//                           size: 40,
+//                         ),
+//                       ),
+//                       const SizedBox(height: 16),
+//                       const Text(
+//                         'Take Photo',
+//                         style: TextStyle(
+//                           color: Colors.white,
+//                           fontSize: 20,
+//                           fontWeight: FontWeight.w600,
+//                         ),
+//                       ),
+//                       const SizedBox(height: 8),
+//                       Text(
+//                         'Use your camera to take a new selfie with automatic face detection',
+//                         textAlign: TextAlign.center,
+//                         style: TextStyle(
+//                           color: Colors.grey[300],
+//                           fontSize: 14,
+//                           height: 1.4,
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//               ),
+
+//               const SizedBox(height: 24),
+
+//               // Gallery option
+//               GestureDetector(
+//                 onTap: () {
+//                   setState(() {
+//                     _selectedMode = 'gallery';
+//                   });
+//                 },
+//                 child: Container(
+//                   width: double.infinity,
+//                   padding: const EdgeInsets.all(24),
+//                   decoration: BoxDecoration(
+//                     color: Colors.green.withOpacity(0.1),
+//                     borderRadius: BorderRadius.circular(16),
+//                     border: Border.all(
+//                       color: Colors.green.withOpacity(0.3),
+//                       width: 2,
+//                     ),
+//                   ),
+//                   child: Column(
+//                     children: [
+//                       Container(
+//                         width: 80,
+//                         height: 80,
+//                         decoration: BoxDecoration(
+//                           color: Colors.green,
+//                           borderRadius: BorderRadius.circular(40),
+//                         ),
+//                         child: const Icon(
+//                           Icons.photo_library,
+//                           color: Colors.white,
+//                           size: 40,
+//                         ),
+//                       ),
+//                       const SizedBox(height: 16),
+//                       const Text(
+//                         'Choose from Gallery',
+//                         style: TextStyle(
+//                           color: Colors.white,
+//                           fontSize: 20,
+//                           fontWeight: FontWeight.w600,
+//                         ),
+//                       ),
+//                       const SizedBox(height: 8),
+//                       Text(
+//                         'Select an existing photo from your gallery with face validation',
+//                         textAlign: TextAlign.center,
+//                         style: TextStyle(
+//                           color: Colors.grey[300],
+//                           fontSize: 14,
+//                           height: 1.4,
+//                         ),
+//                       ),
+//                     ],
+//                   ),
+//                 ),
+//               ),
+
+//               const Spacer(),
+
+//               // Skip button
+//               GestureDetector(
+//                 onTap: () => push(NamedRoute.preferenceScreen),
+//                 child: Container(
+//                   width: double.infinity,
+//                   padding: const EdgeInsets.symmetric(vertical: 16),
+//                   child: Text(
+//                     'Skip for now',
+//                     textAlign: TextAlign.center,
+//                     style: TextStyle(
+//                       color: Colors.grey[400],
+//                       fontSize: 16,
+//                       decoration: TextDecoration.underline,
+//                     ),
+//                   ),
+//                 ),
+//               ),
+//             ],
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// // Photo Storage Helper Class
+// class PhotoStorageHelper {
+//   static const String _selfiePathKey = 'user_selfie_path';
+
+//   // Save photo to app's document directory and store path in SharedPreferences
+//   static Future<String> savePhoto(XFile photo) async {
 //     try {
-//       ImagePicker picker = ImagePicker();
-//       final image = await picker.pickImage(source: source);
+//       // Get app's document directory
+//       final Directory appDocDir = await getApplicationDocumentsDirectory();
+//       final String appDocPath = appDocDir.path;
 
-//       setState(() {
-//         imgPath = image?.path ?? '';
-//       });
-//       pop();
-//       return image;
+//       // Create selfies directory if it doesn't exist
+//       final Directory selfiesDir = Directory('$appDocPath/selfies');
+//       if (!await selfiesDir.exists()) {
+//         await selfiesDir.create(recursive: true);
+//       }
+
+//       // Generate unique filename with timestamp
+//       final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+//       final String fileName = 'selfie_$timestamp.jpg';
+//       final String savedPath = '${selfiesDir.path}/$fileName';
+
+//       // Copy the photo to the new location
+//       final File originalFile = File(photo.path);
+//       final File savedFile = await originalFile.copy(savedPath);
+
+//       // Save the path in SharedPreferences
+//       final SharedPreferences prefs = await SharedPreferences.getInstance();
+//       await prefs.setString(_selfiePathKey, savedPath);
+
+//       print('Photo saved to: $savedPath');
+//       return savedPath;
 //     } catch (e) {
+//       print('Error saving photo: $e');
+//       throw Exception('Failed to save photo: $e');
+//     }
+//   }
+
+//   // Get saved selfie path from SharedPreferences
+//   static Future<String?> getSavedSelfiePath() async {
+//     try {
+//       final SharedPreferences prefs = await SharedPreferences.getInstance();
+//       return prefs.getString(_selfiePathKey);
+//     } catch (e) {
+//       print('Error getting saved selfie path: $e');
 //       return null;
 //     }
 //   }
 
-//   Widget getProfilePic({
-//     required BuildContext context,
-//     required String? name,
-//     required String? avatar,
-//     required double radius,
-//     Color? backgroundColor,
-//     double fontSize = 18,
-//     FontWeight? fontWeight,
-//     Color? fontColor,
-//     required double tS,
-//   }) {
-//     return Stack(
-//       alignment: Alignment.bottomRight,
-//       children: [
-//         Container(
-//           width: radius,
-//           height: radius,
-//           alignment: Alignment.center,
-//           decoration: BoxDecoration(
-//             shape: BoxShape.circle,
-//             color:
-//                 backgroundColor ??
-//                 Theme.of(context).primaryColor.withOpacity(0.2),
-//           ),
-//           child: avatar == null || avatar == ''
-//               ? Text(
-//                   name != null
-//                       ? getInitials('DT')
-//                       :
-//                         //  getInitials(userName) :
-//                         '',
-//                   style: Theme.of(context).textTheme.headlineSmall!.copyWith(
-//                     fontSize: tS * fontSize,
-//                     fontWeight: fontWeight ?? FontWeight.w600,
-//                     color: fontColor ?? Theme.of(context).primaryColor,
-//                   ),
-//                 )
-//               : Container(
-//                   width: radius,
-//                   height: radius,
-//                   decoration: const BoxDecoration(shape: BoxShape.circle),
-//                   child: ClipRRect(
-//                     borderRadius: BorderRadius.circular(100),
-//                     child: Image.file(
-//                       File(imgPath),
-//                       repeat: ImageRepeat.repeat,
-//                       fit: BoxFit.cover,
-//                       width: 32,
-//                       height: 32,
-//                     ),
-//                   ),
-//                 ),
-//         ),
-//         Container(
-//           padding: EdgeInsets.all(dW * 0.02),
-//           decoration: BoxDecoration(shape: BoxShape.circle, color: buttonColor),
-//           child: const Icon(Icons.edit, color: Colors.white),
-//         ),
-//       ],
-//     );
+//   // Check if saved selfie file still exists
+//   static Future<bool> savedSelfieExists() async {
+//     try {
+//       final String? savedPath = await getSavedSelfiePath();
+//       if (savedPath == null) return false;
+
+//       final File file = File(savedPath);
+//       return await file.exists();
+//     } catch (e) {
+//       print('Error checking if selfie exists: $e');
+//       return false;
+//     }
 //   }
 
-//   imagePicker(BuildContext ctx) {
-//     showModalBottomSheet(
-//       context: ctx,
-//       builder: (BuildContext context) {
-//         return SizedBox(
-//           height: dH * .2,
-//           child: Padding(
-//             padding: EdgeInsets.symmetric(horizontal: dW * .05),
-//             child: Column(
-//               mainAxisAlignment: MainAxisAlignment.start,
-//               crossAxisAlignment: CrossAxisAlignment.start,
-//               children: [
-//                 SizedBox(height: dW * .02),
-//                 const Text(
-//                   'Profile Photo',
-//                   style: TextStyle(fontWeight: FontWeight.w600),
-//                 ),
-//                 SizedBox(height: dW * .03),
-//                 Row(
-//                   crossAxisAlignment: CrossAxisAlignment.start,
-//                   mainAxisAlignment: MainAxisAlignment.start,
-//                   children: [
-//                     if (imgPath != '')
-//                       Container(
-//                         margin: EdgeInsets.only(right: dW * 0.05),
-//                         child: GestureDetector(
-//                           onTap: () {
-//                             setState(() => imgPath = '');
-//                             pop();
-//                           },
-//                           child: Column(
-//                             children: [
-//                               CircleAvatar(
-//                                 radius: dW * .08,
-//                                 backgroundColor: Colors.grey.withOpacity(0.4),
-//                                 child: const Icon(
-//                                   Icons.delete,
-//                                   color: Colors.red,
-//                                 ),
-//                               ),
-//                               SizedBox(height: dW * .02),
-//                               const Text('Remove '),
-//                               const Text('Photo'),
-//                             ],
-//                           ),
-//                         ),
-//                       ),
-//                     // SizedBox(width: dW * .05),
-//                     GestureDetector(
-//                       onTap: () => pickImage(ImageSource.gallery),
-//                       child: Column(
-//                         children: [
-//                           CircleAvatar(
-//                             radius: dW * .08,
-//                             backgroundColor: Colors.grey.withOpacity(0.4),
-//                             child: const Icon(
-//                               Icons.image,
-//                               color: Colors.purple,
-//                             ),
-//                           ),
-//                           SizedBox(height: dW * .02),
-//                           const Text('Gallery'),
-//                         ],
-//                       ),
-//                     ),
-//                     SizedBox(width: dW * .05),
-//                     GestureDetector(
-//                       onTap: () => pickImage(ImageSource.camera),
-//                       child: Column(
-//                         children: [
-//                           CircleAvatar(
-//                             radius: dW * .08,
-//                             backgroundColor: Colors.grey.withOpacity(0.4),
-//                             child: const Icon(
-//                               Icons.camera_alt_rounded,
-//                               color: Colors.blue,
-//                             ),
-//                           ),
-//                           SizedBox(height: dW * .02),
-//                           const Text('Camera'),
-//                         ],
-//                       ),
-//                     ),
-//                   ],
-//                 ),
-//               ],
-//             ),
-//           ),
-//         );
-//       },
-//     );
+//   // Delete saved selfie
+//   static Future<bool> deleteSavedSelfie() async {
+//     try {
+//       final String? savedPath = await getSavedSelfiePath();
+//       if (savedPath == null) return false;
+
+//       final File file = File(savedPath);
+//       if (await file.exists()) {
+//         await file.delete();
+//       }
+
+//       // Remove from SharedPreferences
+//       final SharedPreferences prefs = await SharedPreferences.getInstance();
+//       await prefs.remove(_selfiePathKey);
+
+//       return true;
+//     } catch (e) {
+//       print('Error deleting saved selfie: $e');
+//       return false;
+//     }
 //   }
+// }
+
+// // Camera Capture Screen
+// class CameraCaptureScreen extends StatefulWidget {
+//   final VoidCallback onBack;
+//   final Function(String) onPhotoSaved;
+
+//   const CameraCaptureScreen({
+//     Key? key,
+//     required this.onBack,
+//     required this.onPhotoSaved,
+//   }) : super(key: key);
+
+//   @override
+//   State<CameraCaptureScreen> createState() => _CameraCaptureScreenState();
+// }
+
+// class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
+//   CameraController? _cameraController;
+//   List<CameraDescription>? _cameras;
+//   bool _isCameraInitialized = false;
+//   bool _isCapturing = false;
+//   bool _faceDetected = false;
+//   bool _faceInPosition = false;
+//   bool _isSaving = false;
+
+//   // Face detection
+//   FaceDetector? _faceDetector;
+//   bool _faceDetectionWorking = false;
+
+//   Timer? _faceCheckTimer;
+//   int _stableFrameCount = 0;
+//   static const int _requiredStableFrames = 3;
+//   bool _isCheckingFace = false;
 
 //   @override
 //   void initState() {
 //     super.initState();
-
-//     _faceCameraController = FaceCameraController(
-//       onCapture: (File? image) {
-//         if (image != null && mounted) {
-//           setState(() {
-//             imgPath = image.path;
-//           });
-//         }
-//       },
-//     );
-
-//     FaceCamera.initialize();
-
-//     _faceCameraController.addListener(() {
-//       // If you want to listen for other changes, do it here
-//     });
-
-//     fetchData();
+//     _initializeFaceDetector();
+//     _initializeCamera();
 //   }
 
-//   // @override
-//   // void initState() {
-//   //   super.initState();
-//   //   Future.delayed(const Duration(seconds: 0), () {
-//   //     if (mounted) imagePicker(context);
-//   //   });
-//   //   _faceCameraController = FaceCameraController(onCapture: (File? image) {});
-//   //   FaceCamera.initialize();
-//   //   fetchData();
-//   // }
+//   void _initializeFaceDetector() {
+//     try {
+//       _faceDetector = FaceDetector(
+//         options: FaceDetectorOptions(
+//           enableContours: false,
+//           enableLandmarks: false,
+//           performanceMode: FaceDetectorMode.fast,
+//           enableClassification: false,
+//         ),
+//       );
+//     } catch (e) {
+//       print('Face detector failed: $e');
+//     }
+//   }
+
+//   Future<void> _initializeCamera() async {
+//     try {
+//       _cameras = await availableCameras();
+
+//       if (_cameras!.isNotEmpty) {
+//         final frontCamera = _cameras!.firstWhere(
+//           (camera) => camera.lensDirection == CameraLensDirection.front,
+//           orElse: () => _cameras!.first,
+//         );
+
+//         _cameraController = CameraController(
+//           frontCamera,
+//           ResolutionPreset.medium,
+//           enableAudio: false,
+//         );
+
+//         await _cameraController!.initialize();
+//         if (mounted) {
+//           setState(() {
+//             _isCameraInitialized = true;
+//           });
+
+//           await Future.delayed(const Duration(seconds: 1));
+//           _startPeriodicFaceCheck();
+//         }
+//       }
+//     } catch (e) {
+//       print('Camera initialization error: $e');
+//     }
+//   }
+
+//   void _startPeriodicFaceCheck() {
+//     if (_faceDetector == null) {
+//       setState(() {
+//         _faceDetectionWorking = false;
+//       });
+//       return;
+//     }
+
+//     setState(() {
+//       _faceDetectionWorking = true;
+//     });
+
+//     _faceCheckTimer = Timer.periodic(const Duration(milliseconds: 800), (
+//       timer,
+//     ) {
+//       if (!_isCheckingFace &&
+//           !_isCapturing &&
+//           _cameraController != null &&
+//           _cameraController!.value.isInitialized) {
+//         _checkFaceInCurrentFrame();
+//       }
+//     });
+//   }
+
+//   Future<void> _checkFaceInCurrentFrame() async {
+//     if (_isCheckingFace || _isCapturing || _cameraController == null) return;
+
+//     _isCheckingFace = true;
+
+//     try {
+//       final XFile tempImage = await _cameraController!.takePicture();
+//       final inputImage = InputImage.fromFilePath(tempImage.path);
+//       final List<Face> faces = await _faceDetector!.processImage(inputImage);
+
+//       try {
+//         await File(tempImage.path).delete();
+//       } catch (e) {
+//         print('Error deleting temp file: $e');
+//       }
+
+//       _processFaces(faces);
+//     } catch (e) {
+//       setState(() {
+//         _faceDetectionWorking = false;
+//       });
+//       _faceCheckTimer?.cancel();
+//     } finally {
+//       _isCheckingFace = false;
+//     }
+//   }
+
+//   void _processFaces(List<Face> faces) {
+//     bool faceDetected = faces.isNotEmpty;
+//     bool faceInPosition = false;
+
+//     if (faceDetected) {
+//       final face = faces.first;
+//       final faceRect = face.boundingBox;
+
+//       final faceArea = faceRect.width * faceRect.height;
+//       final minFaceArea = 8000;
+//       final maxFaceArea = 250000;
+
+//       faceInPosition = faceArea > minFaceArea && faceArea < maxFaceArea;
+//     }
+
+//     if (mounted) {
+//       setState(() {
+//         _faceDetected = faceDetected;
+//         _faceInPosition = faceInPosition;
+//       });
+
+//       if (faceInPosition) {
+//         _stableFrameCount++;
+//         if (_stableFrameCount >= _requiredStableFrames && !_isCapturing) {
+//           _autoCapture();
+//         }
+//       } else {
+//         _stableFrameCount = 0;
+//       }
+//     }
+//   }
+
+//   Future<void> _autoCapture() async {
+//     _faceCheckTimer?.cancel();
+//     await _capturePhoto();
+//   }
+
+//   Future<void> _capturePhoto() async {
+//     if (_cameraController == null || !_cameraController!.value.isInitialized) {
+//       return;
+//     }
+
+//     setState(() {
+//       _isCapturing = true;
+//     });
+
+//     try {
+//       final XFile photo = await _cameraController!.takePicture();
+//       _showCapturedImage(photo);
+//     } catch (e) {
+//       setState(() {
+//         _isCapturing = false;
+//       });
+
+//       if (_faceDetectionWorking) {
+//         await Future.delayed(const Duration(milliseconds: 500));
+//         _startPeriodicFaceCheck();
+//       }
+//     }
+//   }
+
+//   void _manualCapture() {
+//     _faceCheckTimer?.cancel();
+
+//     if (_faceDetectionWorking && !_faceDetected) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(
+//           content: Text('Please position your face in the circle first'),
+//           backgroundColor: Colors.red,
+//         ),
+//       );
+//       _startPeriodicFaceCheck();
+//       return;
+//     }
+
+//     _capturePhoto();
+//   }
+
+//   void _showCapturedImage(XFile photo) {
+//     showDialog(
+//       context: context,
+//       barrierDismissible: false,
+//       builder: (context) => Dialog(
+//         child: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           children: [
+//             Image.file(File(photo.path)),
+//             Padding(
+//               padding: const EdgeInsets.all(16.0),
+//               child: Row(
+//                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//                 children: [
+//                   TextButton(
+//                     onPressed: _isSaving
+//                         ? null
+//                         : () {
+//                             Navigator.pop(context);
+//                             setState(() {
+//                               _isCapturing = false;
+//                               _stableFrameCount = 0;
+//                             });
+
+//                             if (_faceDetectionWorking) {
+//                               Future.delayed(
+//                                 const Duration(milliseconds: 500),
+//                                 () {
+//                                   _startPeriodicFaceCheck();
+//                                 },
+//                               );
+//                             }
+//                           },
+//                     child: const Text('Retake'),
+//                   ),
+//                   ElevatedButton(
+//                     onPressed: _isSaving
+//                         ? null
+//                         : () async {
+//                             await _saveAndAcceptPhoto(photo);
+//                           },
+//                     child: _isSaving
+//                         ? const SizedBox(
+//                             width: 20,
+//                             height: 20,
+//                             child: CircularProgressIndicator(strokeWidth: 2),
+//                           )
+//                         : const Text('Use Photo'),
+//                   ),
+//                 ],
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Future<void> _saveAndAcceptPhoto(XFile photo) async {
+//     setState(() {
+//       _isSaving = true;
+//     });
+
+//     try {
+//       // Save the photo using PhotoStorageHelper
+//       final String savedPath = await PhotoStorageHelper.savePhoto(photo);
+
+//       Navigator.pop(context); // Close dialog
+//       widget.onPhotoSaved(savedPath); // Notify parent with saved path
+//     } catch (e) {
+//       setState(() {
+//         _isSaving = false;
+//       });
+
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Error saving photo: $e'),
+//           backgroundColor: Colors.red,
+//         ),
+//       );
+//     }
+//   }
 
 //   @override
 //   void dispose() {
-//     _faceCameraController.dispose();
+//     _faceCheckTimer?.cancel();
+//     _cameraController?.dispose();
+//     _faceDetector?.close();
 //     super.dispose();
 //   }
 
 //   @override
 //   Widget build(BuildContext context) {
-//     dH = MediaQuery.of(context).size.height;
-//     dW = MediaQuery.of(context).size.width;
-//     tS = MediaQuery.of(context).textScaleFactor;
-//     language = Provider.of<AuthProvider>(context).selectedLanguage;
-//     customTextTheme = Theme.of(context).textTheme;
 //     return Scaffold(
-//       appBar: CustomAppBar(title: 'Title', dW: dW),
-//       body: iOSCondition(dH) ? screenBody() : SafeArea(child: screenBody()),
-//     );
-//   }
-
-//   screenBody() {
-//     return SizedBox(
-//       height: dH,
-//       width: dW,
-//       child: isLoading
-//           ? CircularLoader(android: dW * 0.08, iOS: dW * 0.035)
-//           : SingleChildScrollView(
-//               physics: const BouncingScrollPhysics(),
-//               padding: EdgeInsets.symmetric(horizontal: dW * 0.05),
-//               child: Column(
-//                 crossAxisAlignment: CrossAxisAlignment.stretch,
+//       backgroundColor: const Color(0xFF2D2D2D),
+//       body: SafeArea(
+//         child: Column(
+//           children: [
+//             // Header with back button
+//             Padding(
+//               padding: const EdgeInsets.all(16.0),
+//               child: Row(
 //                 children: [
-//                   SizedBox(height: dW * 0.05),
-//                   TextWidget(title: 'Capture Face'),
-//                   TextWidget(title: imgPath),
-//                   Stack(
-//                     alignment: Alignment.bottomCenter,
-//                     children: [
-//                       SmartFaceCamera(
-//                         controller: _faceCameraController,
-//                         showControls: false,
-//                         indicatorShape: IndicatorShape.defaultShape,
-//                         message:
-//                             'Align your face in the oval and tap the button',
+//                   GestureDetector(
+//                     onTap: widget.onBack,
+//                     child: Container(
+//                       padding: const EdgeInsets.all(8),
+//                       decoration: BoxDecoration(
+//                         color: Colors.black.withOpacity(0.5),
+//                         borderRadius: BorderRadius.circular(20),
 //                       ),
-//                       Padding(
-//                         padding: const EdgeInsets.only(bottom: 24),
-//                         child: ElevatedButton(
-//                           style: ElevatedButton.styleFrom(
-//                             shape: const CircleBorder(),
-//                             padding: const EdgeInsets.all(20),
-//                             backgroundColor: Colors.blue,
+//                       child: const Icon(
+//                         Icons.arrow_back,
+//                         color: Colors.white,
+//                         size: 24,
+//                       ),
+//                     ),
+//                   ),
+//                   const SizedBox(width: 16),
+//                   const Text(
+//                     'Take Selfie',
+//                     style: TextStyle(
+//                       color: Colors.white,
+//                       fontSize: 20,
+//                       fontWeight: FontWeight.w600,
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ),
+
+//             // Instruction text
+//             Padding(
+//               padding: const EdgeInsets.all(16.0),
+//               child: Text(
+//                 _isCapturing
+//                     ? 'Capturing photo...'
+//                     : !_faceDetectionWorking
+//                     ? 'Position yourself and tap the capture button'
+//                     : _faceDetected
+//                     ? (_faceInPosition
+//                           ? 'Perfect! Hold still for auto-capture...'
+//                           : 'Center your face in the circle')
+//                     : 'Position your face in the circle for auto-capture',
+//                 textAlign: TextAlign.center,
+//                 style: TextStyle(
+//                   color: _faceInPosition ? Colors.green[300] : Colors.grey[300],
+//                   fontSize: 16,
+//                   height: 1.4,
+//                   fontWeight: _faceInPosition
+//                       ? FontWeight.bold
+//                       : FontWeight.normal,
+//                 ),
+//               ),
+//             ),
+
+//             // Camera preview
+//             Expanded(
+//               child: Stack(
+//                 children: [
+//                   if (_isCameraInitialized && _cameraController != null)
+//                     Container(
+//                       width: double.infinity,
+//                       child: CameraPreview(_cameraController!),
+//                     )
+//                   else
+//                     Container(
+//                       width: double.infinity,
+//                       color: Colors.black,
+//                       child: const Center(
+//                         child: CircularProgressIndicator(color: Colors.white),
+//                       ),
+//                     ),
+
+//                   // Face guide overlay
+//                   Center(
+//                     child: CustomPaint(
+//                       size: const Size(280, 350),
+//                       painter: FaceGuidePainter(
+//                         faceDetected: _faceDetected,
+//                         faceInPosition: _faceInPosition,
+//                         faceDetectionWorking: _faceDetectionWorking,
+//                       ),
+//                     ),
+//                   ),
+
+//                   // Manual capture button
+//                   Positioned(
+//                     bottom: 30,
+//                     left: 0,
+//                     right: 0,
+//                     child: Center(
+//                       child: GestureDetector(
+//                         onTap: _isCapturing ? null : _manualCapture,
+//                         child: Container(
+//                           width: 80,
+//                           height: 80,
+//                           decoration: BoxDecoration(
+//                             shape: BoxShape.circle,
+//                             color: (_faceDetectionWorking && !_faceDetected)
+//                                 ? Colors.grey[600]
+//                                 : Colors.white,
+//                             border: Border.all(
+//                               color: (_faceDetectionWorking && !_faceDetected)
+//                                   ? Colors.grey[500]!
+//                                   : Colors.grey[300]!,
+//                               width: 4,
+//                             ),
 //                           ),
-//                           onPressed: () {
-//                             _faceCameraController.captureImage();
-//                             // No await or assign here — the onCapture callback will update imgPath
-//                           },
-//                           child: const Icon(
-//                             Icons.camera_alt,
-//                             size: 32,
-//                             color: Colors.white,
-//                           ),
+//                           child: _isCapturing
+//                               ? const Center(
+//                                   child: CircularProgressIndicator(
+//                                     color: Colors.grey,
+//                                   ),
+//                                 )
+//                               : Icon(
+//                                   Icons.camera_alt,
+//                                   size: 40,
+//                                   color:
+//                                       (_faceDetectionWorking && !_faceDetected)
+//                                       ? Colors.grey[400]
+//                                       : Colors.grey[700],
+//                                 ),
 //                         ),
 //                       ),
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ),
+
+//             // Bottom status indicator
+//             Padding(
+//               padding: const EdgeInsets.all(16.0),
+//               child: Container(
+//                 padding: const EdgeInsets.symmetric(
+//                   horizontal: 16,
+//                   vertical: 8,
+//                 ),
+//                 decoration: BoxDecoration(
+//                   color: !_faceDetectionWorking
+//                       ? Colors.grey.withOpacity(0.2)
+//                       : _faceInPosition
+//                       ? Colors.green.withOpacity(0.2)
+//                       : _faceDetected
+//                       ? Colors.orange.withOpacity(0.2)
+//                       : Colors.red.withOpacity(0.2),
+//                   borderRadius: BorderRadius.circular(20),
+//                 ),
+//                 child: Text(
+//                   !_faceDetectionWorking
+//                       ? '⚠ Manual capture mode'
+//                       : _faceInPosition
+//                       ? '✓ Ready for auto-capture'
+//                       : _faceDetected
+//                       ? '⚠ Adjust your position'
+//                       : '✗ No face detected',
+//                   style: TextStyle(
+//                     color: !_faceDetectionWorking
+//                         ? Colors.grey[300]
+//                         : _faceInPosition
+//                         ? Colors.green[300]
+//                         : _faceDetected
+//                         ? Colors.orange[300]
+//                         : Colors.red[300],
+//                     fontSize: 14,
+//                   ),
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+// }
+
+// // Gallery Selection Screen
+// class GallerySelectionScreen extends StatefulWidget {
+//   final VoidCallback onBack;
+//   final Function(String) onPhotoSaved;
+
+//   const GallerySelectionScreen({
+//     Key? key,
+//     required this.onBack,
+//     required this.onPhotoSaved,
+//   }) : super(key: key);
+
+//   @override
+//   State<GallerySelectionScreen> createState() => _GallerySelectionScreenState();
+// }
+
+// class _GallerySelectionScreenState extends State<GallerySelectionScreen> {
+//   final ImagePicker _imagePicker = ImagePicker();
+//   FaceDetector? _faceDetector;
+//   bool _isValidating = false;
+//   bool _isSaving = false;
+
+//   @override
+//   void initState() {
+//     super.initState();
+//     _initializeFaceDetector();
+//     _selectFromGallery();
+//   }
+
+//   void _initializeFaceDetector() {
+//     try {
+//       _faceDetector = FaceDetector(
+//         options: FaceDetectorOptions(
+//           enableContours: false,
+//           enableLandmarks: false,
+//           performanceMode: FaceDetectorMode.accurate,
+//           enableClassification: false,
+//         ),
+//       );
+//     } catch (e) {
+//       print('Face detector initialization failed: $e');
+//     }
+//   }
+
+//   Future<void> _selectFromGallery() async {
+//     try {
+//       final XFile? image = await _imagePicker.pickImage(
+//         source: ImageSource.gallery,
+//         imageQuality: 80,
+//       );
+
+//       if (image != null) {
+//         await _validateGalleryImage(image);
+//       } else {
+//         widget.onBack();
+//       }
+//     } catch (e) {
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Error selecting image: $e'),
+//           backgroundColor: Colors.red,
+//         ),
+//       );
+//       widget.onBack();
+//     }
+//   }
+
+//   Future<void> _validateGalleryImage(XFile imageFile) async {
+//     if (_faceDetector == null) {
+//       await _saveAndAcceptPhoto(imageFile);
+//       return;
+//     }
+
+//     setState(() {
+//       _isValidating = true;
+//     });
+
+//     try {
+//       final inputImage = InputImage.fromFilePath(imageFile.path);
+//       final List<Face> faces = await _faceDetector!.processImage(inputImage);
+
+//       await _showGalleryValidationResult(imageFile, faces);
+//     } catch (e) {
+//       setState(() {
+//         _isValidating = false;
+//       });
+
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         const SnackBar(
+//           content: Text('Face validation unavailable - accepting image'),
+//           backgroundColor: Colors.orange,
+//         ),
+//       );
+//       await _saveAndAcceptPhoto(imageFile);
+//     }
+//   }
+
+//   Future<void> _showGalleryValidationResult(
+//     XFile imageFile,
+//     List<Face> faces,
+//   ) async {
+//     setState(() {
+//       _isValidating = false;
+//     });
+
+//     String validationMessage;
+//     Color messageColor;
+//     bool isValid = false;
+
+//     if (faces.isEmpty) {
+//       validationMessage =
+//           'No face detected in the selected image. Please choose a clear selfie with your face visible.';
+//       messageColor = Colors.red;
+//     } else if (faces.length > 1) {
+//       validationMessage =
+//           'Multiple faces detected. Please choose an image with only your face.';
+//       messageColor = Colors.orange;
+//     } else {
+//       final face = faces.first;
+//       final faceRect = face.boundingBox;
+
+//       final imageBytes = await File(imageFile.path).readAsBytes();
+//       final image = await decodeImageFromList(imageBytes);
+//       final imageSize = Size(image.width.toDouble(), image.height.toDouble());
+
+//       final faceArea = faceRect.width * faceRect.height;
+//       final imageArea = imageSize.width * imageSize.height;
+//       final faceRatio = faceArea / imageArea;
+
+//       if (faceRatio < 0.03) {
+//         validationMessage =
+//             'Face is too small in the image. Please choose a closer selfie.';
+//         messageColor = Colors.orange;
+//       } else if (faceRatio > 0.9) {
+//         validationMessage =
+//             'Face is too close. Please choose an image with more space around your face.';
+//         messageColor = Colors.orange;
+//       } else {
+//         validationMessage = 'Great! Face detected successfully.';
+//         messageColor = Colors.green;
+//         isValid = true;
+//       }
+//     }
+
+//     showDialog(
+//       context: context,
+//       barrierDismissible: false,
+//       builder: (context) => Dialog(
+//         child: Column(
+//           mainAxisSize: MainAxisSize.min,
+//           children: [
+//             Container(
+//               height: 300,
+//               width: double.infinity,
+//               child: Image.file(File(imageFile.path), fit: BoxFit.cover),
+//             ),
+
+//             Padding(
+//               padding: const EdgeInsets.all(16.0),
+//               child: Column(
+//                 children: [
+//                   Container(
+//                     padding: const EdgeInsets.all(12),
+//                     decoration: BoxDecoration(
+//                       color: messageColor.withOpacity(0.1),
+//                       borderRadius: BorderRadius.circular(8),
+//                       border: Border.all(color: messageColor.withOpacity(0.3)),
+//                     ),
+//                     child: Row(
+//                       children: [
+//                         Icon(
+//                           isValid ? Icons.check_circle : Icons.warning,
+//                           color: messageColor,
+//                           size: 20,
+//                         ),
+//                         const SizedBox(width: 8),
+//                         Expanded(
+//                           child: Text(
+//                             validationMessage,
+//                             style: TextStyle(color: messageColor, fontSize: 14),
+//                           ),
+//                         ),
+//                       ],
+//                     ),
+//                   ),
+
+//                   const SizedBox(height: 16),
+
+//                   Row(
+//                     mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+//                     children: [
+//                       TextButton(
+//                         onPressed: _isSaving
+//                             ? null
+//                             : () {
+//                                 Navigator.pop(context);
+//                                 widget.onBack();
+//                               },
+//                         child: const Text('Go Back'),
+//                       ),
+//                       if (isValid)
+//                         ElevatedButton(
+//                           onPressed: _isSaving
+//                               ? null
+//                               : () async {
+//                                   ;
+//                                   await _saveAndAcceptPhoto(imageFile);
+//                                 },
+//                           child: _isSaving
+//                               ? const SizedBox(
+//                                   width: 20,
+//                                   height: 20,
+//                                   child: CircularProgressIndicator(
+//                                     strokeWidth: 2,
+//                                   ),
+//                                 )
+//                               : const Text('Use This Photo'),
+//                         )
+//                       else
+//                         ElevatedButton(
+//                           onPressed: _isSaving
+//                               ? null
+//                               : () {
+//                                   Navigator.pop(context);
+//                                   _selectFromGallery();
+//                                 },
+//                           child: const Text('Try Again'),
+//                         ),
 //                     ],
 //                   ),
 //                 ],
 //               ),
 //             ),
+//           ],
+//         ),
+//       ),
+//     );
+//   }
+
+//   Future<void> _saveAndAcceptPhoto(XFile photo) async {
+//     setState(() {
+//       _isSaving = true;
+//     });
+
+//     try {
+//       // Save the photo using PhotoStorageHelper
+//       final String savedPath = await PhotoStorageHelper.savePhoto(photo);
+//       widget.onPhotoSaved(savedPath); // Notify parent with saved path
+//     } catch (e) {
+//       setState(() {
+//         _isSaving = false;
+//       });
+
+//       ScaffoldMessenger.of(context).showSnackBar(
+//         SnackBar(
+//           content: Text('Error saving photo: $e'),
+//           backgroundColor: Colors.red,
+//         ),
+//       );
+//     }
+//   }
+
+//   @override
+//   void dispose() {
+//     _faceDetector?.close();
+//     super.dispose();
+//   }
+
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       backgroundColor: const Color(0xFF2D2D2D),
+//       body: SafeArea(
+//         child: Column(
+//           children: [
+//             // Header
+//             Padding(
+//               padding: const EdgeInsets.all(16.0),
+//               child: Row(
+//                 children: [
+//                   GestureDetector(
+//                     onTap: widget.onBack,
+//                     child: Container(
+//                       padding: const EdgeInsets.all(8),
+//                       decoration: BoxDecoration(
+//                         color: Colors.black.withOpacity(0.5),
+//                         borderRadius: BorderRadius.circular(20),
+//                       ),
+//                       child: const Icon(
+//                         Icons.arrow_back,
+//                         color: Colors.white,
+//                         size: 24,
+//                       ),
+//                     ),
+//                   ),
+//                   const SizedBox(width: 16),
+//                   const Text(
+//                     'Select from Gallery',
+//                     style: TextStyle(
+//                       color: Colors.white,
+//                       fontSize: 20,
+//                       fontWeight: FontWeight.w600,
+//                     ),
+//                   ),
+//                 ],
+//               ),
+//             ),
+
+//             // Loading content
+//             Expanded(
+//               child: Center(
+//                 child: Column(
+//                   mainAxisAlignment: MainAxisAlignment.center,
+//                   children: [
+//                     if (_isValidating || _isSaving) ...[
+//                       const CircularProgressIndicator(color: Colors.white),
+//                       const SizedBox(height: 24),
+//                       Text(
+//                         _isSaving
+//                             ? 'Saving photo...'
+//                             : 'Validating face in image...',
+//                         style: const TextStyle(
+//                           color: Colors.white,
+//                           fontSize: 18,
+//                         ),
+//                       ),
+//                     ] else ...[
+//                       const Icon(
+//                         Icons.photo_library,
+//                         color: Colors.white,
+//                         size: 64,
+//                       ),
+//                       const SizedBox(height: 24),
+//                       const Text(
+//                         'Opening Gallery...',
+//                         style: TextStyle(color: Colors.white, fontSize: 18),
+//                       ),
+//                     ],
+//                   ],
+//                 ),
+//               ),
+//             ),
+//           ],
+//         ),
+//       ),
 //     );
 //   }
 // }
 
-import 'dart:io';
+// class FaceGuidePainter extends CustomPainter {
+//   final bool faceDetected;
+//   final bool faceInPosition;
+//   final bool faceDetectionWorking;
+
+//   FaceGuidePainter({
+//     required this.faceDetected,
+//     required this.faceInPosition,
+//     required this.faceDetectionWorking,
+//   });
+
+//   @override
+//   void paint(Canvas canvas, Size size) {
+//     final paint = Paint()
+//       ..color = !faceDetectionWorking
+//           ? Colors.grey[400]!
+//           : faceInPosition
+//           ? Colors.green
+//           : faceDetected
+//           ? Colors.orange
+//           : Colors.grey[400]!
+//       ..strokeWidth = 3.0
+//       ..style = PaintingStyle.stroke;
+
+//     final center = Offset(size.width / 2, size.height / 2);
+//     final rect = Rect.fromCenter(
+//       center: center,
+//       width: size.width * 0.8,
+//       height: size.height * 0.9,
+//     );
+
+//     if (faceInPosition) {
+//       canvas.drawOval(rect, paint);
+//     } else {
+//       _drawDashedOval(canvas, rect, paint);
+//     }
+//   }
+
+//   void _drawDashedOval(Canvas canvas, Rect rect, Paint paint) {
+//     const dashWidth = 8.0;
+//     const dashSpace = 6.0;
+
+//     final path = Path()..addOval(rect);
+//     final pathMetrics = path.computeMetrics();
+
+//     for (final pathMetric in pathMetrics) {
+//       double distance = 0.0;
+//       bool draw = true;
+
+//       while (distance < pathMetric.length) {
+//         final length = draw ? dashWidth : dashSpace;
+//         final nextDistance = distance + length;
+
+//         if (draw) {
+//           final extractPath = pathMetric.extractPath(
+//             distance,
+//             nextDistance > pathMetric.length ? pathMetric.length : nextDistance,
+//           );
+//           canvas.drawPath(extractPath, paint);
+//         }
+
+//         distance = nextDistance;
+//         draw = !draw;
+//       }
+//     }
+//   }
+
+//   @override
+//   bool shouldRepaint(FaceGuidePainter oldDelegate) {
+//     return oldDelegate.faceDetected != faceDetected ||
+//         oldDelegate.faceInPosition != faceInPosition ||
+//         oldDelegate.faceDetectionWorking != faceDetectionWorking;
+//   }
+// }
+
+import 'package:clothing_app_frontend/navigation/navigators.dart';
+import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:flutter/material.dart';
-import 'package:face_camera/face_camera.dart';
+import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'dart:async';
 
 class CaptureFaceScreen extends StatefulWidget {
+  const CaptureFaceScreen({Key? key}) : super(key: key);
+
   @override
-  _CaptureFaceScreenState createState() => _CaptureFaceScreenState();
+  State<CaptureFaceScreen> createState() => _CaptureFaceScreenState();
 }
 
 class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
-  late FaceCameraController _faceCameraController;
-  String? _imagePath;
-  bool _showFaceCamera = false;
-  bool _isValidating = false;
+  String _selectedMode = ''; // 'camera' or 'gallery'
+
+  @override
+  Widget build(BuildContext context) {
+    if (_selectedMode.isEmpty) {
+      return _buildSelectionScreen();
+    } else if (_selectedMode == 'camera') {
+      return CameraCaptureScreen(
+        onBack: () {
+          setState(() {
+            _selectedMode = '';
+          });
+        },
+        onPhotoSaved: (String savedPath) {
+          _handlePhotoSaved(savedPath);
+        },
+      );
+    } else {
+      return GallerySelectionScreen(
+        onBack: () {
+          setState(() {
+            _selectedMode = '';
+          });
+        },
+        onPhotoSaved: (String savedPath) {
+          _handlePhotoSaved(savedPath);
+        },
+      );
+    }
+  }
+
+  void _handlePhotoSaved(String savedPath) {
+    // Handle the saved photo path
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Selfie saved successfully!'),
+        backgroundColor: Colors.green,
+      ),
+    );
+
+    // Navigate to preference screen after photo is saved
+    Navigator.pushNamed(context, NamedRoute.preferenceScreen);
+  }
+
+  Widget _buildSelectionScreen() {
+    return Scaffold(
+      backgroundColor: const Color(0xFF2D2D2D),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(24.0),
+          child: Column(
+            children: [
+              // Header
+              const SizedBox(height: 40),
+              const Text(
+                'Add Your Selfie',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Choose how you\'d like to add your selfie photo',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: Colors.grey[300],
+                  fontSize: 16,
+                  height: 1.4,
+                ),
+              ),
+
+              const SizedBox(height: 60),
+
+              // Camera option
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedMode = 'camera';
+                  });
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.blue.withOpacity(0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Colors.blue,
+                          borderRadius: BorderRadius.circular(40),
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Take Photo',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Use your camera to take a new selfie with automatic face detection',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.grey[300],
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // Gallery option
+              GestureDetector(
+                onTap: () {
+                  setState(() {
+                    _selectedMode = 'gallery';
+                  });
+                },
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.green.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Colors.green.withOpacity(0.3),
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          color: Colors.green,
+                          borderRadius: BorderRadius.circular(40),
+                        ),
+                        child: const Icon(
+                          Icons.photo_library,
+                          color: Colors.white,
+                          size: 40,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Choose from Gallery',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Select an existing photo from your gallery with face validation',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.grey[300],
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const Spacer(),
+
+              // Skip button
+              GestureDetector(
+                onTap: () => push(NamedRoute.preferenceScreen),
+                child: Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  child: Text(
+                    'Skip for now',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: Colors.grey[400],
+                      fontSize: 16,
+                      decoration: TextDecoration.underline,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// Photo Storage Helper Class
+class PhotoStorageHelper {
+  static const String _selfiePathKey = 'user_selfie_path';
+
+  // Save photo to app's document directory and store path in SharedPreferences
+  static Future<String> savePhoto(XFile photo) async {
+    try {
+      // Get app's document directory
+      final Directory appDocDir = await getApplicationDocumentsDirectory();
+      final String appDocPath = appDocDir.path;
+
+      // Create selfies directory if it doesn't exist
+      final Directory selfiesDir = Directory('$appDocPath/selfies');
+      if (!await selfiesDir.exists()) {
+        await selfiesDir.create(recursive: true);
+      }
+
+      // Generate unique filename with timestamp
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final String fileName = 'selfie_$timestamp.jpg';
+      final String savedPath = '${selfiesDir.path}/$fileName';
+
+      // Copy the photo to the new location
+      final File originalFile = File(photo.path);
+      final File savedFile = await originalFile.copy(savedPath);
+
+      // Save the path in SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_selfiePathKey, savedPath);
+
+      print('Photo saved to: $savedPath');
+      return savedPath;
+    } catch (e) {
+      print('Error saving photo: $e');
+      throw Exception('Failed to save photo: $e');
+    }
+  }
+
+  // Get saved selfie path from SharedPreferences
+  static Future<String?> getSavedSelfiePath() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_selfiePathKey);
+    } catch (e) {
+      print('Error getting saved selfie path: $e');
+      return null;
+    }
+  }
+
+  // Check if saved selfie file still exists
+  static Future<bool> savedSelfieExists() async {
+    try {
+      final String? savedPath = await getSavedSelfiePath();
+      if (savedPath == null) return false;
+
+      final File file = File(savedPath);
+      return await file.exists();
+    } catch (e) {
+      print('Error checking if selfie exists: $e');
+      return false;
+    }
+  }
+
+  // Delete saved selfie
+  static Future<bool> deleteSavedSelfie() async {
+    try {
+      final String? savedPath = await getSavedSelfiePath();
+      if (savedPath == null) return false;
+
+      final File file = File(savedPath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+
+      // Remove from SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_selfiePathKey);
+
+      return true;
+    } catch (e) {
+      print('Error deleting saved selfie: $e');
+      return false;
+    }
+  }
+}
+
+// Camera Capture Screen
+class CameraCaptureScreen extends StatefulWidget {
+  final VoidCallback onBack;
+  final Function(String) onPhotoSaved;
+
+  const CameraCaptureScreen({
+    Key? key,
+    required this.onBack,
+    required this.onPhotoSaved,
+  }) : super(key: key);
+
+  @override
+  State<CameraCaptureScreen> createState() => _CameraCaptureScreenState();
+}
+
+class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
+  CameraController? _cameraController;
+  List<CameraDescription>? _cameras;
+  bool _isCameraInitialized = false;
+  bool _isCapturing = false;
+  bool _faceDetected = false;
+  bool _faceInPosition = false;
+  bool _isSaving = false;
+
+  // Face detection
+  FaceDetector? _faceDetector;
+  bool _faceDetectionWorking = false;
+
+  Timer? _faceCheckTimer;
+  int _stableFrameCount = 0;
+  static const int _requiredStableFrames = 3;
+  bool _isCheckingFace = false;
 
   @override
   void initState() {
     super.initState();
-    FaceCamera.initialize();
-    _faceCameraController = FaceCameraController(
-      onCapture: (File? image) async {
-        if (image != null) {
+    _initializeFaceDetector();
+    _initializeCamera();
+  }
+
+  void _initializeFaceDetector() {
+    try {
+      _faceDetector = FaceDetector(
+        options: FaceDetectorOptions(
+          enableContours: false,
+          enableLandmarks: false,
+          performanceMode: FaceDetectorMode.fast,
+          enableClassification: false,
+        ),
+      );
+    } catch (e) {
+      print('Face detector failed: $e');
+    }
+  }
+
+  Future<void> _initializeCamera() async {
+    try {
+      _cameras = await availableCameras();
+
+      if (_cameras!.isNotEmpty) {
+        final frontCamera = _cameras!.firstWhere(
+          (camera) => camera.lensDirection == CameraLensDirection.front,
+          orElse: () => _cameras!.first,
+        );
+
+        _cameraController = CameraController(
+          frontCamera,
+          ResolutionPreset.medium,
+          enableAudio: false,
+        );
+
+        await _cameraController!.initialize();
+        if (mounted) {
           setState(() {
-            _showFaceCamera = false;
-            _imagePath = image.path;
-            _isValidating = true;
+            _isCameraInitialized = true;
           });
 
-          bool valid = await validateFacePhoto(image);
-          setState(() {
-            _isValidating = false;
-          });
-
-          _showValidationDialog(valid);
+          await Future.delayed(const Duration(seconds: 1));
+          _startPeriodicFaceCheck();
         }
-      },
-    );
+      }
+    } catch (e) {
+      print('Camera initialization error: $e');
+    }
   }
 
-  @override
-  void dispose() {
-    _faceCameraController.dispose();
-    super.dispose();
-  }
-
-  Future<bool> validateFacePhoto(File imageFile) async {
-    final inputImage = InputImage.fromFile(imageFile);
-    final options = FaceDetectorOptions(
-      enableClassification: true,
-      performanceMode: FaceDetectorMode.accurate,
-    );
-    final faceDetector = FaceDetector(options: options);
-
-    final List<Face> faces = await faceDetector.processImage(inputImage);
-
-    await faceDetector.close();
-
-    if (faces.length != 1) return false; // Exactly one face only
-
-    final Face face = faces.first;
-
-    // Example extra check: face frontal (yaw close to 0)
-    if (face.headEulerAngleY != null && (face.headEulerAngleY!.abs() > 15)) {
-      return false;
+  void _startPeriodicFaceCheck() {
+    if (_faceDetector == null) {
+      setState(() {
+        _faceDetectionWorking = false;
+      });
+      return;
     }
 
-    return true;
+    setState(() {
+      _faceDetectionWorking = true;
+    });
+
+    _faceCheckTimer = Timer.periodic(const Duration(milliseconds: 800), (
+      timer,
+    ) {
+      if (!_isCheckingFace &&
+          !_isCapturing &&
+          _cameraController != null &&
+          _cameraController!.value.isInitialized) {
+        _checkFaceInCurrentFrame();
+      }
+    });
   }
 
-  void _showValidationDialog(bool isValid) {
+  Future<void> _checkFaceInCurrentFrame() async {
+    if (_isCheckingFace || _isCapturing || _cameraController == null) return;
+
+    _isCheckingFace = true;
+
+    try {
+      final XFile tempImage = await _cameraController!.takePicture();
+      final inputImage = InputImage.fromFilePath(tempImage.path);
+      final List<Face> faces = await _faceDetector!.processImage(inputImage);
+
+      try {
+        await File(tempImage.path).delete();
+      } catch (e) {
+        print('Error deleting temp file: $e');
+      }
+
+      _processFaces(faces);
+    } catch (e) {
+      setState(() {
+        _faceDetectionWorking = false;
+      });
+      _faceCheckTimer?.cancel();
+    } finally {
+      _isCheckingFace = false;
+    }
+  }
+
+  void _processFaces(List<Face> faces) {
+    bool faceDetected = faces.isNotEmpty;
+    bool faceInPosition = false;
+
+    if (faceDetected) {
+      final face = faces.first;
+      final faceRect = face.boundingBox;
+
+      final faceArea = faceRect.width * faceRect.height;
+      final minFaceArea = 8000;
+      final maxFaceArea = 250000;
+
+      faceInPosition = faceArea > minFaceArea && faceArea < maxFaceArea;
+    }
+
+    if (mounted) {
+      setState(() {
+        _faceDetected = faceDetected;
+        _faceInPosition = faceInPosition;
+      });
+
+      if (faceInPosition) {
+        _stableFrameCount++;
+        if (_stableFrameCount >= _requiredStableFrames && !_isCapturing) {
+          _autoCapture();
+        }
+      } else {
+        _stableFrameCount = 0;
+      }
+    }
+  }
+
+  Future<void> _autoCapture() async {
+    _faceCheckTimer?.cancel();
+    await _capturePhoto();
+  }
+
+  Future<void> _capturePhoto() async {
+    if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      return;
+    }
+
+    setState(() {
+      _isCapturing = true;
+    });
+
+    try {
+      final XFile photo = await _cameraController!.takePicture();
+      _showCapturedImage(photo);
+    } catch (e) {
+      setState(() {
+        _isCapturing = false;
+      });
+
+      if (_faceDetectionWorking) {
+        await Future.delayed(const Duration(milliseconds: 500));
+        _startPeriodicFaceCheck();
+      }
+    }
+  }
+
+  void _manualCapture() {
+    _faceCheckTimer?.cancel();
+
+    if (_faceDetectionWorking && !_faceDetected) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please position your face in the circle first'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      _startPeriodicFaceCheck();
+      return;
+    }
+
+    _capturePhoto();
+  }
+
+  void _showCapturedImage(XFile photo) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: Text(isValid ? 'Face Photo Valid' : 'Invalid Face Photo'),
-        content: Text(
-          isValid
-              ? 'Your photo is valid with a single, frontal face.'
-              : 'Please make sure there is only one face and it is frontal.',
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.file(File(photo.path)),
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  TextButton(
+                    onPressed: _isSaving
+                        ? null
+                        : () {
+                            Navigator.pop(context);
+                            setState(() {
+                              _isCapturing = false;
+                              _stableFrameCount = 0;
+                            });
+
+                            if (_faceDetectionWorking) {
+                              Future.delayed(
+                                const Duration(milliseconds: 500),
+                                () {
+                                  _startPeriodicFaceCheck();
+                                },
+                              );
+                            }
+                          },
+                    child: const Text('Retake'),
+                  ),
+                  ElevatedButton(
+                    onPressed: _isSaving
+                        ? null
+                        : () async {
+                            await _saveAndAcceptPhoto(photo);
+                          },
+                    child: _isSaving
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Text('Use Photo'),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
       ),
     );
   }
 
-  Future<void> _pickImageFromGallery() async {
-    final picker = ImagePicker();
-    final XFile? pickedImage = await picker.pickImage(
-      source: ImageSource.gallery,
-    );
-    if (pickedImage != null) {
-      File imageFile = File(pickedImage.path);
+  Future<void> _saveAndAcceptPhoto(XFile photo) async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      // Save the photo using PhotoStorageHelper
+      final String savedPath = await PhotoStorageHelper.savePhoto(photo);
+
+      Navigator.pop(context); // Close dialog
+      widget.onPhotoSaved(
+        savedPath,
+      ); // This will trigger navigation to preference screen
+    } catch (e) {
       setState(() {
-        _imagePath = pickedImage.path;
-        _showFaceCamera = false;
-        _isValidating = true;
+        _isSaving = false;
       });
-      bool valid = await validateFacePhoto(imageFile);
-      setState(() {
-        _isValidating = false;
-      });
-      _showValidationDialog(valid);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving photo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
-  void _openFaceCamera() {
-    setState(() {
-      _showFaceCamera = true;
-      _imagePath = null;
-    });
+  @override
+  void dispose() {
+    _faceCheckTimer?.cancel();
+    _cameraController?.dispose();
+    _faceDetector?.close();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Capture Face Photo'),
-        leading: _showFaceCamera
-            ? IconButton(
-                icon: Icon(Icons.close),
-                onPressed: () => setState(() => _showFaceCamera = false),
-              )
-            : null,
-      ),
-      body: _showFaceCamera
-          ? Stack(
-              children: [
-                SmartFaceCamera(
-                  controller: _faceCameraController,
-                  showControls: false,
-                  indicatorShape: IndicatorShape.defaultShape,
-                  message: 'Align your face inside the oval and tap the button',
-                ),
-                Positioned(
-                  bottom: 40,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        shape: CircleBorder(),
-                        padding: EdgeInsets.all(20),
+      backgroundColor: const Color(0xFF2D2D2D),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header with back button
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: widget.onBack,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(20),
                       ),
-                      onPressed: () => _faceCameraController.captureImage(),
-                      child: Icon(Icons.camera_alt, size: 32),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 24,
+                      ),
                     ),
                   ),
-                ),
-              ],
-            )
-          : Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                children: [
-                  if (_imagePath != null) ...[
-                    Image.file(
-                      File(_imagePath!),
-                      height: 300,
-                      fit: BoxFit.contain,
+                  const SizedBox(width: 16),
+                  const Text(
+                    'Take Selfie',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
                     ),
-                    const SizedBox(height: 20),
-                  ],
-                  if (_isValidating)
-                    const CircularProgressIndicator()
-                  else ...[
-                    ElevatedButton.icon(
-                      onPressed: _openFaceCamera,
-                      icon: Icon(Icons.camera_alt),
-                      label: Text('Open Face Camera'),
-                    ),
-                    const SizedBox(height: 12),
-                    ElevatedButton.icon(
-                      onPressed: _pickImageFromGallery,
-                      icon: Icon(Icons.photo_library),
-                      label: Text('Pick From Gallery'),
-                    ),
-                  ],
+                  ),
                 ],
               ),
             ),
+
+            // Instruction text
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Text(
+                _isCapturing
+                    ? 'Capturing photo...'
+                    : !_faceDetectionWorking
+                    ? 'Position yourself and tap the capture button'
+                    : _faceDetected
+                    ? (_faceInPosition
+                          ? 'Perfect! Hold still for auto-capture...'
+                          : 'Center your face in the circle')
+                    : 'Position your face in the circle for auto-capture',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: _faceInPosition ? Colors.green[300] : Colors.grey[300],
+                  fontSize: 16,
+                  height: 1.4,
+                  fontWeight: _faceInPosition
+                      ? FontWeight.bold
+                      : FontWeight.normal,
+                ),
+              ),
+            ),
+
+            // Camera preview
+            Expanded(
+              child: Stack(
+                children: [
+                  if (_isCameraInitialized && _cameraController != null)
+                    Container(
+                      width: double.infinity,
+                      child: CameraPreview(_cameraController!),
+                    )
+                  else
+                    Container(
+                      width: double.infinity,
+                      color: Colors.black,
+                      child: const Center(
+                        child: CircularProgressIndicator(color: Colors.white),
+                      ),
+                    ),
+
+                  // Face guide overlay
+                  Center(
+                    child: CustomPaint(
+                      size: const Size(280, 350),
+                      painter: FaceGuidePainter(
+                        faceDetected: _faceDetected,
+                        faceInPosition: _faceInPosition,
+                        faceDetectionWorking: _faceDetectionWorking,
+                      ),
+                    ),
+                  ),
+
+                  // Manual capture button
+                  Positioned(
+                    bottom: 30,
+                    left: 0,
+                    right: 0,
+                    child: Center(
+                      child: GestureDetector(
+                        onTap: _isCapturing ? null : _manualCapture,
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: (_faceDetectionWorking && !_faceDetected)
+                                ? Colors.grey[600]
+                                : Colors.white,
+                            border: Border.all(
+                              color: (_faceDetectionWorking && !_faceDetected)
+                                  ? Colors.grey[500]!
+                                  : Colors.grey[300]!,
+                              width: 4,
+                            ),
+                          ),
+                          child: _isCapturing
+                              ? const Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.grey,
+                                  ),
+                                )
+                              : Icon(
+                                  Icons.camera_alt,
+                                  size: 40,
+                                  color:
+                                      (_faceDetectionWorking && !_faceDetected)
+                                      ? Colors.grey[400]
+                                      : Colors.grey[700],
+                                ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Bottom status indicator
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
+                decoration: BoxDecoration(
+                  color: !_faceDetectionWorking
+                      ? Colors.grey.withOpacity(0.2)
+                      : _faceInPosition
+                      ? Colors.green.withOpacity(0.2)
+                      : _faceDetected
+                      ? Colors.orange.withOpacity(0.2)
+                      : Colors.red.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  !_faceDetectionWorking
+                      ? '⚠ Manual capture mode'
+                      : _faceInPosition
+                      ? '✓ Ready for auto-capture'
+                      : _faceDetected
+                      ? '⚠ Adjust your position'
+                      : '✗ No face detected',
+                  style: TextStyle(
+                    color: !_faceDetectionWorking
+                        ? Colors.grey[300]
+                        : _faceInPosition
+                        ? Colors.green[300]
+                        : _faceDetected
+                        ? Colors.orange[300]
+                        : Colors.red[300],
+                    fontSize: 14,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
     );
+  }
+}
+
+// Gallery Selection Screen
+class GallerySelectionScreen extends StatefulWidget {
+  final VoidCallback onBack;
+  final Function(String) onPhotoSaved;
+
+  const GallerySelectionScreen({
+    Key? key,
+    required this.onBack,
+    required this.onPhotoSaved,
+  }) : super(key: key);
+
+  @override
+  State<GallerySelectionScreen> createState() => _GallerySelectionScreenState();
+}
+
+class _GallerySelectionScreenState extends State<GallerySelectionScreen> {
+  final ImagePicker _imagePicker = ImagePicker();
+  FaceDetector? _faceDetector;
+  bool _isValidating = false;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeFaceDetector();
+    _selectFromGallery();
+  }
+
+  void _initializeFaceDetector() {
+    try {
+      _faceDetector = FaceDetector(
+        options: FaceDetectorOptions(
+          enableContours: false,
+          enableLandmarks: false,
+          performanceMode: FaceDetectorMode.accurate,
+          enableClassification: false,
+        ),
+      );
+    } catch (e) {
+      print('Face detector initialization failed: $e');
+    }
+  }
+
+  Future<void> _selectFromGallery() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+      );
+
+      if (image != null) {
+        await _validateGalleryImage(image);
+      } else {
+        widget.onBack();
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error selecting image: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      widget.onBack();
+    }
+  }
+
+  Future<void> _validateGalleryImage(XFile imageFile) async {
+    if (_faceDetector == null) {
+      await _saveAndAcceptPhoto(imageFile);
+      return;
+    }
+
+    setState(() {
+      _isValidating = true;
+    });
+
+    try {
+      final inputImage = InputImage.fromFilePath(imageFile.path);
+      final List<Face> faces = await _faceDetector!.processImage(inputImage);
+
+      await _showGalleryValidationResult(imageFile, faces);
+    } catch (e) {
+      setState(() {
+        _isValidating = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Face validation unavailable - accepting image'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      await _saveAndAcceptPhoto(imageFile);
+    }
+  }
+
+  Future<void> _showGalleryValidationResult(
+    XFile imageFile,
+    List<Face> faces,
+  ) async {
+    setState(() {
+      _isValidating = false;
+    });
+
+    String validationMessage;
+    Color messageColor;
+    bool isValid = false;
+
+    if (faces.isEmpty) {
+      validationMessage =
+          'No face detected in the selected image. Please choose a clear selfie with your face visible.';
+      messageColor = Colors.red;
+    } else if (faces.length > 1) {
+      validationMessage =
+          'Multiple faces detected. Please choose an image with only your face.';
+      messageColor = Colors.orange;
+    } else {
+      final face = faces.first;
+      final faceRect = face.boundingBox;
+
+      final imageBytes = await File(imageFile.path).readAsBytes();
+      final image = await decodeImageFromList(imageBytes);
+      final imageSize = Size(image.width.toDouble(), image.height.toDouble());
+
+      final faceArea = faceRect.width * faceRect.height;
+      final imageArea = imageSize.width * imageSize.height;
+      final faceRatio = faceArea / imageArea;
+
+      if (faceRatio < 0.03) {
+        validationMessage =
+            'Face is too small in the image. Please choose a closer selfie.';
+        messageColor = Colors.orange;
+      } else if (faceRatio > 0.9) {
+        validationMessage =
+            'Face is too close. Please choose an image with more space around your face.';
+        messageColor = Colors.orange;
+      } else {
+        validationMessage = 'Great! Face detected successfully.';
+        messageColor = Colors.green;
+        isValid = true;
+      }
+    }
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Dialog(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              height: 300,
+              width: double.infinity,
+              child: Image.file(File(imageFile.path), fit: BoxFit.cover),
+            ),
+
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: messageColor.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: messageColor.withOpacity(0.3)),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isValid ? Icons.check_circle : Icons.warning,
+                          color: messageColor,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            validationMessage,
+                            style: TextStyle(color: messageColor, fontSize: 14),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                    children: [
+                      TextButton(
+                        onPressed: _isSaving
+                            ? null
+                            : () {
+                                Navigator.pop(context);
+                                widget.onBack();
+                              },
+                        child: const Text('Go Back'),
+                      ),
+                      if (isValid)
+                        ElevatedButton(
+                          onPressed: _isSaving
+                              ? null
+                              : () async {
+                                  Navigator.pop(context);
+                                  await _saveAndAcceptPhoto(imageFile);
+                                },
+                          child: _isSaving
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Text('Use This Photo'),
+                        )
+                      else
+                        ElevatedButton(
+                          onPressed: _isSaving
+                              ? null
+                              : () {
+                                  Navigator.pop(context);
+                                  _selectFromGallery();
+                                },
+                          child: const Text('Try Again'),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _saveAndAcceptPhoto(XFile photo) async {
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      // Save the photo using PhotoStorageHelper
+      final String savedPath = await PhotoStorageHelper.savePhoto(photo);
+      widget.onPhotoSaved(
+        savedPath,
+      ); // This will trigger navigation to preference screen
+    } catch (e) {
+      setState(() {
+        _isSaving = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error saving photo: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _faceDetector?.close();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFF2D2D2D),
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Header
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                children: [
+                  GestureDetector(
+                    onTap: widget.onBack,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withOpacity(0.5),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Colors.white,
+                        size: 24,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  const Text(
+                    'Select from Gallery',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 20,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Loading content
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (_isValidating || _isSaving) ...[
+                      const CircularProgressIndicator(color: Colors.white),
+                      const SizedBox(height: 24),
+                      Text(
+                        _isSaving
+                            ? 'Saving photo...'
+                            : 'Validating face in image...',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 18,
+                        ),
+                      ),
+                    ] else ...[
+                      const Icon(
+                        Icons.photo_library,
+                        color: Colors.white,
+                        size: 64,
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Opening Gallery...',
+                        style: TextStyle(color: Colors.white, fontSize: 18),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class FaceGuidePainter extends CustomPainter {
+  final bool faceDetected;
+  final bool faceInPosition;
+  final bool faceDetectionWorking;
+
+  FaceGuidePainter({
+    required this.faceDetected,
+    required this.faceInPosition,
+    required this.faceDetectionWorking,
+  });
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = !faceDetectionWorking
+          ? Colors.grey[400]!
+          : faceInPosition
+          ? Colors.green
+          : faceDetected
+          ? Colors.orange
+          : Colors.grey[400]!
+      ..strokeWidth = 3.0
+      ..style = PaintingStyle.stroke;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final rect = Rect.fromCenter(
+      center: center,
+      width: size.width * 0.8,
+      height: size.height * 0.9,
+    );
+
+    if (faceInPosition) {
+      canvas.drawOval(rect, paint);
+    } else {
+      _drawDashedOval(canvas, rect, paint);
+    }
+  }
+
+  void _drawDashedOval(Canvas canvas, Rect rect, Paint paint) {
+    const dashWidth = 8.0;
+    const dashSpace = 6.0;
+
+    final path = Path()..addOval(rect);
+    final pathMetrics = path.computeMetrics();
+
+    for (final pathMetric in pathMetrics) {
+      double distance = 0.0;
+      bool draw = true;
+
+      while (distance < pathMetric.length) {
+        final length = draw ? dashWidth : dashSpace;
+        final nextDistance = distance + length;
+
+        if (draw) {
+          final extractPath = pathMetric.extractPath(
+            distance,
+            nextDistance > pathMetric.length ? pathMetric.length : nextDistance,
+          );
+          canvas.drawPath(extractPath, paint);
+        }
+
+        distance = nextDistance;
+        draw = !draw;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(FaceGuidePainter oldDelegate) {
+    return oldDelegate.faceDetected != faceDetected ||
+        oldDelegate.faceInPosition != faceInPosition ||
+        oldDelegate.faceDetectionWorking != faceDetectionWorking;
   }
 }

@@ -274,7 +274,7 @@ class CategoryScreenState extends State<CategoryScreen> {
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
                                   Image.asset("assets/images/b1.png"),
-                                  Image.asset("assets/images/b2.png"),
+                                  Image.asset("assets/images/b4.png"),
                                 ],
                               ),
                             ),
@@ -386,7 +386,6 @@ class CategoryScreenState extends State<CategoryScreen> {
                     ),
                   ),
                 ),
-                Image.asset('assets/images/tabBar1.png'),
               ],
             ),
     );

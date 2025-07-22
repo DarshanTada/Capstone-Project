@@ -1,9 +1,12 @@
 // var webApi = {'domain': 'https://api.iteeha.co'}; //PROD
-var webApi = {'domain': 'http://localhost:3001/'}; //DEV PROD
+var webApi = {'domain': 'http://110.0.0.213:3001/'}; //DEV PROD
 
 var endPoint = {
   // Authentication
   'login': 'api/user/loginOrRegisterUser',
+
+  // Home
+  'getCategory': 'api/category/getCategory',
 
   //Preference
   'getAllPreferences': 'api/preferences/getAllPreferences',

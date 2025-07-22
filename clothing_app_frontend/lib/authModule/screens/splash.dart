@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
+import 'package:clothing_app_frontend/navigation/arguments.dart';
 import 'package:clothing_app_frontend/navigation/navigators.dart';
 import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:flutter/material.dart';
@@ -67,7 +68,11 @@ class _SplashScreenState extends State<SplashScreenMain>
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
-    pushAndRemoveUntil(NamedRoute.phoneNumberScreen);
+    // pushAndRemoveUntil(NamedRoute.phoneNumberScreen);
+    pushAndRemoveUntil(
+      NamedRoute.bottomNavBarScreen,
+      arguments: BottomNavArgumnets(),
+    );
   }
 
   @override
