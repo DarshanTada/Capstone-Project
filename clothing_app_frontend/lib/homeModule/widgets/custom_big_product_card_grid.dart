@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../navigation/routes.dart';
+import './size_chart_screen.dart';
 
 class CustomBigProductCardGridWidget extends StatefulWidget {
   final String imageUrl;
@@ -83,13 +84,13 @@ class CustomBigProductCardGridWidgetState
             Image.network(
               widget.imageUrl,
               fit: BoxFit.cover,
-              width: dW * 0.59,
+              width: dW * 0.55,
               height: dW * 0.605,
             ),
             Positioned(
               top: 0,
               child: Container(
-                width: dW * 0.59,
+                width: dW * 0.55,
                 alignment: Alignment.topCenter,
                 padding: EdgeInsets.symmetric(
                   horizontal: dW * 0.02,
@@ -143,7 +144,7 @@ class CustomBigProductCardGridWidgetState
             Positioned(
               bottom: 0,
               child: Container(
-                width: dW * 0.59,
+                width: dW * 0.55,
                 alignment: Alignment.bottomCenter,
                 padding: EdgeInsets.only(
                   left: dW * 0.02,
@@ -171,8 +172,11 @@ class CustomBigProductCardGridWidgetState
                     ),
                     GestureDetector(
                       onTap: () {
-                        push(NamedRoute.sizeChartScreen);
+                        // Prevent tap event from propagating to parent GestureDetector
+                        // and only open the SizeChartScreen snackbar.
+                        SizeChartScreen.show(context);
                       },
+                      behavior: HitTestBehavior.opaque,
                       child: Container(
                         margin: EdgeInsets.only(bottom: dW * 0.02),
                         padding: EdgeInsets.symmetric(

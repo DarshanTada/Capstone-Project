@@ -7,6 +7,8 @@ import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart
 import 'package:clothing_app_frontend/homeModule/screens/product_list_screen.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_big_product_card_grid.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_small_product_card_grid.dart';
+import 'package:clothing_app_frontend/navigation/navigators.dart';
+import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -111,11 +113,11 @@ class HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           SizedBox(width: dW * 0.025),
-                          TextWidget(
-                            title: categories.first.name,
-                            fontSize: tS * 20,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          // TextWidget(
+                            // title: categories.first.name,
+                          //   fontSize: tS * 20,
+                          //   fontWeight: FontWeight.w500,
+                          // ),
                           CircleAvatar(
                             backgroundColor: Colors.black,
                             radius: 22,
@@ -416,20 +418,25 @@ class HomeScreenState extends State<HomeScreen> {
                                     MainAxisAlignment.spaceEvenly,
                                 children: [
                                   CustomSmallProductCardGrid(
-                                    imageUrl: 'https://tinyurl.com/42s53ezd',
+                                    imageUrl:                                             'assets/images/g1.png',
+
                                     price: '50',
                                     rating: 3.9,
-                                    onTap: () {},
+                                    onTap: () {
+                        push(NamedRoute.sizeChartScreen);
+
+                                    },
                                   ),
                                   CustomSmallProductCardGrid(
-                                    imageUrl: 'https://tinyurl.com/5n8zedmz',
+                                    imageUrl:                                             'assets/images/g1.png',
+
                                     price: '44',
                                     rating: 4.7,
                                     onTap: () {},
                                   ),
                                   CustomSmallProductCardGrid(
-                                    imageUrl:
-                                        'https://m.media-amazon.com/images/I/61emW3sXLOL._AC_SX679_.jpg',
+                                    imageUrl:                                            'assets/images/g1.png',
+
                                     price: '90',
                                     rating: 4.5,
                                     onTap: () {},
@@ -445,7 +452,7 @@ class HomeScreenState extends State<HomeScreen> {
                                     children: [
                                       CustomSmallProductCardGrid(
                                         imageUrl:
-                                            'https://tinyurl.com/ek2mf8hb',
+                                            'assets/images/g1.png',
                                         price: '90',
                                         rating: 4.5,
                                         onTap: () {},
@@ -454,7 +461,7 @@ class HomeScreenState extends State<HomeScreen> {
 
                                       CustomSmallProductCardGrid(
                                         imageUrl:
-                                            'https://tinyurl.com/2jjbmthn',
+                                            'assets/images/g1.png',
                                         price: '90',
                                         rating: 4.5,
                                         onTap: () {},
@@ -464,7 +471,8 @@ class HomeScreenState extends State<HomeScreen> {
                                   SizedBox(width: dW * 0.01),
                                   CustomBigProductCardGridWidget(
                                     productName: 'Charcoal Fade Jeans',
-                                    imageUrl: 'https://tinyurl.com/2jjbmthn',
+                                    imageUrl:        'assets/images/g1.png',
+                                     
                                     price: '90',
                                     rating: 4.5,
                                     onTap: () {},

@@ -1,7 +1,7 @@
 import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
-import 'package:clothing_app_frontend/homeModule/screens/size_chart_screen.dart';
+import 'package:clothing_app_frontend/homeModule/widgets/size_chart_screen.dart';
 import 'package:clothing_app_frontend/preferenceModule/screen/preference_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/common_widgets/bottom_nav_bar.dart';
