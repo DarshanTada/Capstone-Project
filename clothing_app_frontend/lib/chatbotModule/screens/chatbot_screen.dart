@@ -17,7 +17,6 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   final ScrollController _scrollController = ScrollController();
   final List<_ChatMessage> _messages = [];
   File? _pickedImage;
-  bool _isLoading = false;
 
   static const String systemPrompt =
       "You are a helpful fashion assistant, reply only to fashion related questions. Else say I can only help you with fashion related questions.";
@@ -46,7 +45,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       _messages.add(userMsg);
       _controller.clear();
       _pickedImage = null;
-      _isLoading = true;
+      // Add a loading bot message
+      _messages.add(_ChatMessage(
+        text: "",
+        isUser: false,
+        isLoading: true,
+      ));
     });
 
     // Scroll to bottom after short delay
@@ -85,11 +89,14 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       }
 
       setState(() {
-        _messages.add(_ChatMessage(
-          text: botReply,
-          isUser: false,
-        ));
-        _isLoading = false;
+        // Find the last loading bot message and replace it
+        final idx = _messages.lastIndexWhere((m) => !m.isUser && m.isLoading);
+        if (idx != -1) {
+          _messages[idx] = _ChatMessage(
+            text: botReply,
+            isUser: false,
+          );
+        }
       });
 
       // Scroll to bottom
@@ -102,35 +109,48 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       });
     } catch (e) {
       setState(() {
-        _messages.add(_ChatMessage(
-          text: "Error: ${e.toString()}",
-          isUser: false,
-        ));
-        _isLoading = false;
+        final idx = _messages.lastIndexWhere((m) => !m.isUser && m.isLoading);
+        if (idx != -1) {
+          _messages[idx] = _ChatMessage(
+            text: "Error: ${e.toString()}",
+            isUser: false,
+          );
+        }
       });
     }
   }
 
   Widget _buildMessage(_ChatMessage msg) {
     final isUser = msg.isUser;
+    final userBubbleColor = const Color(0xFFEAE0D5);
+    final botBubbleColor = const Color(0xFFC6AC8E);
+
     final avatar = isUser
-        ? const CircleAvatar(child: Icon(Icons.person))
+        ? CircleAvatar(
+            backgroundColor: userBubbleColor,
+            child: const Icon(Icons.person, color: Color.fromARGB(255, 77, 52, 52)),
+          )
         : const CircleAvatar(
+            backgroundColor: Colors.transparent, // transparent background
             backgroundImage: AssetImage('assets/images/ai_avatar.png'),
           );
 
-    final bubbleColor = isUser ? Colors.blue[100] : Colors.grey[200];
+    final bubbleColor = isUser ? userBubbleColor : botBubbleColor;
     final align = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
     final margin = isUser
-        ? const EdgeInsets.only(left: 60, top: 8, right: 8)
-        : const EdgeInsets.only(right: 60, top: 8, left: 8);
+        ? const EdgeInsets.only(left: 100, top: 8, right: 8) // Increase left margin for user
+        : const EdgeInsets.only(right: 80, top: 8, left: 8);
 
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisAlignment:
           isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
-        if (!isUser) avatar,
+        if (!isUser)
+          Padding(
+            padding: const EdgeInsets.only(left: 8.0), // Gap from left edge for bot
+            child: avatar,
+          ),
         Expanded(
           child: Container(
             margin: margin,
@@ -159,31 +179,49 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Expanded(
-                      child: SelectableText(
-                        msg.text,
-                        style: const TextStyle(
-                          color: Colors.black87,
-                          fontSize: 16,
-                        ),
+                      child: msg.isLoading
+                          ? Align(
+                              alignment: Alignment.centerLeft,
+                              child: SizedBox(
+                                height: 16,
+                                width: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(Colors.black),
+                                ),
+                              ),
+                            )
+                          : SelectableText(
+                              msg.text,
+                              style: const TextStyle(
+                                color: Colors.black87,
+                                fontSize: 16,
+                              ),
+                            ),
+                    ),
+                    if (!msg.isLoading)
+                      IconButton(
+                        icon: const Icon(Icons.copy, size: 18),
+                        tooltip: 'Copy',
+                        onPressed: () {
+                          Clipboard.setData(ClipboardData(text: msg.text));
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Message copied!')),
+                          );
+                        },
                       ),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.copy, size: 18),
-                      tooltip: 'Copy',
-                      onPressed: () {
-                        Clipboard.setData(ClipboardData(text: msg.text));
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(content: Text('Message copied!')),
-                        );
-                      },
-                    ),
                   ],
                 ),
               ],
             ),
           ),
         ),
-        if (isUser) avatar,
+        if (isUser)
+          Padding(
+            padding: const EdgeInsets.only(right: 8.0), // Gap from right edge for user
+            child: avatar,
+          ),
       ],
     );
   }
@@ -202,52 +240,68 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Fashion AI Assistant"),
+        title: const Text(
+          "YOLO Bot",
+          style: TextStyle(
+            color: Colors.white,
+            fontWeight: FontWeight.bold,
+          ),
+          textAlign: TextAlign.center,
+        ),
+        centerTitle: true,
         backgroundColor: Colors.black,
       ),
-      body: Column(
+      body: Stack(
         children: [
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              itemCount: _messages.length,
-              itemBuilder: (context, idx) => _buildMessage(_messages[idx]),
-            ),
-          ),
-          if (_pickedImage != null)
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 8.0),
-              child: Stack(
-                alignment: Alignment.topRight,
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.file(
-                      _pickedImage!,
-                      width: 100,
-                      height: 100,
-                      fit: BoxFit.cover,
+          // Chat messages
+          Padding(
+            padding: const EdgeInsets.only(bottom: 76), // Height of input bar + margin
+            child: Column(
+              children: [
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, idx) => _buildMessage(_messages[idx]),
+                  ),
+                ),
+                if (_pickedImage != null)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Stack(
+                      alignment: Alignment.topRight,
+                      children: [
+                        ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: Image.file(
+                            _pickedImage!,
+                            width: 100,
+                            height: 100,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.close, color: Colors.red),
+                          onPressed: () {
+                            setState(() {
+                              _pickedImage = null;
+                            });
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                  IconButton(
-                    icon: const Icon(Icons.close, color: Colors.red),
-                    onPressed: () {
-                      setState(() {
-                        _pickedImage = null;
-                      });
-                    },
-                  ),
-                ],
-              ),
+              ],
             ),
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: CircularProgressIndicator(),
-            ),
-          Divider(height: 1),
-          _buildInputBar(),
+          ),
+          // Floating input bar
+          Positioned(
+            left: 10,
+            right: 10,
+            bottom: 10,
+            child: _buildInputBar(),
+          ),
         ],
       ),
     );
@@ -256,8 +310,12 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   Widget _buildInputBar() {
     return SafeArea(
       child: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30), // Rounded borders
+          border: Border.all(color: Colors.black, width: 1), // 1px black border
+        ),
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        color: Colors.white,
         child: Row(
           children: [
             IconButton(
@@ -276,7 +334,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             ),
             IconButton(
               icon: const Icon(Icons.send, color: Colors.black),
-              onPressed: _isLoading ? null : _sendMessage,
+              onPressed: _sendMessage,
             ),
           ],
         ),
@@ -289,10 +347,12 @@ class _ChatMessage {
   final String text;
   final bool isUser;
   final File? image;
+  final bool isLoading;
 
   _ChatMessage({
     required this.text,
     required this.isUser,
     this.image,
+    this.isLoading = false,
   });
 }
