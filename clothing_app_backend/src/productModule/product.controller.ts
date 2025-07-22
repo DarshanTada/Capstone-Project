@@ -1,107 +1,18 @@
-import { Request, Response, NextFunction } from 'express';
+import { Request, Response } from 'express';
 import Product from '../productModule/product.model';
 import ProductVariant from '../productModule/productVariant.model';
 import ProductImage from '../productModule/productImage.model';
-import CareInstruction from '../productModule/careInstruction.model';
-import Festival from '../festivalModule/festival.model';
-import Season from '../seasonModule/season.model';
-import dotenv from "dotenv";
+import mongoose from "mongoose";
 
-
-dotenv.config()
-
-export const getProduct = async (req: Request, res: Response, next: NextFunction) => {
+const safeParse = (value: any): any[] => {
   try {
-    const productId = req.params.id;
-    const product = await Product.findById(productId)
-      .populate('care_instruction_objectId')
-      .populate('festival_objectId')
-      .populate('season_objectId')
-      .lean();
-
-    if (!product) {
-      return res.status(404).json({ success: false, message: 'Product not found' });
+    if (typeof value === "string") {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
     }
-
-    // Fetch variants & images
-    const variants = await ProductVariant.find({ productObjectId: productId }).lean();
-    const images = await ProductImage.find({ productObjectId: productId }).lean();
-
-    return res.status(200).json({ success: true, data: { product, variants, images } });
-  } catch (error: any) {
-    console.error('Get Product Error:', error);
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-export const getAllProducts = async (req: Request, res: Response) => {
-  try {
-    // Fetch all products with populated relations
-    const products = await Product.find()
-      .populate('care_instruction_objectId')
-      .populate('festival_objectId')
-      .populate('season_objectId')
-      .lean();
-
-    // Fetch variants and images for all products
-    const productIds = products.map((p) => p._id);
-
-    const variants = await ProductVariant.find({ productObjectId: { $in: productIds } }).lean();
-    const images = await ProductImage.find({ productObjectId: { $in: productIds } }).lean();
-
-    // Map variants and images to respective products
-    const variantsMap = variants.reduce((acc, variant) => {
-      const key = variant.productObjectId?.toString?.() ?? '';
-      acc[key] = acc[key] || [];
-      acc[key].push(variant);
-      return acc;
-    }, {} as Record<string, any[]>);
-
-    const imagesMap = images.reduce((acc, image) => {
-      const key = image.productObjectId?.toString?.() ?? '';
-      acc[key] = acc[key] || [];
-      acc[key].push(image);
-      return acc;
-    }, {} as Record<string, any[]>);
-
-    // Attach variants and images to each product
-    const result = products.map((product) => ({
-      ...product,
-      variants: variantsMap[product._id.toString()] || [],
-      images: imagesMap[product._id.toString()] || [],
-    }));
-
-    res.status(200).json({ success: true, data: result });
-  } catch (error: any) {
-    console.error('Get All Products Error:', error);
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-
-// Delete Product by ID and cleanup
-export const deleteProduct = async (req: Request, res: Response) => {
-  try {
-    const productId = req.params.id;
-
-    // Delete product
-    const deletedProduct = await Product.findByIdAndDelete(productId);
-
-    if (!deletedProduct) {
-      return res.status(404).json({ success: false, message: 'Product not found' });
-    }
-
-    // Delete related variants, images, care instruction, festival, season if needed
-    await ProductVariant.deleteMany({ productObjectId: productId });
-    await ProductImage.deleteMany({ productObjectId: productId });
-    await CareInstruction.findByIdAndDelete(deletedProduct.care_instruction_objectId);
-    await Festival.findByIdAndDelete(deletedProduct.festival_objectId);
-    await Season.findByIdAndDelete(deletedProduct.season_objectId);
-
-    return res.status(200).json({ success: true, message: 'Product deleted successfully' });
-  } catch (error: any) {
-    console.error('Delete Product Error:', error);
-    return res.status(500).json({ success: false, message: error.message });
+    return Array.isArray(value) ? value : [];
+  } catch {
+    return [];
   }
 };
 
@@ -112,217 +23,322 @@ export const createProduct = async (req: Request, res: Response) => {
       description,
       fabric_type,
       category_id,
-      availabe_status,
-      reviewObjectId,
       gender,
-      weight,
+      bodyType,
+      season_objectId,
+      festival_objectId,
+      care_instruction_objectId,
       productType,
-      care_instruction,
-      festival_name,
-      season_name,
+      style,
       variants,
     } = req.body;
 
-    // Save CareInstruction
-    let careInstructionId = null;
-    if (care_instruction) {
-      const files = req.files as Record<string, Express.Multer.File[]>;
-      const care = new CareInstruction({
-        instruction: care_instruction,
-        image: files?.['care_instruction_image']?.[0]?.filename || null,
-      });
-      await care.save();
-      careInstructionId = care._id;
-    }
+    // Parse arrays safely with fallback to []
+    const parsedStyle = safeParse(style);
+    const parsedVariants = safeParse(variants);
+    const parsedSeason = safeParse(season_objectId);
+    const parsedFestival = safeParse(festival_objectId);
+    const parsedCareInstructions = safeParse(care_instruction_objectId);
 
-    // Save Festival
-    let festivalId = null;
-    if (festival_name) {
-      const festival = new Festival({ festival_name, isEnable: true });
-      await festival.save();
-      festivalId = festival._id;
-    }
-
-    // Save Season
-    let seasonId = null;
-    if (season_name) {
-      const season = new Season({ season_name, isEnable: true });
-      await season.save();
-      seasonId = season._id;
-    }
-
-    // Save Product
-    const product = new Product({
+    // Create product
+    const newProduct = await Product.create({
       name,
       description,
       fabric_type,
       category_id,
-      availabe_status,
-      reviewObjectId,
       gender,
-      season_objectId: seasonId,
-      festival_objectId: festivalId,
-      care_instruction_objectId: careInstructionId,
-      weight,
+      bodyType,
       productType,
+      style: parsedStyle,
+      season_objectId: parsedSeason,
+      festival_objectId: parsedFestival,
+      care_instruction_objectId: parsedCareInstructions,
     });
 
+    // req.files is an array when using upload.any()
+    const filesArray = req.files as Express.Multer.File[] || [];
+    const files: Record<string, Express.Multer.File[]> = {};
+
+    // Convert array of files into an object keyed by fieldname
+    filesArray.forEach(file => {
+      if (!files[file.fieldname]) files[file.fieldname] = [];
+      files[file.fieldname].push(file);
+    });
+
+    // Loop through variants
+    for (let i = 0; i < parsedVariants.length; i++) {
+      const variant = parsedVariants[i];
+
+      const savedVariant = await ProductVariant.create({
+        ...variant,
+        productObjectId: newProduct._id,
+      });
+
+      // Store multiple images dynamically for each variant
+      let imageIndex = 0;
+      while (true) {
+        const key = `variant_${i}_image_${imageIndex}`;
+        const file = files?.[key]?.[0];
+        if (!file) break;
+
+        // Convert buffer to base64 string
+        const base64String = file.buffer.toString("base64");
+        await ProductImage.create({
+          productObjectId: newProduct._id,
+          productVariantObjectId: savedVariant._id,
+          image: {
+            base64: base64String,
+            contentType: file.mimetype,
+          },
+        });
+
+        imageIndex++;
+      }
+    }
+
+    // Fetch saved variants and images
+    const savedVariants = await ProductVariant.find({ productObjectId: newProduct._id });
+    const images = await ProductImage.find({ productObjectId: newProduct._id });
+
+    res.status(200).json({
+      success: true,
+      message: "Product created successfully",
+      data: {
+        product: newProduct,
+        variants: savedVariants,
+        images,
+      },
+    });
+  } catch (error) {
+    console.error("Error creating product:", error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: (error as Error).message,
+    });
+  }
+};
+
+export default createProduct;
+
+
+export const updateProduct = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const {
+      productId,
+      name,
+      description,
+      fabric_type,
+      category_id,
+      gender,
+      bodyType,
+      season_objectId,
+      festival_objectId,
+      care_instruction_objectId,
+      productType,
+      style,
+      variants,
+    } = req.body;
+
+    if (!productId || !mongoose.Types.ObjectId.isValid(productId)) {
+      res.status(400).json({ success: false, message: "Invalid product ID" });
+      return;
+    }
+
+    const product = await Product.findById(productId);
+    if (!product) {
+      res.status(404).json({ success: false, message: "Product not found" });
+      return;
+    }
+
+    // Update base product fields
+    product.name = name;
+    product.description = description;
+    product.fabric_type = fabric_type;
+    product.category_id = category_id;
+    product.gender = gender;
+    product.bodyType = bodyType;
+    product.productType = productType;
+    product.style = safeParse(style);
+    product.season_objectId = safeParse(season_objectId);
+    product.festival_objectId = safeParse(festival_objectId);
+    product.care_instruction_objectId = safeParse(care_instruction_objectId);
     await product.save();
 
-    // Save Variants
-    const parsedVariants = JSON.parse(variants || '[]');
-    for (const variant of parsedVariants) {
-      const files = req.files as Record<string, Express.Multer.File[]>;
-      const variantImageFile = files?.['variant_image']?.find((img) => img.originalname === variant.image_name);
-      const newVariant = new ProductVariant({
+    // Parse uploaded files
+    const filesArray = req.files as Express.Multer.File[] || [];
+    const files: Record<string, Express.Multer.File[]> = {};
+    filesArray.forEach(file => {
+      if (!files[file.fieldname]) files[file.fieldname] = [];
+      files[file.fieldname].push(file);
+    });
+
+    // Update variants and existing images
+    const parsedVariants = safeParse(variants);
+    for (let i = 0; i < parsedVariants.length; i++) {
+      const variant = parsedVariants[i];
+
+      // ✅ Only allow update of existing variants
+      if (!variant._id || !mongoose.Types.ObjectId.isValid(variant._id)) {
+        res.status(400).json({
+          success: false,
+          message: `Invalid or missing _id for variant at index ${i}. Only existing variants can be updated.`,
+        });
+        return;
+      }
+
+      const existingVariant = await ProductVariant.findById(variant._id);
+      if (!existingVariant) {
+        res.status(404).json({
+          success: false,
+          message: `Variant not found with id: ${variant._id}`,
+        });
+        return;
+      }
+
+      await ProductVariant.findByIdAndUpdate(variant._id, {
         ...variant,
-        productObjectId: product._id,
-        variant_image: variantImageFile ? variantImageFile.filename : null,
+        productObjectId: productId,
       });
-      await newVariant.save();
+
+      // ✅ Handle only updates to existing images
+      const variantImages = safeParse(variant.images || []);
+      for (let j = 0; j < variantImages.length; j++) {
+        const imageObj = variantImages[j];
+
+        if (!imageObj._id || !mongoose.Types.ObjectId.isValid(imageObj._id)) {
+          res.status(400).json({
+            success: false,
+            message: `Invalid or missing _id for image at variant index ${i}, image index ${j}. New images cannot be added.`,
+          });
+          return;
+        }
+
+        const fileKey = `variant_${i}_image_${j}`;
+        const file = files?.[fileKey]?.[0];
+
+        if (file) {
+          const base64String = file.buffer.toString("base64");
+
+          await ProductImage.findByIdAndUpdate(imageObj._id, {
+            image: {
+              base64: base64String,
+              contentType: file.mimetype,
+            },
+          });
+        }
+      }
     }
 
-    // Save Images
-    const imageFiles = (req.files as Record<string, Express.Multer.File[]>)?.['images'] || [];
-    for (let i = 0; i < imageFiles.length; i++) {
-      const image = new ProductImage({
-        productObjectId: product._id,
-        image: imageFiles[i].filename,
-        is_primary: i === 0,
-        sort_order: i,
-      });
-      await image.save();
-    }
+    // Fetch updated data
+    const updatedVariants = await ProductVariant.find({ productObjectId: productId });
+    const images = await ProductImage.find({ productObjectId: productId });
 
-    res.status(201).json({ success: true, message: 'Product created successfully', productId: product._id });
-  } catch (error: any) {
-    console.error('Create Product Error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(200).json({
+      success: true,
+      message: "Product, variants, and images updated successfully",
+      data: {
+        product,
+        variants: updatedVariants,
+        images,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating product:", error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: (error as Error).message,
+    });
   }
 };
 
 
-// Update Product by ID
-export const updateProduct = async (req: Request, res: Response) => {
+export const getAllProducts = async (req: Request, res: Response): Promise<void> => {
   try {
-    const productId = req.params.id;
-    const {
-      name,
-      description,
-      fabric_type,
-      category_id,
-      availabe_status,
-      reviewObjectId,
-      gender,
-      weight,
-      productType,
-      care_instruction,
-      festival_name,
-      season_name,
-      variants,
-    } = req.body;
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
 
-    // Update or create CareInstruction
-    let careInstructionId = null;
-    if (care_instruction) {
-      let care = await CareInstruction.findOne({ _id: req.body.care_instruction_objectId });
-      if (care) {
-        care.instruction = care_instruction;
-        const files = req.files as Record<string, Express.Multer.File[]>;
-        if (files?.['care_instruction_image']?.[0]) {
-          care.image = files['care_instruction_image'][0].filename;
-        }
-        await care.save();
-      } else {
-        care = new CareInstruction({
-          instruction: care_instruction,
-          image: (req.files as Record<string, Express.Multer.File[]>)?.['care_instruction_image']?.[0]?.filename || null,
-        });
-        await care.save();
-      }
-      careInstructionId = care._id;
-    }
+    const skip = (page - 1) * limit;
 
-    // Update or create Festival
-    let festivalId = null;
-    if (festival_name) {
-      let festival = await Festival.findOne({ _id: req.body.festival_objectId });
-      if (festival) {
-        festival.festival_name = festival_name;
-        festival.isEnable = true;
-        await festival.save();
-      } else {
-        festival = new Festival({ festival_name, isEnable: true });
-        await festival.save();
-      }
-      festivalId = festival._id;
-    }
+    const total = await Product.countDocuments();
+    const products = await Product.find()
+      .skip(skip)
+      .limit(limit)
+      .lean();
 
-    // Update or create Season
-    let seasonId = null;
-    if (season_name) {
-      let season = await Season.findOne({ _id: req.body.season_objectId });
-      if (season) {
-        season.season_name = season_name;
-        season.isEnable = true;
-        await season.save();
-      } else {
-        season = new Season({ season_name, isEnable: true });
-        await season.save();
-      }
-      seasonId = season._id;
-    }
+    const productIds = products.map(p => p._id);
 
-    // Update Product main
-    const updatedProduct = await Product.findByIdAndUpdate(
-      productId,
-      {
-        name,
-        description,
-        fabric_type,
-        category_id,
-        availabe_status,
-        reviewObjectId,
-        gender,
-        season_objectId: seasonId,
-        festival_objectId: festivalId,
-        care_instruction_objectId: careInstructionId,
-        weight,
-        productType,
+    // Fetch all variants and images for current products
+    const variants = await ProductVariant.find({ productObjectId: { $in: productIds } }).lean();
+    const images = await ProductImage.find({ productObjectId: { $in: productIds } }).lean();
+
+    // Attach variants and images to each product
+    const enrichedProducts = products.map(product => {
+      const productVariants = variants.filter(v => String(v.productObjectId) === String(product._id));
+      const productImages = images.filter(img => String(img.productObjectId) === String(product._id));
+
+      return {
+        ...product,
+        variants: productVariants,
+        images: productImages,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: enrichedProducts,
+      pagination: {
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        limit,
       },
-      { new: true }
-    );
+    });
+  } catch (error) {
+    console.error("Error fetching products:", error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: (error as Error).message,
+    });
+  }
+};
 
-    // Update Variants (simple strategy: delete old and insert new)
+export const deleteProduct = async (req: Request, res: Response): Promise<void> => {
+  const { productId } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(productId)) {
+    res.status(400).json({ success: false, message: "Invalid product ID" });
+    return;
+  }
+
+  try {
+    const product = await Product.findById(productId);
+    if (!product) {
+      res.status(404).json({ success: false, message: "Product not found" });
+      return;
+    }
+
+    // Delete product
+    await Product.findByIdAndDelete(productId);
+
+    // Delete related variants
     await ProductVariant.deleteMany({ productObjectId: productId });
-    const parsedVariants = JSON.parse(variants || '[]');
-    for (const variant of parsedVariants) {
-      const files = req.files as Record<string, Express.Multer.File[]>;
-      const variantImageFile = files?.['variant_image']?.find((img) => img.originalname === variant.image_name);
-      const newVariant = new ProductVariant({
-        ...variant,
-        productObjectId: productId,
-        variant_image: variantImageFile ? variantImageFile.filename : null,
-      });
-      await newVariant.save();
-    }
 
-    // Update Product Images (delete old and add new)
+    // Delete related images
     await ProductImage.deleteMany({ productObjectId: productId });
-    const imageFiles = (req.files as Record<string, Express.Multer.File[]>)?.['images'] || [];
-    for (let i = 0; i < imageFiles.length; i++) {
-      const image = new ProductImage({
-        productObjectId: productId,
-        image: imageFiles[i].filename,
-        is_primary: i === 0,
-        sort_order: i,
-      });
-      await image.save();
-    }
 
-    res.status(200).json({ success: true, message: 'Product updated successfully', product: updatedProduct });
-  } catch (error: any) {
-    console.error('Update Product Error:', error);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(200).json({
+      success: true,
+      message: "Product, variants, and images deleted successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting product:", error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: (error as Error).message,
+    });
   }
 };
