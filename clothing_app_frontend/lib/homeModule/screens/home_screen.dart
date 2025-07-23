@@ -7,6 +7,9 @@ import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart
 import 'package:clothing_app_frontend/homeModule/screens/product_list_screen.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_big_product_card_grid.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_small_product_card_grid.dart';
+import 'package:clothing_app_frontend/navigation/arguments.dart';
+import 'package:clothing_app_frontend/navigation/navigators.dart';
+import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -52,7 +55,7 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   fetchData() async {
-    await fetchCategories();
+    // await fetchCategories();
   }
 
   @override
@@ -111,11 +114,11 @@ class HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           SizedBox(width: dW * 0.025),
-                          TextWidget(
-                            title: categories.first.name,
-                            fontSize: tS * 20,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          // TextWidget(
+                          //   title: categories.first.name,
+                          //   fontSize: tS * 20,
+                          //   fontWeight: FontWeight.w500,
+                          // ),
                           CircleAvatar(
                             backgroundColor: Colors.black,
                             radius: 22,
@@ -419,7 +422,15 @@ class HomeScreenState extends State<HomeScreen> {
                                     imageUrl: 'https://tinyurl.com/42s53ezd',
                                     price: '50',
                                     rating: 3.9,
-                                    onTap: () {},
+                                    onTap: () {
+                                      push(
+                                        NamedRoute.productDetailScreen,
+                                        arguments:
+                                            ProductDetailScreenArguments(),
+                                      );
+
+                                      //   }
+                                    },
                                   ),
                                   CustomSmallProductCardGrid(
                                     imageUrl: 'https://tinyurl.com/5n8zedmz',

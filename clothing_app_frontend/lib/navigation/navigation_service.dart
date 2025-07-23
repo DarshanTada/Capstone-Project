@@ -1,6 +1,7 @@
 import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
+import 'package:clothing_app_frontend/categoryModule/screens/product_detail_screen.dart';
 import 'package:clothing_app_frontend/homeModule/screens/size_chart_screen.dart';
 import 'package:clothing_app_frontend/preferenceModule/screen/preference_screen.dart';
 import 'package:flutter/material.dart';
@@ -16,8 +17,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case NamedRoute.sizeChartScreen:
       return _getPageRoute(const SizeChartScreen());
 
-       case NamedRoute.preferenceScreen:
-      return _getPageRoute( PreferenceScreen());
+    case NamedRoute.preferenceScreen:
+      return _getPageRoute(PreferenceScreen());
 
     case NamedRoute.verifyOtpScreen:
       return _getPageRoute(
@@ -32,7 +33,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return _getPageRoute(
         BottomNavBar(args: settings.arguments as BottomNavArgumnets),
       );
-
+    case NamedRoute.productDetailScreen:
+      return _getPageRoute(
+        ProductDetailScreen(
+          args: settings.arguments as ProductDetailScreenArguments,
+        ),
+      );
     // case NamedRoute.walletScreen:
     //   return _getPageRoute(const WalletScreen());
 

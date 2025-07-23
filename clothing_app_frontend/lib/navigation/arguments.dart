@@ -51,6 +51,12 @@ class EditProfileScreenArguments {
   EditProfileScreenArguments({required this.user});
 }
 
+class ProductDetailScreenArguments{
+  ProductDetailScreenArguments({
+  Null
+  });
+}
+
 class PaymentScreenArguments {
   final String orderId;
   final num amount;
