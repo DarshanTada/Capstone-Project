@@ -57,6 +57,12 @@ class ProductDetailScreenArguments{
   });
 }
 
+class CategoryRelationScreenArguments{
+ CategoryRelationScreenArguments ({
+  Null
+  });
+}
+
 class PaymentScreenArguments {
   final String orderId;
   final num amount;

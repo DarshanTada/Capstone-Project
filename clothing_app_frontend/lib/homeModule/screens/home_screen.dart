@@ -392,12 +392,10 @@ class HomeScreenState extends State<HomeScreen> {
                                   Spacer(),
                                   GestureDetector(
                                     onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (context) =>
-                                              ProductListScreen(),
-                                        ),
+                                      push(
+                                        NamedRoute.categoryRelationScreen,
+                                        arguments:
+                                            CategoryRelationScreenArguments(),
                                       );
                                     },
                                     child: Row(
