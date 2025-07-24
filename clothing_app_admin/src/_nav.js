@@ -18,6 +18,8 @@ import {
   cilList,
   cilPaint,
   cilBarcode,
+  cilPaint,
+  cilBarcode,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
@@ -469,6 +471,7 @@ const _nav = [
     name: 'Orders',
     to: '/orders',
     icon: <CIcon icon={cilList} customClassName="nav-icon" />,
+
   },
   // {
   //   component: CNavTitle,

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow, CTableHeaderCell,
   CTableBody, CTableDataCell, CButton, CAvatar, CPagination, CPaginationItem, CFormInput
@@ -6,13 +7,17 @@ import {
 import { useNavigate } from 'react-router-dom'
 import { ROLE, hasPermission } from 'src/roles/permissions'
 import axios from 'axios'
+import axios from 'axios'
 
 const ProductList = () => {
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
   const [products, setProducts] = useState([])
   const [categories, setCategories] = useState([])
   const [search, setSearch] = useState('')
   const [productsPerPage, setProductsPerPage] = useState(5)
   const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const [totalPages, setTotalPages] = useState(1)
   const navigate = useNavigate()
 
@@ -40,10 +45,32 @@ const ProductList = () => {
     fetchProducts()
   }, [currentPage, productsPerPage])
 
+  // Fetch products from backend
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await axios.get('http://localhost:3001/api/product/getProduct', {
+          params: {
+            page: currentPage,
+            limit: productsPerPage,
+          }
+        })
+        if (res.data.success) {
+          setProducts(res.data.data)
+          setTotalPages(res.data.pagination.totalPages)
+        }
+      } catch (err) {
+        console.error('Failed to fetch products:', err)
+      }
+    }
+    fetchProducts()
+  }, [currentPage, productsPerPage])
+
   // Filter products by search
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(search.toLowerCase()) ||
+      (product.category_id && product.category_id.toLowerCase().includes(search.toLowerCase()))
       (product.category_id && product.category_id.toLowerCase().includes(search.toLowerCase()))
   )
 
@@ -54,9 +81,23 @@ const ProductList = () => {
   //   currentPage * productsPerPage
   // )
   const paginatedProducts = filteredProducts // backend already paginates
+  // Pagination logic (frontend filter, backend paginates)
+  // If you want to paginate only on backend, use products as-is and remove this slice
+  // const paginatedProducts = filteredProducts.slice(
+  //   (currentPage - 1) * productsPerPage,
+  //   currentPage * productsPerPage
+  // )
+  const paginatedProducts = filteredProducts // backend already paginates
 
   const handleDelete = async (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
+      try {
+        await axios.delete(`http://localhost:3001/api/product/deleteProduct/${id}`)
+        setProducts(products.filter((p) => p._id !== id))
+      } catch (err) {
+        alert('Failed to delete product.')
+      }
       try {
         await axios.delete(`http://localhost:3001/api/product/deleteProduct/${id}`)
         setProducts(products.filter((p) => p._id !== id))
@@ -84,6 +125,8 @@ const ProductList = () => {
 
   const pageOptions = [2, 3, 5, 10, 15, 20, 25, 50].filter(num => num < products.length)
   if (products.length > 0) pageOptions.push(products.length)
+  const pageOptions = [2, 3, 5, 10, 15, 20, 25, 50].filter(num => num < products.length)
+  if (products.length > 0) pageOptions.push(products.length)
 
   return (
     <CCard className="mb-4">
@@ -99,6 +142,7 @@ const ProductList = () => {
           >
             {pageOptions.map((num) => (
               <option key={num} value={num}>
+                {num === products.length ? 'All' : num}
                 {num === products.length ? 'All' : num}
               </option>
             ))}
@@ -143,27 +187,27 @@ const ProductList = () => {
               paginatedProducts.map((product) => (
                 <CTableRow key={product._id}>
                   <CTableDataCell>{product._id}</CTableDataCell>
-                  <CTableDataCell style={{ textAlign: 'center', verticalAlign: 'middle', height: '80px' }}>
+                  <CTableDataCell>
                     <CAvatar
-                      src={
-                        product.images &&
-                        product.images[0] &&
-                        product.images[0].image &&
-                        product.images[0].image.base64
-                          ? `data:${product.images[0].image.contentType};base64,${product.images[0].image.base64}`
-                          : undefined
-                      }
-                      style={{
-                        height: '60px',
-                        width: '60px',
-                        objectFit: 'cover',
-                        borderRadius: '8px',
-                        background: '#f8f9fa',
-                        display: 'inline-block',
-                      }}
+                      src={product.images && product.images[0] && product.images[0].image && product.images[0].image.base64
+                        ? `data:${product.images[0].image.contentType};base64,${product.images[0].image.base64}`
+                        : undefined}
+                      size="md"
                     />
                   </CTableDataCell>
                   <CTableDataCell>{product.name}</CTableDataCell>
+                  <CTableDataCell>{product.category_id.name}</CTableDataCell>
+                  <CTableDataCell>
+                    {/* If you have price in variants, show min price */}
+                    {product.variants && product.variants.length > 0
+                      ? `₹${product.variants[0].price}`
+                      : '-'}
+                  </CTableDataCell>
+                  <CTableDataCell>
+                    {product.variants && product.variants.length > 0
+                      ? product.variants[0].stock_qty
+                      : '-'}
+                  </CTableDataCell>
                   <CTableDataCell>{product.category_id.name}</CTableDataCell>
                   <CTableDataCell>
                     {/* If you have price in variants, show min price */}
@@ -183,9 +227,11 @@ const ProductList = () => {
                         size="sm"
                         className="me-2"
                         onClick={() => navigate(`/products/${product._id}`)}
+                        onClick={() => navigate(`/products/${product._id}`)}
                       >
                         View Product
                       </CButton>
+                      <CButton color="danger" size="sm" onClick={() => handleDelete(product._id)}>
                       <CButton color="danger" size="sm" onClick={() => handleDelete(product._id)}>
                         Delete
                       </CButton>
