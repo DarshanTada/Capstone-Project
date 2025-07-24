@@ -1,318 +1,185 @@
 import React, { useState } from 'react'
+import {
+  CCard, CCardBody, CCardHeader, CForm, CFormInput, CButton, CRow, CCol, CAlert
+} from '@coreui/react'
 import { useNavigate } from 'react-router-dom'
-import { CCard, CCardBody, CCardHeader, CButton, CForm, CFormInput, CFormLabel, CRow, CCol, CFormTextarea, CAlert } from '@coreui/react'
+import axios from 'axios'
 
-const initialProduct = {
-  name: '',
-  description: '',
-  price: '',
-  discount_price: '',
-  size: '',
-  color: '',
-  fabric_type: '',
-  images: [''],
-  category_id: '',
-  quantity: '',
-  availabe_status: false,
-  average_rating: '',
-  total_reviews: '',
-  gender: '',
-  season_objectId: '',
-  festival_objectId: '',
-  care_instruction_objectId: '',
-  sku: '',
-  barcode: '',
-  is_featured: false,
-  is_new_arrival: false,
-  is_best_seller: false,
-  is_on_sale: false,
-  is_on_trend: false,
-  weight: '',
-  isTryon: false,
-  productType: '',
-}
-
-const AddProduct = () => {
-  const [form, setForm] = useState(initialProduct)
-  const [errors, setErrors] = useState({})
-  const [showAlert, setShowAlert] = useState(false)
+const ProductAdd = () => {
+  const [form, setForm] = useState({
+    name: '',
+    description: '',
+    fabric_type: '',
+    category_id: '',
+    gender: 'female',
+    bodyType: 'Hourglass',
+    productType: 'top',
+    style: '["Casual"]', // as JSON string
+    season_objectId: '[]', // as JSON string
+    festival_objectId: '[]', // as JSON string
+    care_instruction_objectId: '[]', // as JSON string
+  })
+  const [variant, setVariant] = useState({
+    size: 'm',
+    available_status: 'in_stock',
+    ageGroup: '',
+    skin_tone: '["Fair"]', // as JSON string
+    under_tone: '["Cool"]', // as JSON string
+    color: '',
+    sku: '',
+    stock_qty: '',
+    barcode: '',
+    price: '',
+    discount_price: '',
+    is_featured: false,
+    is_new_arrival: false,
+    is_best_seller: false,
+    is_on_sale: false,
+    is_on_trend: false,
+    is_limited_edition: false,
+    is_back_in_stock: false,
+    is_pre_order: false,
+    is_exclusive: false,
+    is_eco_friendly: false,
+    is_customizable: false,
+    is_limited_time_offer: false,
+    is_clearance: false,
+    is_giftable: false,
+    is_bundle: false,
+    is_recommended: false,
+    is_trending_near_you: false,
+    is_celebrity_pick: false,
+    is_festival_ready: false,
+    isTryOn: false,
+  })
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const navigate = useNavigate()
 
+  const flags = {
+    'is_featured': 'Featured',
+    'is_new_arrival': 'New Arrival',
+    'is_best_seller': 'Best Seller',
+    'is_on_sale': 'On Sale',
+    'is_on_trend': 'On Trend',
+    'is_limited_edition': 'Limited Edition',
+    'is_back_in_stock': 'Back in Stock',
+    'is_pre_order': 'Pre Order',
+    'is_exclusive': 'Exclusive',
+    'is_eco_friendly': 'Eco Friendly',
+    'is_customizable': 'Customizable',
+    'is_limited_time_offer': 'Limited Time Offer',
+    'is_clearance': 'Clearance',
+    'is_giftable': 'Giftable',
+    'is_bundle': 'Bundle',
+    'is_recommended': 'Recommended',
+    'is_trending_near_you': 'Trending Near You',
+    'is_celebrity_pick': 'Celebrity Pick',
+    'is_festival_ready': 'Festival Ready',
+    'isTryOn': 'Try On'
+  }
+
   const handleChange = (e) => {
+    setForm({ ...form, [e.target.name]: e.target.value })
+  }
+
+  const handleVariantChange = (e) => {
     const { name, value, type, checked } = e.target
-    setForm((prev) => ({
-      ...prev,
+    setVariant({
+      ...variant,
       [name]: type === 'checkbox' ? checked : value,
-    }))
-    setErrors((prev) => ({ ...prev, [name]: undefined }))
+    })
   }
 
-  const handleImageChange = (e) => {
-    setForm((prev) => ({
-      ...prev,
-      images: [e.target.value],
-    }))
-    setErrors((prev) => ({ ...prev, images: undefined }))
-  }
-
-  // Validation for important fields
-  const validate = () => {
-    const newErrors = {}
-    if (!form.name.trim()) newErrors.name = 'Product name is required'
-    if (!form.price || isNaN(form.price)) newErrors.price = 'Valid price is required'
-    if (!form.category_id.trim()) newErrors.category_id = 'Category ID is required'
-    if (!form.quantity || isNaN(form.quantity)) newErrors.quantity = 'Valid quantity is required'
-    if (!form.images[0] || !form.images[0].trim()) newErrors.images = 'Image URL is required'
-    return newErrors
-  }
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    const validationErrors = validate()
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors)
-      setShowAlert(true)
-      return
+    setError('')
+    setSuccess('')
+
+    try {
+      const formData = new FormData()
+      Object.entries(form).forEach(([key, value]) => formData.append(key, value))
+      // Variants as JSON string array
+      formData.append('variants', JSON.stringify([{
+        ...variant,
+        skin_tone: JSON.parse(variant.skin_tone),
+        under_tone: JSON.parse(variant.under_tone),
+      }]))
+
+      const res = await axios.post('http://localhost:3001/api/product/createProducts', formData, {
+        headers: { 'Content-Type': 'multipart/form-data' }
+      })
+
+      if (res.data.success) {
+        setSuccess('Product added successfully!')
+        setTimeout(() => navigate('/products'), 1000)
+      } else {
+        setError(res.data.message || 'Failed to add product')
+      }
+    } catch (err) {
+      setError('Failed to add product')
     }
-    setShowAlert(false)
-    // Here you would send form data to your backend API
-    alert('Product added!')
-    navigate('/products')
   }
 
   return (
-    <CRow className="justify-content-center">
-      <CCol md={10}>
-        <CCard>
-          <CCardHeader>
-            <strong>Add Product</strong>
-            <CButton color="secondary" className="float-end ms-2" onClick={() => navigate(-1)}>
-              Back
-            </CButton>
-          </CCardHeader>
-          <CCardBody>
-            {showAlert && (
-              <CAlert color="danger" dismissible onClose={() => setShowAlert(false)}>
-                Please fill all required fields correctly.
-              </CAlert>
-            )}
-            <CForm onSubmit={handleSubmit} noValidate>
-              <CRow className="mb-3">
-                <CCol md={12} className="text-center">
-                  <img
-                    src={
-                      form.images[0]
-                        ? form.images[0].startsWith('data:')
-                          ? form.images[0]
-                          : form.images[0]
-                        : 'https://via.placeholder.com/120x120?text=Product'
-                    }
-                    alt="Product"
-                    style={{ width: 120, borderRadius: 8 }}
+    <CCard className="mb-4">
+      <CCardHeader>
+        <strong>Add Product</strong>
+      </CCardHeader>
+      <CCardBody>
+        {error && <CAlert color="danger">{error}</CAlert>}
+        {success && <CAlert color="success">{success}</CAlert>}
+        <CForm onSubmit={handleSubmit}>
+          <CRow>
+            <CCol md={6}>
+              <CFormInput label="Name" name="name" value={form.name} onChange={handleChange} required className="mb-3" />
+              <CFormInput label="Description" name="description" value={form.description} onChange={handleChange} className="mb-3" />
+              <CFormInput label="Fabric Type" name="fabric_type" value={form.fabric_type} onChange={handleChange} className="mb-3" />
+              <CFormInput label="Category ID" name="category_id" value={form.category_id} onChange={handleChange} required className="mb-3" />
+              <CFormInput label="Gender" name="gender" value={form.gender} onChange={handleChange} className="mb-3" />
+              <CFormInput label="Body Type" name="bodyType" value={form.bodyType} onChange={handleChange} className="mb-3" />
+              <CFormInput label="Product Type" name="productType" value={form.productType} onChange={handleChange} className="mb-3" />
+              <CFormInput label="Style (JSON array)" name="style" value={form.style} onChange={handleChange} className="mb-3" />
+              <CFormInput label="Season Object IDs (JSON array)" name="season_objectId" value={form.season_objectId} onChange={handleChange} className="mb-3" />
+              <CFormInput label="Festival Object IDs (JSON array)" name="festival_objectId" value={form.festival_objectId} onChange={handleChange} className="mb-3" />
+              <CFormInput label="Care Instruction Object IDs (JSON array)" name="care_instruction_objectId" value={form.care_instruction_objectId} onChange={handleChange} className="mb-3" />
+            </CCol>
+            <CCol md={6}>
+              <h6>Variant</h6>
+              <CFormInput label="Size" name="size" value={variant.size} onChange={handleVariantChange} className="mb-3" />
+              <CFormInput label="Available Status" name="available_status" value={variant.available_status} onChange={handleVariantChange} className="mb-3" />
+              <CFormInput label="Age Group" name="ageGroup" value={variant.ageGroup} onChange={handleVariantChange} className="mb-3" />
+              <CFormInput label="Skin Tone (JSON array)" name="skin_tone" value={variant.skin_tone} onChange={handleVariantChange} className="mb-3" />
+              <CFormInput label="Under Tone (JSON array)" name="under_tone" value={variant.under_tone} onChange={handleVariantChange} className="mb-3" />
+              <CFormInput label="Color" name="color" value={variant.color} onChange={handleVariantChange} className="mb-3" />
+              <CFormInput label="SKU" name="sku" value={variant.sku} onChange={handleVariantChange} className="mb-3" />
+              <CFormInput label="Stock Qty" name="stock_qty" value={variant.stock_qty} onChange={handleVariantChange} className="mb-3" />
+              <CFormInput label="Barcode" name="barcode" value={variant.barcode} onChange={handleVariantChange} className="mb-3" />
+              <CFormInput label="Price" name="price" value={variant.price} onChange={handleVariantChange} className="mb-3" />
+              <CFormInput label="Discount Price" name="discount_price" value={variant.discount_price} onChange={handleVariantChange} className="mb-3" />
+              {/* Boolean flags */}
+              {Object.entries(flags).map(([key, label]) => (
+                <div key={key} className="form-check mb-1">
+                  <input
+                    className="form-check-input"
+                    type="checkbox"
+                    name={key}
+                    checked={variant[key]}
+                    onChange={handleVariantChange}
+                    id={key}
                   />
-                  <div className="d-flex flex-column align-items-center mt-2">
-                    <CFormLabel className="mb-1">Image URL<span className="text-danger">*</span></CFormLabel>
-                    <CFormInput
-                      name="image"
-                      value={form.images[0]}
-                      onChange={handleImageChange}
-                      placeholder="Paste image URL or upload below"
-                      invalid={!!errors.images}
-                      style={{ maxWidth: 350 }}
-                    />
-                    <span className="my-2">or</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      onChange={e => {
-                        const file = e.target.files[0]
-                        if (file) {
-                          const reader = new FileReader()
-                          reader.onloadend = () => {
-                            setForm(prev => ({
-                              ...prev,
-                              images: [reader.result],
-                            }))
-                            setErrors(prev => ({ ...prev, images: undefined }))
-                          }
-                          reader.readAsDataURL(file)
-                        }
-                      }}
-                      className="form-control"
-                      style={{ maxWidth: 350 }}
-                    />
-                    {errors.images && <div className="text-danger small mt-1">{errors.images}</div>}
-                  </div>
-                </CCol>
-              </CRow>
-              <CRow className="g-3">
-                <CCol md={6}>
-                  <CFormLabel>Name<span className="text-danger">*</span></CFormLabel>
-                  <CFormInput
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                    invalid={!!errors.name}
-                  />
-                  {errors.name && <div className="text-danger small">{errors.name}</div>}
-
-                  <CFormLabel className="mt-2">Description</CFormLabel>
-                  <CFormTextarea name="description" value={form.description} onChange={handleChange} />
-
-                  <CFormLabel className="mt-2">Price<span className="text-danger">*</span></CFormLabel>
-                  <CFormInput
-                    name="price"
-                    type="number"
-                    value={form.price}
-                    onChange={handleChange}
-                    invalid={!!errors.price}
-                  />
-                  {errors.price && <div className="text-danger small">{errors.price}</div>}
-
-                  <CFormLabel className="mt-2">Discount Price</CFormLabel>
-                  <CFormInput name="discount_price" type="number" value={form.discount_price} onChange={handleChange} />
-
-                  <CFormLabel className="mt-2">Size</CFormLabel>
-                  <CFormInput name="size" value={form.size} onChange={handleChange} />
-
-                  <CFormLabel className="mt-2">Color</CFormLabel>
-                  <CFormInput name="color" value={form.color} onChange={handleChange} />
-
-                  <CFormLabel className="mt-2">Fabric Type</CFormLabel>
-                  <CFormInput name="fabric_type" value={form.fabric_type} onChange={handleChange} />
-
-                  <CFormLabel className="mt-2">Category ID<span className="text-danger">*</span></CFormLabel>
-                  <CFormInput
-                    name="category_id"
-                    value={form.category_id}
-                    onChange={handleChange}
-                    invalid={!!errors.category_id}
-                  />
-                  {errors.category_id && <div className="text-danger small">{errors.category_id}</div>}
-
-                  <CFormLabel className="mt-2">Quantity<span className="text-danger">*</span></CFormLabel>
-                  <CFormInput
-                    name="quantity"
-                    type="number"
-                    value={form.quantity}
-                    onChange={handleChange}
-                    invalid={!!errors.quantity}
-                  />
-                  {errors.quantity && <div className="text-danger small">{errors.quantity}</div>}
-
-                  <CFormLabel className="mt-2">Available Status</CFormLabel>
-                  <div className="d-flex align-items-center mb-2">
-                    <input
-                      type="checkbox"
-                      name="availabe_status"
-                      checked={form.availabe_status}
-                      onChange={handleChange}
-                      className="me-2"
-                    />
-                    <span className="ms-2">{form.availabe_status ? 'Available' : 'Not Available'}</span>
-                  </div>
-                  <CFormLabel className="mt-2">Average Rating</CFormLabel>
-                  <CFormInput name="average_rating" type="number" value={form.average_rating} onChange={handleChange} />                 
-                </CCol>
-                <CCol md={6}>
-                 
-                  <CFormLabel className="mt-2">Total Reviews</CFormLabel>
-                  <CFormInput name="total_reviews" type="number" value={form.total_reviews} onChange={handleChange} />
-
-                  <CFormLabel className="mt-2">Gender</CFormLabel>
-                  <CFormInput name="gender" value={form.gender} onChange={handleChange} />
-                  <CFormLabel>Season ObjectId</CFormLabel>
-                  <CFormInput name="season_objectId" value={form.season_objectId} onChange={handleChange} />
-
-                  <CFormLabel className="mt-2">Festival ObjectId</CFormLabel>
-                  <CFormInput name="festival_objectId" value={form.festival_objectId} onChange={handleChange} />
-
-                  <CFormLabel className="mt-2">Care Instruction ObjectId</CFormLabel>
-                  <CFormInput name="care_instruction_objectId" value={form.care_instruction_objectId} onChange={handleChange} />
-
-                  <CFormLabel className="mt-2">SKU</CFormLabel>
-                  <CFormInput name="sku" value={form.sku} onChange={handleChange} />
-
-                  <CFormLabel className="mt-2">Barcode</CFormLabel>
-                  <CFormInput name="barcode" value={form.barcode} onChange={handleChange} />
-
-                  <CFormLabel className="mt-2">Weight</CFormLabel>
-                  <CFormInput name="weight" value={form.weight} onChange={handleChange} />
-
-                  <CFormLabel className="mt-2">Product Type</CFormLabel>
-                  <CFormInput name="productType" value={form.productType} onChange={handleChange} />
-
-                  <div className="mt-2 d-flex flex-wrap gap-3">
-                    <label className="mb-0">
-                      <input
-                        type="checkbox"
-                        name="is_featured"
-                        checked={form.is_featured}
-                        onChange={handleChange}
-                        className="me-1"
-                      /> Featured
-                    </label>
-                    <label className="mb-0">
-                      <input
-                        type="checkbox"
-                        name="is_new_arrival"
-                        checked={form.is_new_arrival}
-                        onChange={handleChange}
-                        className="me-1"
-                      /> New Arrival
-                    </label>
-                    <label className="mb-0">
-                      <input
-                        type="checkbox"
-                        name="is_best_seller"
-                        checked={form.is_best_seller}
-                        onChange={handleChange}
-                        className="me-1"
-                      /> Best Seller
-                    </label>
-                    <label className="mb-0">
-                      <input
-                        type="checkbox"
-                        name="is_on_sale"
-                        checked={form.is_on_sale}
-                        onChange={handleChange}
-                        className="me-1"
-                      /> On Sale
-                    </label>
-                    <label className="mb-0">
-                      <input
-                        type="checkbox"
-                        name="is_on_trend"
-                        checked={form.is_on_trend}
-                        onChange={handleChange}
-                        className="me-1"
-                      /> On Trend
-                    </label>
-                    <label className="mb-0">
-                      <input
-                        type="checkbox"
-                        name="isTryon"
-                        checked={form.isTryon}
-                        onChange={handleChange}
-                        className="me-1"
-                      /> Try On
-                    </label>
-                  </div>
-                </CCol>
-              </CRow>
-              <CRow>
-                <CCol className="d-flex justify-content-center">
-                  <CButton className="my-3" color="primary" type="submit">
-                    Add Product
-                  </CButton>
-                </CCol>
-              </CRow>
-            </CForm>
-          </CCardBody>
-        </CCard>
-      </CCol>
-    </CRow>
+                  <label className="form-check-label" htmlFor={key}>
+                    {label}
+                  </label>
+                </div>
+              ))}
+            </CCol>
+          </CRow>
+          <CButton color="primary" type="submit" className="mt-3">Add Product</CButton>
+        </CForm>
+      </CCardBody>
+    </CCard>
   )
 }
 
-export default AddProduct
+export default ProductAdd
