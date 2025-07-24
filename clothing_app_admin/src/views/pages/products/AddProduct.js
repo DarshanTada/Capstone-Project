@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react'
 
 import {
@@ -18,7 +19,6 @@ const AVAILABILITY_OPTIONS = [
   { value: 'out_of_stock', label: 'Out of Stock' },
   { value: 'pre_order', label: 'Pre Order' },
 ]
-
 const ProductAdd = () => {
   const [form, setForm] = useState({
     name: '',
