@@ -21,44 +21,55 @@ class Category {
     this.updatedAt,
   });
 
-  static Category jsonToCategory(Map<String, dynamic> category) {
+  /// Factory to safely create a Category from JSON
+  factory Category.fromJson(Map<String, dynamic> json) {
     return Category(
-      id: category['_id']?.toString() ?? '',
-      name: category['name'] ?? '',
-      image: category['image'] ?? '',
-      gender: category['gender'] ?? '',
-      bodyTypes: (category['body_type'] as List? ?? [])
-          .map((bt) => BodyTypeEntry.jsonToBodyType(
-              Map<String, dynamic>.from(bt)))
+      id: json['_id']?.toString() ?? '',
+      name: (json['name'] ?? '').toString(),
+      image: (json['image'] ?? '').toString(),
+      gender: (json['gender'] ?? '').toString(),
+      bodyTypes: (json['body_type'] as List? ?? [])
+          .map(
+            (bt) => BodyTypeEntry.jsonToBodyType(Map<String, dynamic>.from(bt)),
+          )
           .toList(),
-      createdAt: category['createdAt'] != null
-          ? DateTime.tryParse(category['createdAt'])
-          : null,
-      updatedAt: category['updatedAt'] != null
-          ? DateTime.tryParse(category['updatedAt'])
-          : null,
+      createdAt: _parseDateTime(json['createdAt']),
+      updatedAt: _parseDateTime(json['updatedAt']),
     );
   }
 
-  Map<String, dynamic> toJson() => {
-        '_id': id,
-        'name': name,
-        'image': image,
-        'gender': gender,
-        'body_type': bodyTypes.map((b) => b.toJson()).toList(),
-        'createdAt': createdAt?.toIso8601String(),
-        'updatedAt': updatedAt?.toIso8601String(),
-      };
-}
+  /// Optional helper to replace existing jsonToCategory
+  static Category jsonToCategory(Map<String, dynamic> json) =>
+      Category.fromJson(json);
 
-/// Helper to decode base64 image into Uint8List
-Uint8List? decodeCategoryImage(String image) {
-  if (image.isEmpty) return null;
-  final base64Part =
-      image.contains(',') ? image.split(',').last : image; // strip prefix
-  try {
-    return base64Decode(base64Part);
-  } catch (_) {
-    return null;
+  Map<String, dynamic> toJson() => {
+    '_id': id,
+    'name': name,
+    'image': image,
+    'gender': gender,
+    'body_type': bodyTypes.map((b) => b.toJson()).toList(),
+    'createdAt': createdAt?.toIso8601String(),
+    'updatedAt': updatedAt?.toIso8601String(),
+  };
+
+  /// Returns `Uint8List` from base64-encoded image string
+  Uint8List? get decodedImage {
+    if (image.isEmpty) return null;
+    final base64Part = image.contains(',') ? image.split(',').last : image;
+    try {
+      return base64Decode(base64Part);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Utility to safely parse ISO date strings
+  static DateTime? _parseDateTime(dynamic value) {
+    if (value == null) return null;
+    try {
+      return DateTime.tryParse(value.toString());
+    } catch (_) {
+      return null;
+    }
   }
 }
