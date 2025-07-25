@@ -23,6 +23,10 @@ class NamedRoute {
   // Home Module
   static const String bottomNavBarScreen = "/bottomNavBarScreen";
   static const String sizeChartScreen = "/sizeChartScreen";
+  static const String checkoutScreen = "/checkoutScreen";
+  static const String addressesScreen = "/addressesScreen";
+  static const String myCartScreen = "/myCartScreen";
+  static const String orderHistoryScreen = "/orderHistoryScreen";
 
   static const String homeScreen = "/homeScreen";
   static const String walletScreen = "/walletScreen";

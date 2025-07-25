@@ -129,6 +129,7 @@ flutter:
     - assets/images/
     - assets/images/corousel/
     - assets/svgIcons/
+    - assets/videos/
     - assets/iframe.html
     - assets/viewer.html
     # - assets/placeholders/
