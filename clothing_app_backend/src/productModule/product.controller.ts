@@ -263,6 +263,7 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
 
     const total = await Product.countDocuments();
     const products = await Product.find()
+      .populate('category_id')
       .skip(skip)
       .limit(limit)
       .lean();

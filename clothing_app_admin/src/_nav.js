@@ -16,6 +16,8 @@ import {
   cilStar,
   cilPeople,
   cilList,
+  cilPaint,
+  cilBarcode,
 } from '@coreui/icons'
 import { CNavGroup, CNavItem, CNavTitle } from '@coreui/react'
 
@@ -460,7 +462,7 @@ const _nav = [
     name: 'Docs',
     href: 'https://coreui.io/react/docs/templates/installation/',
     icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
-  },
+  }
 ]
 
 export default _nav
