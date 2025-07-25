@@ -2,7 +2,9 @@ import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
 import 'package:clothing_app_frontend/common_widgets/custom_app_bar.dart';
+import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
+import 'package:clothing_app_frontend/navigation/navigators.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -35,7 +37,7 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
     return {
       'name': 'Charcoal Fade Jeans',
       'image': [
-        'https://i.imgur.com/8Km9tLL.jpg',
+        'https://i.imgur.com/5tj6S7Ol.jpg',
         'https://i.imgur.com/5tj6S7Ol.jpg',
         'https://i.imgur.com/3y5b2.jpg',
       ][i % 3],
@@ -73,7 +75,24 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
     language = Provider.of<AuthProvider>(context).selectedLanguage;
     customTextTheme = Theme.of(context).textTheme;
     return Scaffold(
-      appBar: CustomAppBar(title: 'Title', dW: dW),
+      appBar: AppBar(
+        leading: IconButton(
+          onPressed: () {
+            pop();
+          },
+          icon: Icon(Icons.arrow_back_ios),
+        ),
+        centerTitle: true,
+        elevation: 3,
+        backgroundColor: Colors.white,
+        title: Column(
+          children: [
+            TextWidget(title: 'Vintage jeans'),
+            SizedBox(height: dW * 0.02),
+            TextWidget(title: '1256 items'),
+          ],
+        ),
+      ),
       body: iOSCondition(dH) ? screenBody() : SafeArea(child: screenBody()),
     );
   }
@@ -87,6 +106,7 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
           : Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                SizedBox(height: dW * 0.03),
                 CategoryRow(
                   categories: categories,
                   dW: dW,
@@ -101,7 +121,11 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
                   child: Builder(
                     builder: (context) {
                       if (viewType == ProductViewType.oneList) {
-                        return ProductList(products: products, dW: dW);
+                        return ProductList(
+                          products: products,
+                          dW: dW,
+                          onUpdate: setState, // <-- Pass setState
+                        );
                       } else {
                         int crossAxisCount = viewType == ProductViewType.twoGrid
                             ? 2
@@ -110,6 +134,7 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
                           products: products,
                           dW: dW,
                           crossAxisCount: crossAxisCount,
+                          onUpdate: setState, // <-- Pass setState
                         );
                       }
                     },
@@ -259,17 +284,22 @@ class ProductGrid extends StatelessWidget {
   final List<Map<String, dynamic>> products;
   final double dW;
   final int crossAxisCount;
+  final void Function(void Function()) onUpdate; // <-- Add this
 
   const ProductGrid({
     super.key,
     required this.products,
     required this.dW,
     required this.crossAxisCount,
+    required this.onUpdate,
   });
 
   @override
   Widget build(BuildContext context) {
-    double aspectRatio = crossAxisCount == 3 ? 0.62 : 0.82;
+    // Lower aspect ratio for more height and no overflow
+    double aspectRatio = crossAxisCount == 3
+        ? 0.65
+        : 0.75; // <-- Tweak these values
     return GridView.builder(
       padding: EdgeInsets.symmetric(horizontal: dW * 0.01, vertical: dW * 0.01),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -279,7 +309,15 @@ class ProductGrid extends StatelessWidget {
         childAspectRatio: aspectRatio,
       ),
       itemCount: products.length,
-      itemBuilder: (context, i) => ProductCard(product: products[i], dW: dW),
+      itemBuilder: (context, i) => ProductCard(
+        product: products[i],
+        dW: dW,
+        isThreeGrid: crossAxisCount == 3,
+        onLikeToggle: (liked) {
+          products[i]['isFavorite'] = liked;
+          onUpdate(() {}); // <-- Call setState from parent
+        },
+      ),
     );
   }
 }
@@ -287,8 +325,14 @@ class ProductGrid extends StatelessWidget {
 class ProductList extends StatelessWidget {
   final List<Map<String, dynamic>> products;
   final double dW;
+  final void Function(void Function()) onUpdate; // <-- Add this
 
-  const ProductList({super.key, required this.products, required this.dW});
+  const ProductList({
+    super.key,
+    required this.products,
+    required this.dW,
+    required this.onUpdate,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -296,29 +340,51 @@ class ProductList extends StatelessWidget {
       padding: EdgeInsets.symmetric(horizontal: dW * 0.01, vertical: dW * 0.01),
       itemCount: products.length,
       separatorBuilder: (_, __) => SizedBox(height: dW * 0.03),
-      itemBuilder: (context, i) =>
-          ProductCard(product: products[i], dW: dW, isFull: true),
+      itemBuilder: (context, i) => ProductCard(
+        product: products[i],
+        dW: dW,
+        isFull: true,
+        onLikeToggle: (liked) {
+          products[i]['isFavorite'] = liked;
+          onUpdate(() {}); // <-- Call setState from parent
+        },
+      ),
     );
   }
 }
 
-class ProductCard extends StatelessWidget {
+class ProductCard extends StatefulWidget {
   final Map<String, dynamic> product;
   final double dW;
   final bool isFull;
+  final bool isThreeGrid;
+  final ValueChanged<bool>? onLikeToggle; // <-- Add this
+
   const ProductCard({
     required this.product,
     required this.dW,
     this.isFull = false,
-  });
+    this.isThreeGrid = false,
+    this.onLikeToggle, // <-- Add this
+    Key? key,
+  }) : super(key: key);
 
   @override
+  State<ProductCard> createState() => _ProductCardState();
+}
+
+class _ProductCardState extends State<ProductCard> {
+  @override
   Widget build(BuildContext context) {
-    // Set a fixed image height for all cards (responsive to screen width)
-    final double imageHeight = isFull ? dW * 0.7 : dW * 0.48;
+    final bool isLiked = widget.product['isFavorite'] ?? false;
+    final double imageHeight = widget.isFull
+        ? widget.dW * 0.7
+        : widget.isThreeGrid
+        ? widget.dW * 0.22
+        : widget.dW * 0.28;
 
     return Container(
-      margin: EdgeInsets.all(dW * 0.01),
+      margin: EdgeInsets.all(widget.dW * 0.01),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
@@ -334,7 +400,6 @@ class ProductCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Fixed height image
           Container(
             height: imageHeight,
             width: double.infinity,
@@ -346,7 +411,7 @@ class ProductCard extends StatelessWidget {
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
                   child: Image.network(
-                    product['image'],
+                    widget.product['image'],
                     width: double.infinity,
                     height: imageHeight,
                     fit: BoxFit.cover,
@@ -355,10 +420,15 @@ class ProductCard extends StatelessWidget {
                 Positioned(
                   top: 12,
                   right: 12,
-                  child: Icon(
-                    Icons.favorite_border,
-                    color: Colors.white,
-                    size: 30,
+                  child: GestureDetector(
+                    onTap: () {
+                      widget.onLikeToggle?.call(!isLiked);
+                    },
+                    child: Icon(
+                      isLiked ? Icons.favorite : Icons.favorite_border,
+                      color: isLiked ? Colors.red : Colors.white,
+                      size: widget.isThreeGrid ? 22 : 26,
+                    ),
                   ),
                 ),
               ],
@@ -366,82 +436,81 @@ class ProductCard extends StatelessWidget {
           ),
           // Product name
           Container(
-            width: double.infinity,
-            padding: EdgeInsets.fromLTRB(12, 10, 12, 0),
+            padding: EdgeInsets.fromLTRB(12, 8, 12, 0),
             child: Text(
-              product['name'],
+              widget.product['name'],
               style: TextStyle(
                 fontWeight: FontWeight.w400,
-                fontSize: 19,
+                fontSize: widget.isThreeGrid ? 13 : 15,
                 color: Colors.black87,
               ),
-              maxLines: 2,
+              maxLines: 1,
               overflow: TextOverflow.ellipsis,
             ),
           ),
           // Price row
           Container(
             width: double.infinity,
-            padding: EdgeInsets.fromLTRB(12, 8, 12, 0),
+            padding: EdgeInsets.fromLTRB(12, 4, 12, 0),
             child: Row(
               children: [
                 Text(
-                  '\$${product['oldPrice']}',
+                  '\$${widget.product['oldPrice']}',
                   style: TextStyle(
                     color: Colors.black38,
-                    fontSize: 16,
+                    fontSize: widget.isThreeGrid ? 11 : 13,
                     decoration: TextDecoration.lineThrough,
                   ),
                 ),
-                SizedBox(width: 8),
+                SizedBox(width: 6),
                 Text(
-                  '\$${product['price']}',
+                  '\$${widget.product['price']}',
                   style: TextStyle(
                     color: Colors.black,
                     fontWeight: FontWeight.w600,
-                    fontSize: 22,
+                    fontSize: widget.isThreeGrid ? 14 : 17,
                   ),
                 ),
                 Spacer(),
                 Icon(
                   Icons.local_offer_rounded,
                   color: Colors.amber[700],
-                  size: 28,
+                  size: widget.isThreeGrid ? 18 : 22,
                 ),
               ],
             ),
           ),
-          // Colors and sizes row
+          // Colors row
           Container(
             width: double.infinity,
-            padding: EdgeInsets.fromLTRB(12, 8, 12, 10),
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ...product['colors'].map<Widget>(
-                    (c) => Container(
-                      margin: EdgeInsets.only(right: 6),
-                      width: 20,
-                      height: 20,
-                      decoration: BoxDecoration(
-                        color: c,
-                        borderRadius: BorderRadius.circular(4),
-                        border: Border.all(color: Colors.black12, width: 1),
-                      ),
+            padding: EdgeInsets.fromLTRB(12, 4, 12, 0),
+            child: Row(
+              children: [
+                ...widget.product['colors'].map<Widget>(
+                  (c) => Container(
+                    margin: EdgeInsets.only(right: 4),
+                    width: widget.isThreeGrid ? 12 : 16,
+                    height: widget.isThreeGrid ? 12 : 16,
+                    decoration: BoxDecoration(
+                      color: c,
+                      borderRadius: BorderRadius.circular(4),
+                      border: Border.all(color: Colors.black12, width: 1),
                     ),
                   ),
-                  SizedBox(width: 8),
-                  Text(
-                    product['sizes'].join(' '),
-                    style: TextStyle(
-                      color: Colors.black87,
-                      fontWeight: FontWeight.w500,
-                      fontSize: 15,
-                      letterSpacing: 1.2,
-                    ),
-                  ),
-                ],
+                ),
+              ],
+            ),
+          ),
+          // Sizes row
+          Padding(
+            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
+            child: Text(
+              widget.product['sizes'].join(' '),
+              style: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w500,
+                fontSize: widget.isThreeGrid ? 11 : 13,
+                letterSpacing: 1.2,
               ),
             ),
           ),
