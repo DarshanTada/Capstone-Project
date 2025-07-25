@@ -283,3 +283,72 @@ export const loginAdmin = [
     }
   }
 ]
+
+
+export const getUserById = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.body.userId || req.params.id || req.query.userId;
+
+    if (!userId) {
+      res.status(400).json({
+        success: false,
+        message: 'userId is required in body, params, or query.'
+      });
+      return;
+    }
+
+    const user = await User.findById(userId)
+      .populate('addressObjectId')
+      .populate('festival_objectId')
+      .populate('relation_objectId')
+      .populate('photo_objectId')
+      .populate('preferenceObjectId')
+      .select('-password -token') // optional: remove sensitive data
+      .lean();
+
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: 'User not found.'
+      });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'User fetched successfully.',
+      data: user
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching user.',
+      error: error.message
+    });
+  }
+};
+
+export const getAllUsers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const users = await User.find()
+      .populate('addressObjectId')
+      .populate('festival_objectId')
+      .populate('relation_objectId')
+      .populate('photo_objectId')
+      .populate('preferenceObjectId')
+      .select('-password -token') // 🔒 remove sensitive fields
+      .lean();
+
+    res.status(200).json({
+      success: true,
+      message: 'All users fetched successfully.',
+      data: users
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      success: false,
+      message: 'Server error while fetching users.',
+      error: error.message
+    });
+  }
+};
