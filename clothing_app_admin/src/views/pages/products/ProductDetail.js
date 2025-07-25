@@ -90,7 +90,18 @@ const ProductDetail = () => {
             <CForm onSubmit={handleSave}>
               <CRow className="mb-3">
                 <CCol md={12} className="text-center">
-                  <img src={form.images[0]} alt="Product" style={{ width: 120, borderRadius: 8 }} />
+                  <img
+                    src={form.images[0]}
+                    alt="Product"
+                    style={{
+                      maxWidth: 120,
+                      maxHeight: 120,
+                      borderRadius: 8,
+                      objectFit: 'contain',
+                      display: 'inline-block',
+                      verticalAlign: 'middle',
+                    }}
+                  />
                   {isEditing && (
                     <>
                       <CFormLabel className="mt-2">Image URL</CFormLabel>
