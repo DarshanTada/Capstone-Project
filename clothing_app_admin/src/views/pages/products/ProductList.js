@@ -187,12 +187,24 @@ const ProductList = () => {
               paginatedProducts.map((product) => (
                 <CTableRow key={product._id}>
                   <CTableDataCell>{product._id}</CTableDataCell>
-                  <CTableDataCell>
+                  <CTableDataCell style={{ textAlign: 'center', verticalAlign: 'middle', height: '80px' }}>
                     <CAvatar
-                      src={product.images && product.images[0] && product.images[0].image && product.images[0].image.base64
-                        ? `data:${product.images[0].image.contentType};base64,${product.images[0].image.base64}`
-                        : undefined}
-                      size="md"
+                      src={
+                        product.images &&
+                        product.images[0] &&
+                        product.images[0].image &&
+                        product.images[0].image.base64
+                          ? `data:${product.images[0].image.contentType};base64,${product.images[0].image.base64}`
+                          : undefined
+                      }
+                      style={{
+                        height: '60px',
+                        width: '60px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        background: '#f8f9fa',
+                        display: 'inline-block',
+                      }}
                     />
                   </CTableDataCell>
                   <CTableDataCell>{product.name}</CTableDataCell>
