@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class CategoryProvider with ChangeNotifier {
   List<Category> _categories = [];
 
-  List<Category> get categories => [..._categories];
+  List<Category> get categories => _categories;
 
   // List<Cafe> _likedCafes = [];
 
@@ -18,22 +18,21 @@ class CategoryProvider with ChangeNotifier {
   //   notifyListeners();
   // }
 
-  fetchCategory({
-    // required String accessToken,
-    required String query,
-  }) async {
+  Future<Map<String, dynamic>> fetchCategory({required String query}) async {
     try {
       final url = '${webApi['domain']}${endPoint['getCategory']}?$query';
 
       final response = await RemoteServices.httpRequest(
         method: 'GET',
         url: url,
-        // accessToken: accessToken,
       );
 
-      if (response['success']) {
+      if (response['success'] == true && response['data'] is List) {
         List<Category> fetchedCategories = (response['data'] as List)
-            .map((category) => Category.jsonToCategory(category))
+            .map(
+              (category) =>
+                  Category.jsonToCategory(Map<String, dynamic>.from(category)),
+            )
             .toList();
 
         _categories = fetchedCategories;
@@ -41,7 +40,7 @@ class CategoryProvider with ChangeNotifier {
       }
 
       return response;
-    } catch (error) {
+    } catch (error, stackTrace) {
       return {'success': false, 'message': 'failedGetCategories'};
     }
   }

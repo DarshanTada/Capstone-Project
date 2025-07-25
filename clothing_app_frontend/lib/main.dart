@@ -8,7 +8,7 @@ import 'package:clothing_app_frontend/cartModule/screens/cart_screen.dart';
 import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
-import 'package:clothing_app_frontend/categoryModule/screens/category_screen.dart';
+// import 'package:clothing_app_frontend/homeModule/screens/category_provider.dart';
 import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/size_chart_screen.dart';
 import 'package:clothing_app_frontend/preferenceModule/screen/preference_screen.dart';

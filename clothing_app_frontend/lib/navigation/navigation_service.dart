@@ -1,6 +1,8 @@
 import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
+import 'package:clothing_app_frontend/categoryModule/screens/product_detail_screen.dart';
+import 'package:clothing_app_frontend/homeModule/screens/category_relation_screen.dart';
 import 'package:clothing_app_frontend/checkoutModule/screens/checkout_screen.dart';
 import 'package:clothing_app_frontend/addressModule/screens/addresses_screen.dart';
 import 'package:clothing_app_frontend/orderHistoryModule/screens/order_history_screen.dart';
@@ -20,6 +22,8 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case NamedRoute.sizeChartScreen:
       return _getPageRoute(const SizeChartScreen());
 
+    case NamedRoute.preferenceScreen:
+      return _getPageRoute(PreferenceScreen());
     case NamedRoute.checkoutScreen:
       return _getPageRoute(const CheckoutScreen());
     
@@ -48,6 +52,18 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return _getPageRoute(
         BottomNavBar(args: settings.arguments as BottomNavArgumnets),
       );
+    case NamedRoute.productDetailScreen:
+      return _getPageRoute(
+        ProductDetailScreen(
+          args: settings.arguments as ProductDetailScreenArguments,
+        ),
+      );
+
+    case NamedRoute.categoryRelationScreen:
+      return _getPageRoute( CategoryRelationScreen(
+        args: settings.arguments as CategoryRelationScreenArguments,
+      ));
+
 
     // case NamedRoute.walletScreen:
     //   return _getPageRoute(const WalletScreen());
