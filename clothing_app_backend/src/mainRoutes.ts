@@ -12,6 +12,8 @@ import { SubCategoryRoute } from './subCategoryModule/subCategory.routes';
 import { CareInstructorRouter } from './careInstructionModule/careInstruction.router';
 import { ProductRouter } from './productModule/product.routes';
 import { BannerRouter } from './bannerModule/banner.router';
+import { AddressRouter } from './addressModule/address.router';
+
 
 // import { UserRoutes } from './userModule/user.routes';
 // import { CafeRoutes } from './cafeModule/cafe.routes';
@@ -59,6 +61,8 @@ app.use('/subCategory', SubCategoryRoute);
 app.use('/careInstruction', CareInstructorRouter);
 app.use('/product', ProductRouter);
 app.use('/banner', BannerRouter);
+app.use('/address', AddressRouter);
+
 // // api/appConfig
 // app.use('/appConfig', AppConfigRoutes);
 

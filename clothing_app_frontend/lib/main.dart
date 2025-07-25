@@ -120,13 +120,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider()),
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
+
         // ChangeNotifierProvider(create: (_) => CafeProvider()),
         // ChangeNotifierProvider(create: (_) => CartProvider()),
         // ChangeNotifierProvider(create: (_) => OrderProvider()),
-      
-      
       ],
       child: Consumer(
         builder: (context, theme, _) => MaterialApp(
