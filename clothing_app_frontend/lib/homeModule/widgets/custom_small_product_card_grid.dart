@@ -29,7 +29,13 @@ class CustomSmallProductCardGrid extends StatelessWidget {
           children: [
             // Product Image
             // AssetSvgIcon(imageUrl, width: 116, height: 116),
-            Image.network(imageUrl, fit: BoxFit.cover, width: 110, height: 116),
+            // Image.network(imageUrl, fit: BoxFit.cover, width: 110, height: 116),
+            Image.asset(
+              imageUrl,
+              fit: BoxFit.cover,
+              width: dW * 0.29,
+              height: dW * 0.29,
+            ),
             // Gradient Overlay
             Container(
               width: dW * 0.29,

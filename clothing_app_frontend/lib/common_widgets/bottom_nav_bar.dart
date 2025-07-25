@@ -157,7 +157,7 @@ class BottomNavBarState extends State<BottomNavBar> {
     HomeScreen(),
     const CategoryScreen(),
     const SearchScreen(),
-    const CartScreen(),
+    MyCartScreen(),
     ProfileScreen(),
   ];
 
