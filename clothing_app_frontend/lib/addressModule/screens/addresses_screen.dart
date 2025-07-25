@@ -1,6 +1,4 @@
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
-import 'package:clothing_app_frontend/common_widgets/custom_app_bar.dart';
-import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../authModule/providers/auth_provider.dart';
@@ -40,8 +38,32 @@ class _AddressesScreenState extends State<AddressesScreen> {
     customTextTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: CustomAppBar(title: 'Addresses', dW: dW),
+      backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        title: const Text(
+          'My Addresses',
+          style: TextStyle(
+            color: Colors.black,
+            fontWeight: FontWeight.w600,
+            fontSize: 18,
+          ),
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: Colors.brown.shade300),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.edit_outlined, color: Colors.brown.shade300),
+            onPressed: () {
+              // Add edit functionality
+            },
+          ),
+        ],
+      ),
       body: iOSCondition(dH) ? screenBody() : SafeArea(child: screenBody()),
     );
   }
@@ -54,11 +76,12 @@ class _AddressesScreenState extends State<AddressesScreen> {
           ? CircularLoader(android: dW * 0.08, iOS: dW * 0.035)
           : SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.symmetric(horizontal: dW * 0.05),
+              padding: EdgeInsets.symmetric(horizontal: dW * 0.04),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  SizedBox(height: dW * 0.05),
+                  SizedBox(height: dH * 0.02),
+                  // Add New Address Button
                   GestureDetector(
                     onTap: () {
                       Navigator.push(
@@ -69,21 +92,63 @@ class _AddressesScreenState extends State<AddressesScreen> {
                       );
                     },
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 14),
+                      padding: EdgeInsets.symmetric(
+                        vertical: dH * 0.018, 
+                        horizontal: dW * 0.04
+                      ),
                       decoration: BoxDecoration(
-                        color: Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(10),
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Color(0xFFB8956A).withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: Offset(0, 4),
+                          ),
+                        ],
                       ),
                       child: Row(
-                        children: const [
-                          Icon(Icons.add, size: 22),
-                          SizedBox(width: 10),
-                          Text("Add New Address", style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500)),
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(4),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.add, 
+                              size: 20, 
+                              color: Colors.white,
+                            ),
+                          ),
+                          SizedBox(width: 12),
+                          Text(
+                            "Add New Address", 
+                            style: TextStyle(
+                              fontSize: 16, 
+                              fontWeight: FontWeight.w600,
+                              color: Colors.white,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
-                  SizedBox(height: dW * 0.05),
+                  SizedBox(height: dH * 0.025),
+                  Text(
+                    'Saved Addresses',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.black87,
+                    ),
+                  ),
+                  SizedBox(height: dH * 0.015),
                   addressCard(
                     id: 'home',
                     icon: Icons.home_outlined,
@@ -112,7 +177,7 @@ class _AddressesScreenState extends State<AddressesScreen> {
                     address: '108, University Ave, Waterloo,\nCanada N2J 2W2',
                     phone: '+1 (902) 254 8888',
                   ),
-                  SizedBox(height: dW * 0.08),
+                  SizedBox(height: dH * 0.08),
                 ],
               ),
             ),
@@ -135,59 +200,184 @@ class _AddressesScreenState extends State<AddressesScreen> {
         });
       },
       child: Container(
-        margin: const EdgeInsets.symmetric(vertical: 8),
-        padding: const EdgeInsets.all(14),
+        margin: EdgeInsets.only(bottom: dH * 0.015),
+        padding: EdgeInsets.all(dW * 0.04),
         decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected ? const Color(0xFFD2BA9F) : Colors.black12,
-            width: isSelected ? 2 : 1,
+            color: isSelected ? Color(0xFFD2B193) : Colors.transparent,
+            width: 2,
           ),
-          borderRadius: BorderRadius.circular(12),
-          color: isSelected ? const Color(0xFFD2BA9F).withOpacity(0.1) : Colors.white,
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              icon, 
-              size: 22,
-              color: isSelected ? const Color(0xFFD2BA9F) : Colors.black54,
+          boxShadow: [
+            BoxShadow(
+              color: isSelected 
+                ? Color(0xFFD2B193).withOpacity(0.2)
+                : Colors.black.withOpacity(0.05),
+              blurRadius: isSelected ? 15 : 8,
+              offset: Offset(0, isSelected ? 6 : 2),
+              spreadRadius: 0,
             ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
+          ],
+        ),
+        child: Column(
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  padding: EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isSelected 
+                      ? Color(0xFFD2B193).withOpacity(0.2)
+                      : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected 
+                        ? Color(0xFFD2B193)
+                        : Colors.transparent,
+                      width: 1,
+                    ),
+                  ),
+                  child: Icon(
+                    icon, 
+                    size: 24,
+                    color: isSelected ? Color(0xFFB8956A) : Colors.grey.shade600,
+                  ),
+                ),
+                SizedBox(width: dW * 0.04),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Expanded(
-                        child: Text(title,
-                            style: TextStyle(
-                              fontWeight: FontWeight.bold, 
-                              fontSize: 15,
-                              color: isSelected ? const Color(0xFFD2BA9F) : Colors.black,
-                            )),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              title,
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600, 
+                                fontSize: 16,
+                                color: isSelected ? Color(0xFFB8956A) : Colors.black87,
+                              ),
+                            ),
+                          ),
+                          if (isSelected)
+                            Container(
+                              padding: EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: Color(0xFFD2B193),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.check,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                            ),
+                        ],
                       ),
-                      if (isSelected)
-                        const Icon(
-                          Icons.check_circle,
-                          color: Color(0xFFD2BA9F),
-                          size: 20,
+                      SizedBox(height: dH * 0.008),
+                      Text(
+                        address, 
+                        style: TextStyle(
+                          color: Colors.grey.shade700, 
+                          fontSize: 14,
+                          height: 1.4,
                         ),
+                      ),
+                      SizedBox(height: dH * 0.006),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.phone_outlined,
+                            size: 16,
+                            color: Colors.grey.shade500,
+                          ),
+                          SizedBox(width: 6),
+                          Text(
+                            phone, 
+                            style: TextStyle(
+                              color: Colors.grey.shade700, 
+                              fontSize: 14,
+                            ),
+                          ),
+                        ],
+                      ),
                     ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(address, style: const TextStyle(color: Colors.black87, fontSize: 13)),
-                  const SizedBox(height: 4),
-                  Text(phone, style: const TextStyle(color: Colors.black87, fontSize: 13)),
-                  const SizedBox(height: 6),
-                  Text("View on map",
-                      style: TextStyle(
-                        color: isSelected ? const Color(0xFFD2BA9F) : const Color(0xFFB08C6E), 
-                        fontSize: 13
-                      )),
-                ],
-              ),
+                ),
+              ],
+            ),
+            SizedBox(height: dH * 0.015),
+            Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: dH * 0.012),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.grey.shade200,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.map_outlined,
+                          size: 16,
+                          color: Color(0xFFB8956A),
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          "View on Map",
+                          style: TextStyle(
+                            color: Color(0xFFB8956A),
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                SizedBox(width: dW * 0.03),
+                Expanded(
+                  child: Container(
+                    padding: EdgeInsets.symmetric(vertical: dH * 0.012),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: Colors.grey.shade200,
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.edit_outlined,
+                          size: 16,
+                          color: Colors.grey.shade600,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          "Edit",
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
