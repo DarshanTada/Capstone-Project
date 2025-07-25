@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class CategoryProvider with ChangeNotifier {
   List<Category> _categories = [];
 
-  List<Category> get categories => [..._categories];
+  List<Category> get categories => _categories;
 
   // List<Cafe> _likedCafes = [];
 
@@ -41,8 +41,6 @@ class CategoryProvider with ChangeNotifier {
 
       return response;
     } catch (error, stackTrace) {
-      print('Error fetching categories: $error');
-      print(stackTrace);
       return {'success': false, 'message': 'failedGetCategories'};
     }
   }

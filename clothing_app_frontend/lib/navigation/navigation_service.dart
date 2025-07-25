@@ -3,8 +3,12 @@ import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dar
 import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
 import 'package:clothing_app_frontend/categoryModule/screens/product_detail_screen.dart';
 import 'package:clothing_app_frontend/homeModule/screens/category_relation_screen.dart';
+import 'package:clothing_app_frontend/checkoutModule/screens/checkout_screen.dart';
+import 'package:clothing_app_frontend/addressModule/screens/addresses_screen.dart';
+import 'package:clothing_app_frontend/orderHistoryModule/screens/order_history_screen.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/size_chart_screen.dart';
 import 'package:clothing_app_frontend/preferenceModule/screen/preference_screen.dart';
+import 'package:clothing_app_frontend/cartModule/screens/cart_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/common_widgets/bottom_nav_bar.dart';
 import 'arguments.dart';
@@ -20,6 +24,20 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     case NamedRoute.preferenceScreen:
       return _getPageRoute(PreferenceScreen());
+    case NamedRoute.checkoutScreen:
+      return _getPageRoute(const CheckoutScreen());
+    
+    case NamedRoute.addressesScreen:
+      return _getPageRoute(const AddressesScreen());
+
+    case NamedRoute.orderHistoryScreen:
+      return _getPageRoute(const OrderHistoryScreen());
+
+    case NamedRoute.myCartScreen:
+      return _getPageRoute(const MyCartScreen());
+
+       case NamedRoute.preferenceScreen:
+      return _getPageRoute( PreferenceScreen());
 
     case NamedRoute.verifyOtpScreen:
       return _getPageRoute(

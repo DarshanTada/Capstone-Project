@@ -31,7 +31,7 @@ class HomeScreenState extends State<HomeScreen> {
   bool isLoading = false;
   int selectedCategoryIndex = 0;
   final TextEditingController searchController = TextEditingController();
-  final List<String> categories = ['all', 'men', 'women', 'boys', 'girls'];
+  // final List<String> categories = ['all', 'men', 'women', 'boys', 'girls'];
   final List<String> productImages = [
     'assets/images/g1.png',
     'assets/images/g2.png',
@@ -55,7 +55,7 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   fetchData() async {
-    // await fetchCategories();
+    await fetchCategories();
   }
 
   @override
@@ -71,6 +71,7 @@ class HomeScreenState extends State<HomeScreen> {
     tS = MediaQuery.of(context).textScaleFactor;
     language = Provider.of<AuthProvider>(context).selectedLanguage;
     customTextTheme = Theme.of(context).textTheme;
+
     return Scaffold(
       backgroundColor: Colors.white,
       // appBar: CustomAppBar(title: 'Title', dW: dW),
@@ -114,11 +115,15 @@ class HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           SizedBox(width: dW * 0.025),
-                          // TextWidget(
-                          //   title: categories.first.name,
-                          //   fontSize: tS * 20,
-                          //   fontWeight: FontWeight.w500,
-                          // ),
+                          TextWidget(
+                            title:
+                                (categories.isNotEmpty &&
+                                    categories.first.name.isNotEmpty)
+                                ? categories.first.name
+                                : 'Loading...',
+                            fontSize: tS * 20,
+                            fontWeight: FontWeight.w500,
+                          ),
                           CircleAvatar(
                             backgroundColor: Colors.black,
                             radius: 22,
@@ -163,46 +168,46 @@ class HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
 
-                    SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: List.generate(categories.length, (index) {
-                          final isSelected = selectedCategoryIndex == index;
-                          return GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                selectedCategoryIndex = index;
-                              });
-                            },
-                            child: Container(
-                              margin: EdgeInsets.only(
-                                left: index == 0 ? dW * 0.05 : dW * 0.02,
-                                right: index == categories.length - 1
-                                    ? dW * 0.05
-                                    : 0,
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                horizontal: dW * 0.05,
-                                vertical: dW * 0.02,
-                              ),
-                              decoration: BoxDecoration(
-                                color: isSelected ? Colors.black : Colors.white,
-                                borderRadius: BorderRadius.circular(25),
-                                border: Border.all(
-                                  color: Colors.black,
-                                  width: 1.5,
-                                ),
-                              ),
-                              child: TextWidget(
-                                title: language[categories[index]],
-                                fontSize: tS * 18,
-                                color: isSelected ? Colors.white : Colors.black,
-                              ),
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
+                    // SingleChildScrollView(
+                    //   scrollDirection: Axis.horizontal,
+                    //   child: Row(
+                    //     children: List.generate(categories.length, (index) {
+                    //       final isSelected = selectedCategoryIndex == index;
+                    //       return GestureDetector(
+                    //         onTap: () {
+                    //           setState(() {
+                    //             selectedCategoryIndex = index;
+                    //           });
+                    //         },
+                    //         child: Container(
+                    //           margin: EdgeInsets.only(
+                    //             left: index == 0 ? dW * 0.05 : dW * 0.02,
+                    //             right: index == categories.length - 1
+                    //                 ? dW * 0.05
+                    //                 : 0,
+                    //           ),
+                    //           padding: EdgeInsets.symmetric(
+                    //             horizontal: dW * 0.05,
+                    //             vertical: dW * 0.02,
+                    //           ),
+                    //           decoration: BoxDecoration(
+                    //             color: isSelected ? Colors.black : Colors.white,
+                    //             borderRadius: BorderRadius.circular(25),
+                    //             border: Border.all(
+                    //               color: Colors.black,
+                    //               width: 1.5,
+                    //             ),
+                    //           ),
+                    //           child: TextWidget(
+                    //             title: language[categories[index]],
+                    //             fontSize: tS * 18,
+                    //             color: isSelected ? Colors.white : Colors.black,
+                    //           ),
+                    //         ),
+                    //       );
+                    //     }),
+                    //   ),
+                    // ),
                     Container(
                       padding: EdgeInsets.symmetric(horizontal: dW * 0.05),
                       margin: EdgeInsets.only(
@@ -417,7 +422,8 @@ class HomeScreenState extends State<HomeScreen> {
                                     MainAxisAlignment.spaceEvenly,
                                 children: [
                                   CustomSmallProductCardGrid(
-                                    imageUrl: 'https://tinyurl.com/42s53ezd',
+                                    imageUrl:                                             'assets/images/g1.png',
+
                                     price: '50',
                                     rating: 3.9,
                                     onTap: () {
@@ -431,14 +437,15 @@ class HomeScreenState extends State<HomeScreen> {
                                     },
                                   ),
                                   CustomSmallProductCardGrid(
-                                    imageUrl: 'https://tinyurl.com/5n8zedmz',
+                                    imageUrl:                                             'assets/images/g1.png',
+
                                     price: '44',
                                     rating: 4.7,
                                     onTap: () {},
                                   ),
                                   CustomSmallProductCardGrid(
-                                    imageUrl:
-                                        'https://m.media-amazon.com/images/I/61emW3sXLOL._AC_SX679_.jpg',
+                                    imageUrl:                                            'assets/images/g1.png',
+
                                     price: '90',
                                     rating: 4.5,
                                     onTap: () {},
@@ -454,7 +461,7 @@ class HomeScreenState extends State<HomeScreen> {
                                     children: [
                                       CustomSmallProductCardGrid(
                                         imageUrl:
-                                            'https://tinyurl.com/ek2mf8hb',
+                                            'assets/images/g1.png',
                                         price: '90',
                                         rating: 4.5,
                                         onTap: () {},
@@ -463,7 +470,7 @@ class HomeScreenState extends State<HomeScreen> {
 
                                       CustomSmallProductCardGrid(
                                         imageUrl:
-                                            'https://tinyurl.com/2jjbmthn',
+                                            'assets/images/g1.png',
                                         price: '90',
                                         rating: 4.5,
                                         onTap: () {},
@@ -473,7 +480,8 @@ class HomeScreenState extends State<HomeScreen> {
                                   SizedBox(width: dW * 0.01),
                                   CustomBigProductCardGridWidget(
                                     productName: 'Charcoal Fade Jeans',
-                                    imageUrl: 'https://tinyurl.com/2jjbmthn',
+                                    imageUrl:        'assets/images/g1.png',
+                                     
                                     price: '90',
                                     rating: 4.5,
                                     onTap: () {},
