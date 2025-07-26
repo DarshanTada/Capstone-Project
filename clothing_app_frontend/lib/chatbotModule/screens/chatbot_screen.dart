@@ -122,107 +122,171 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   Widget _buildMessage(_ChatMessage msg) {
     final isUser = msg.isUser;
-    final userBubbleColor = const Color(0xFFEAE0D5);
-    final botBubbleColor = const Color(0xFFC6AC8E);
+    final userBubbleColor = Color(0xFFD2B193);
+    final botBubbleColor = Colors.white;
 
     final avatar = isUser
-        ? CircleAvatar(
-            backgroundColor: userBubbleColor,
-            child: const Icon(Icons.person, color: Color.fromARGB(255, 77, 52, 52)),
-          )
-        : const CircleAvatar(
-            backgroundColor: Colors.transparent, // transparent background
-            backgroundImage: AssetImage('assets/images/ai_avatar.png'),
-          );
-
-    final bubbleColor = isUser ? userBubbleColor : botBubbleColor;
-    final align = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
-    final margin = isUser
-        ? const EdgeInsets.only(left: 100, top: 8, right: 8) // Increase left margin for user
-        : const EdgeInsets.only(right: 80, top: 8, left: 8);
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisAlignment:
-          isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-      children: [
-        if (!isUser)
-          Padding(
-            padding: const EdgeInsets.only(left: 8.0), // Gap from left edge for bot
-            child: avatar,
-          ),
-        Expanded(
-          child: Container(
-            margin: margin,
-            padding: const EdgeInsets.all(12),
+        ? Container(
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
-              color: bubbleColor,
-              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
             ),
-            child: Column(
-              crossAxisAlignment: align,
-              children: [
-                if (msg.image != null)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.file(
-                        msg.image!,
-                        width: 120,
-                        height: 120,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: msg.isLoading
-                          ? Align(
-                              alignment: Alignment.centerLeft,
-                              child: SizedBox(
-                                height: 16,
-                                width: 16,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor:
-                                      AlwaysStoppedAnimation<Color>(Colors.black),
-                                ),
-                              ),
-                            )
-                          : SelectableText(
-                              msg.text,
-                              style: const TextStyle(
-                                color: Colors.black87,
-                                fontSize: 16,
-                              ),
-                            ),
-                    ),
-                    if (!msg.isLoading)
-                      IconButton(
-                        icon: const Icon(Icons.copy, size: 18),
-                        tooltip: 'Copy',
-                        onPressed: () {
-                          Clipboard.setData(ClipboardData(text: msg.text));
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(content: Text('Message copied!')),
-                          );
-                        },
-                      ),
-                  ],
+            child: Icon(Icons.person, color: Colors.white, size: 20),
+          )
+        : Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              border: Border.all(color: Color(0xFFD2B193), width: 2),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
                 ),
               ],
             ),
+            child: Icon(Icons.smart_toy, color: Color(0xFFB8956A), size: 20),
+          );
+
+    final bubbleColor = isUser ? userBubbleColor : botBubbleColor;
+    final textColor = isUser ? Colors.white : Colors.black87;
+    final align = isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start;
+    final margin = isUser
+        ? const EdgeInsets.only(left: 60, top: 8, right: 16, bottom: 4)
+        : const EdgeInsets.only(right: 60, top: 8, left: 16, bottom: 4);
+
+    return Container(
+      margin: margin,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment:
+            isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        children: [
+          if (!isUser) avatar,
+          if (!isUser) SizedBox(width: 8),
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: bubbleColor,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(isUser ? 20 : 4),
+                  topRight: Radius.circular(isUser ? 4 : 20),
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: align,
+                children: [
+                  if (msg.image != null)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.file(
+                          msg.image!,
+                          width: 150,
+                          height: 150,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Expanded(
+                        child: msg.isLoading
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 8),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    SizedBox(
+                                      height: 16,
+                                      width: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        valueColor: AlwaysStoppedAnimation<Color>(
+                                          Color(0xFFB8956A),
+                                        ),
+                                      ),
+                                    ),
+                                    SizedBox(width: 8),
+                                    Text(
+                                      "Thinking...",
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 14,
+                                        fontStyle: FontStyle.italic,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : SelectableText(
+                                msg.text,
+                                style: TextStyle(
+                                  color: isUser ? Colors.white : Colors.black87,
+                                  fontSize: 15,
+                                  height: 1.4,
+                                ),
+                              ),
+                      ),
+                      if (!msg.isLoading && msg.text.isNotEmpty)
+                        Container(
+                          margin: EdgeInsets.only(left: 8),
+                          child: InkWell(
+                            onTap: () {
+                              Clipboard.setData(ClipboardData(text: msg.text));
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text('Message copied!'),
+                                  backgroundColor: Color(0xFFB8956A),
+                                  duration: Duration(seconds: 2),
+                                ),
+                              );
+                            },
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              padding: EdgeInsets.all(4),
+                              child: Icon(
+                                Icons.copy,
+                                size: 16,
+                                color: isUser 
+                                  ? Colors.white.withOpacity(0.7)
+                                  : Colors.grey.shade500,
+                              ),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ),
-        ),
-        if (isUser)
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0), // Gap from right edge for user
-            child: avatar,
-          ),
-      ],
+          if (isUser) SizedBox(width: 8),
+          if (isUser) avatar,
+        ],
+      ),
     );
   }
 
@@ -231,7 +295,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     super.initState();
     // Add initial chatbot message
     _messages.add(_ChatMessage(
-      text: "Hi I am YOLO Bot. How can I help you with your fashion needs?",
+      text: "👋 Hi! I'm YOLO Bot, your personal fashion assistant.\n\nI can help you with:\n• Style recommendations\n• Outfit suggestions\n• Fashion trends\n• Clothing advice\n\nFeel free to send me images of outfits for analysis!",
       isUser: false,
     ));
   }
@@ -239,69 +303,123 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text(
-          "YOLO Bot",
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.bold,
-          ),
-          textAlign: TextAlign.center,
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 32,
+              height: 32,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: LinearGradient(
+                  colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+              ),
+              child: Icon(Icons.smart_toy, color: Colors.white, size: 18),
+            ),
+            SizedBox(width: 8),
+            Text(
+              "YOLO Bot",
+              style: TextStyle(
+                color: Colors.black87,
+                fontWeight: FontWeight.w600,
+                fontSize: 18,
+              ),
+            ),
+          ],
         ),
         centerTitle: true,
-        backgroundColor: Colors.black,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: Colors.brown.shade300),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.more_vert, color: Colors.brown.shade300),
+            onPressed: () {
+              // Add menu functionality
+            },
+          ),
+        ],
       ),
-      body: Stack(
+      body: Column(
         children: [
           // Chat messages
-          Padding(
-            padding: const EdgeInsets.only(bottom: 76), // Height of input bar + margin
-            child: Column(
-              children: [
-                Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, idx) => _buildMessage(_messages[idx]),
+          Expanded(
+            child: ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
+              itemCount: _messages.length,
+              itemBuilder: (context, idx) => _buildMessage(_messages[idx]),
+            ),
+          ),
+          if (_pickedImage != null)
+            Container(
+              margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Color(0xFFD2B193), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 8,
+                    offset: Offset(0, 2),
                   ),
-                ),
-                if (_pickedImage != null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8.0),
-                    child: Stack(
-                      alignment: Alignment.topRight,
+                ],
+              ),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: Image.file(
+                      _pickedImage!,
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        ClipRRect(
-                          borderRadius: BorderRadius.circular(8),
-                          child: Image.file(
-                            _pickedImage!,
-                            width: 100,
-                            height: 100,
-                            fit: BoxFit.cover,
+                        Text(
+                          "Image selected",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
                           ),
                         ),
-                        IconButton(
-                          icon: const Icon(Icons.close, color: Colors.red),
-                          onPressed: () {
-                            setState(() {
-                              _pickedImage = null;
-                            });
-                          },
+                        Text(
+                          "Ready to analyze",
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 13,
+                          ),
                         ),
                       ],
                     ),
                   ),
-              ],
+                  IconButton(
+                    icon: Icon(Icons.close, color: Colors.red.shade400),
+                    onPressed: () {
+                      setState(() {
+                        _pickedImage = null;
+                      });
+                    },
+                  ),
+                ],
+              ),
             ),
-          ),
-          // Floating input bar
-          Positioned(
-            left: 10,
-            right: 10,
-            bottom: 10,
-            child: _buildInputBar(),
-          ),
+          _buildInputBar(),
         ],
       ),
     );
@@ -310,31 +428,66 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   Widget _buildInputBar() {
     return SafeArea(
       child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(30), // Rounded borders
-          border: Border.all(color: Colors.black, width: 1), // 1px black border
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(color: Color(0xFFD2B193), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 10,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
         child: Row(
           children: [
-            IconButton(
-              icon: const Icon(Icons.image, color: Colors.black54),
-              onPressed: _pickImage,
+            Container(
+              margin: EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                color: Color(0xFFD2B193).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: Icon(Icons.image_outlined, color: Color(0xFFB8956A)),
+                onPressed: _pickImage,
+                tooltip: 'Add Image',
+              ),
             ),
             Expanded(
               child: TextField(
                 controller: _controller,
-                decoration: const InputDecoration(
-                  hintText: "Enter your message...",
+                decoration: InputDecoration(
+                  hintText: "Ask me anything about fashion...",
+                  hintStyle: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 15,
+                  ),
                   border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 ),
+                style: TextStyle(fontSize: 15),
                 onSubmitted: (_) => _sendMessage(),
+                maxLines: null,
+                textCapitalization: TextCapitalization.sentences,
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.send, color: Colors.black),
-              onPressed: _sendMessage,
+            Container(
+              margin: EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+              ),
+              child: IconButton(
+                icon: Icon(Icons.send_rounded, color: Colors.white),
+                onPressed: _sendMessage,
+                tooltip: 'Send Message',
+              ),
             ),
           ],
         ),

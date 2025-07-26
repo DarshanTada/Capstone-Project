@@ -1,83 +1,68 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import {
   CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow, CTableHeaderCell,
   CTableBody, CTableDataCell, CButton, CAvatar, CPagination, CPaginationItem, CFormInput
 } from '@coreui/react'
 import { useNavigate } from 'react-router-dom'
-import tshirtImg from 'src/assets/images/products/T-Shirt.png'
 import { ROLE, hasPermission } from 'src/roles/permissions'
-
-const dummyProducts = [
-  {
-    id: 1,
-    name: 'Classic T-Shirt',
-    category: 'Tops',
-    price: 19.99,
-    stock: 120,
-    images: [tshirtImg],
-  },
-  {
-    id: 2,
-    name: 'Denim Jeans',
-    category: 'Bottoms',
-    price: 39.99,
-    stock: 80,
-    image: 'https://via.placeholder.com/60x60?text=Jeans',
-  },
-  {
-    id: 3,
-    name: 'Summer Dress',
-    category: 'Dresses',
-    price: 29.99,
-    stock: 50,
-    image: 'https://via.placeholder.com/60x60?text=Dress',
-  },
-  {
-    id: 4,
-    name: 'Summer Dress',
-    category: 'Dresses',
-    price: 29.99,
-    stock: 50,
-    image: 'https://via.placeholder.com/60x60?text=Dress',
-  },
-  {
-    id: 5,
-    name: 'Summer Dress',
-    category: 'Dresses',
-    price: 29.99,
-    stock: 50,
-    image: 'https://via.placeholder.com/60x60?text=Dress',
-  },
-  // Add more products as needed
-]
+import axios from 'axios'
 
 const ProductList = () => {
-  const [products, setProducts] = useState(dummyProducts)
+  const [products, setProducts] = useState([])
+  const [categories, setCategories] = useState([])
   const [search, setSearch] = useState('')
   const [productsPerPage, setProductsPerPage] = useState(5)
   const [currentPage, setCurrentPage] = useState(1)
+  const [totalPages, setTotalPages] = useState(1)
   const navigate = useNavigate()
 
   // Get the current user's role (from localStorage, context, or props)
   const role = localStorage.getItem('role') || ROLE.PRODUCT_MANAGER // fallback for demo
 
+  // Fetch products from backend
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const res = await axios.get('http://localhost:3001/api/product/getProduct', {
+          params: {
+            page: currentPage,
+            limit: productsPerPage,
+          }
+        })
+        if (res.data.success) {
+          setProducts(res.data.data)
+          setTotalPages(res.data.pagination.totalPages)
+        }
+      } catch (err) {
+        console.error('Failed to fetch products:', err)
+      }
+    }
+    fetchProducts()
+  }, [currentPage, productsPerPage])
+
   // Filter products by search
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(search.toLowerCase()) ||
-      product.category.toLowerCase().includes(search.toLowerCase())
+      (product.category_id && product.category_id.toLowerCase().includes(search.toLowerCase()))
   )
 
-  // Pagination logic
-  const totalPages = Math.ceil(filteredProducts.length / productsPerPage)
-  const paginatedProducts = filteredProducts.slice(
-    (currentPage - 1) * productsPerPage,
-    currentPage * productsPerPage
-  )
+  // Pagination logic (frontend filter, backend paginates)
+  // If you want to paginate only on backend, use products as-is and remove this slice
+  // const paginatedProducts = filteredProducts.slice(
+  //   (currentPage - 1) * productsPerPage,
+  //   currentPage * productsPerPage
+  // )
+  const paginatedProducts = filteredProducts // backend already paginates
 
-  const handleDelete = (id) => {
+  const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
-      setProducts(products.filter((p) => p.id !== id))
+      try {
+        await axios.delete(`http://localhost:3001/api/product/deleteProduct/${id}`)
+        setProducts(products.filter((p) => p._id !== id))
+      } catch (err) {
+        alert('Failed to delete product.')
+      }
     }
   }
 
@@ -97,8 +82,8 @@ const ProductList = () => {
     setCurrentPage(1) // Reset to first page when changing page size
   }
 
-  const pageOptions = [2, 3, 5, 10, 15, 20, 25, 50].filter(num => num < filteredProducts.length)
-  if (filteredProducts.length > 0) pageOptions.push(filteredProducts.length)
+  const pageOptions = [2, 3, 5, 10, 15, 20, 25, 50].filter(num => num < products.length)
+  if (products.length > 0) pageOptions.push(products.length)
 
   return (
     <CCard className="mb-4">
@@ -114,7 +99,7 @@ const ProductList = () => {
           >
             {pageOptions.map((num) => (
               <option key={num} value={num}>
-                {num === filteredProducts.length ? 'All' : num}
+                {num === products.length ? 'All' : num}
               </option>
             ))}
           </select>
@@ -156,29 +141,52 @@ const ProductList = () => {
               </CTableRow>
             ) : (
               paginatedProducts.map((product) => (
-                <CTableRow key={product.id}>
-                  <CTableDataCell>{product.id}</CTableDataCell>
-                  <CTableDataCell>
+                <CTableRow key={product._id}>
+                  <CTableDataCell>{product._id}</CTableDataCell>
+                  <CTableDataCell style={{ textAlign: 'center', verticalAlign: 'middle', height: '80px' }}>
                     <CAvatar
-                      src={product.images ? product.images[0] : product.image}
-                      size="md"
+                      src={
+                        product.images &&
+                        product.images[0] &&
+                        product.images[0].image &&
+                        product.images[0].image.base64
+                          ? `data:${product.images[0].image.contentType};base64,${product.images[0].image.base64}`
+                          : undefined
+                      }
+                      style={{
+                        height: '60px',
+                        width: '60px',
+                        objectFit: 'cover',
+                        borderRadius: '8px',
+                        background: '#f8f9fa',
+                        display: 'inline-block',
+                      }}
                     />
                   </CTableDataCell>
                   <CTableDataCell>{product.name}</CTableDataCell>
-                  <CTableDataCell>{product.category}</CTableDataCell>
-                  <CTableDataCell>${product.price.toFixed(2)}</CTableDataCell>
-                  <CTableDataCell>{product.stock}</CTableDataCell>
+                  <CTableDataCell>{product.category_id.name}</CTableDataCell>
+                  <CTableDataCell>
+                    {/* If you have price in variants, show min price */}
+                    {product.variants && product.variants.length > 0
+                      ? `₹${product.variants[0].price}`
+                      : '-'}
+                  </CTableDataCell>
+                  <CTableDataCell>
+                    {product.variants && product.variants.length > 0
+                      ? product.variants[0].stock_qty
+                      : '-'}
+                  </CTableDataCell>
                   {hasPermission(role, 'manage_products') && (
                     <CTableDataCell>
                       <CButton
                         color="info"
                         size="sm"
                         className="me-2"
-                        onClick={() => navigate(`/products/${product.id}`)}
+                        onClick={() => navigate(`/products/${product._id}`)}
                       >
                         View Product
                       </CButton>
-                      <CButton color="danger" size="sm" onClick={() => handleDelete(product.id)}>
+                      <CButton color="danger" size="sm" onClick={() => handleDelete(product._id)}>
                         Delete
                       </CButton>
                     </CTableDataCell>
@@ -211,11 +219,6 @@ const ProductList = () => {
             Next
           </CPaginationItem>
         </CPagination>
-        {/* <ProductUpload onDataParsed={(data) => {
-          // data is an array of product objects from the file
-          // You can merge with your state or send to your backend API
-          setProducts([...products, ...data])
-        }} accept=".csv,.xls,.xlsx" /> */}
       </CCardBody>
     </CCard>
   )
