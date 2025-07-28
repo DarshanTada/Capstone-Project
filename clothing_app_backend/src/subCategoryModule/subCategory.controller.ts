@@ -1,23 +1,46 @@
 import { Request, Response } from 'express';
-import SubCategory from '../subCategoryModule/subCategory.model';
-import Category from '../categoryModule/category.model';
+import SubCategory from './subCategory.model';
 import { upload } from '../utils/common/multer';
-
 
 export const uploadSubCategoryImage = upload.fields([
   { name: 'image', maxCount: 1 },
 ]);
-// Create
+
+// Create SubCategory
 export const createSubCategory = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name } = req.body;
+    const { name, gender, body_type, category } = req.body;
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
     const imageFile = files?.['image']?.[0];
 
     if (!name) {
       res.status(400).json({
         success: false,
-        message: "Sub category name is required.",
+        message: "SubCategory name is required.",
+      });
+      return;
+    }
+
+    if (!gender) {
+      res.status(400).json({
+        success: false,
+        message: "Gender is required.",
+      });
+      return;
+    }
+
+    if (!body_type) {
+      res.status(400).json({
+        success: false,
+        message: "Body type is required.",
+      });
+      return;
+    }
+
+    if (!category) {
+      res.status(400).json({
+        success: false,
+        message: "Category ID is required.",
       });
       return;
     }
@@ -29,12 +52,13 @@ export const createSubCategory = async (req: Request, res: Response): Promise<vo
 
     if (imageFile && imageFile.buffer) {
       base64Image = imageFile.buffer.toString('base64');
-      // You can also prefix with data URI if needed:
-      // base64Image = `data:${imageFile.mimetype};base64,${base64Image}`;
     }
 
     const newSubCategory = new SubCategory({
       name,
+      gender,
+      body_type,
+      category,
       ...(base64Image && { image: base64Image }),
     });
 
@@ -42,21 +66,25 @@ export const createSubCategory = async (req: Request, res: Response): Promise<vo
 
     res.status(201).json({ success: true, data: newSubCategory });
   } catch (error: any) {
-    console.error('Create Sub category Error:', error);
-    res.status(500).json({ success: false, message: `Create Sub category Error: ${error.message}` });
+    console.error('Create SubCategory Error:', error);
+    res.status(500).json({ success: false, message: `Create SubCategory Error: ${error.message}` });
   }
 };
 
-
-// Read all
+// Read all SubCategories
 export const getAllSubCategories = async (req: Request, res: Response): Promise<void> => {
   try {
-    const subCategories = await SubCategory.find();
+    const subCategories = await SubCategory.find().populate('category');
 
-    const formatted = subCategories.map((cat) => ({
-      _id: cat._id,
-      name: cat.name,
-      image: cat.image?.toString('base64') || null,
+    const formatted = subCategories.map((subCat) => ({
+      _id: subCat._id,
+      name: subCat.name,
+      gender: subCat.gender,
+      body_type: subCat.body_type,
+      category: subCat.category,
+      image: subCat.image?.toString('base64') || null,
+      createdAt: subCat.createdAt,
+      updatedAt: subCat.updatedAt,
     }));
 
     res.status(200).json({ success: true, data: formatted });
@@ -66,31 +94,55 @@ export const getAllSubCategories = async (req: Request, res: Response): Promise<
   }
 };
 
-// Read by ID
-export const getSubCategoryById = async (req: Request, res: Response): Promise<void> => {
+// Get SubCategories by Category ID
+export const getSubCategoriesByCategory = async (req: Request, res: Response): Promise<void> => {
   try {
-    const subCategory = await SubCategory.findById(req.params.id);
-    if (!subCategory) res.status(404).json({  success: false, message: 'SubCategory not found' });
-    res.status(200).json({ success: true, data: subCategory });
-  } catch (err) {
-    console.error('Get SubCategory Error:', err);
-    res.status(500).json({ success: false, message: err.message })
+    const { categoryId } = req.params;
+
+    if (!categoryId) {
+      res.status(400).json({
+        success: false,
+        message: "Category ID is required.",
+      });
+      return;
+    }
+
+    const subCategories = await SubCategory.find({ category: categoryId }).populate('category');
+
+    const formatted = subCategories.map((subCat) => ({
+      _id: subCat._id,
+      name: subCat.name,
+      gender: subCat.gender,
+      body_type: subCat.body_type,
+      category: subCat.category,
+      image: subCat.image?.toString('base64') || null,
+      createdAt: subCat.createdAt,
+      updatedAt: subCat.updatedAt,
+    }));
+
+    res.status(200).json({ success: true, data: formatted });
+  } catch (error: any) {
+    console.error('Get SubCategories by Category Error:', error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-//Update Category
+// Update SubCategory
 export const uploadUpdateSubCategoryImage = upload.fields([{ name: 'image', maxCount: 1 }]);
 
 export const updateSubCategory = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
-    const { name } = req.body;
+    const { name, gender, body_type, category } = req.body;
 
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
     const imageBuffer = files?.['image']?.[0]?.buffer;
 
     const updateData: any = {};
     if (name) updateData.name = name;
+    if (gender) updateData.gender = gender;
+    if (body_type) updateData.body_type = body_type;
+    if (category) updateData.category = category;
     if (imageBuffer) updateData.image = imageBuffer;
 
     console.log('Updating SubCategory with ID:', id);
@@ -98,10 +150,10 @@ export const updateSubCategory = async (req: Request, res: Response): Promise<vo
 
     const updatedSubCategory = await SubCategory.findByIdAndUpdate(id, updateData, {
       new: true,
-    });
+    }).populate('category');
 
     if (!updatedSubCategory) {
-      res.status(404).json({ success: false, message: 'Sub Category not found.' });
+      res.status(404).json({ success: false, message: 'SubCategory not found.' });
       return;
     }
 
@@ -112,65 +164,16 @@ export const updateSubCategory = async (req: Request, res: Response): Promise<vo
   }
 };
 
-// Delete
+// Delete SubCategory
 export const deleteSubCategory = async (req: Request, res: Response): Promise<void> => {
   try {
     const deleted = await SubCategory.findByIdAndDelete(req.params.id);
-    if (!deleted) res.status(404).json({ success: false, message: 'SubCategory not found' });
+    if (!deleted) {
+      res.status(404).json({ success: false, message: 'SubCategory not found' });
+      return;
+    }
     res.status(200).json({ success: true, message: 'SubCategory deleted successfully' });
-  } catch (err) {
-    res.status(500).json({success: false, message: err.message });
-  }
-};
-
-// Get SubCategories by Category
-export const getSubCategoriesByCategoryId = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const category = await Category.findById(req.params.categoryId).populate('body_type.subcategory');
-    if (!category) {
-      res.status(404).json({ success: false, message: 'Category not found' });
-      return;
-    }
-
-    const allSubcategories = category.body_type.flatMap(bt => bt.subcategory);
-    res.status(200).json({ success: true, data: allSubcategories });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
-  }
-};
-export const createMultipleSubCategories = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const names = req.query.names as string | undefined; // read from query
-    const files = req.files as Record<string, Express.Multer.File[]> | undefined;
-    const imageFile = files?.['image']?.[0];
-
-    if (!names) {
-      res.status(400).json({ success: false, message: "Comma separated 'names' query parameter is required." });
-      return;
-    }
-
-    const namesArray = names.split(',').map(name => name.trim()).filter(Boolean);
-
-    if (namesArray.length === 0) {
-      res.status(400).json({ success: false, message: "No valid subcategory names provided." });
-      return;
-    }
-
-    let base64Image: string | undefined;
-    if (imageFile && imageFile.buffer) {
-      base64Image = imageFile.buffer.toString('base64');
-    }
-
-    const subCategoriesToCreate = namesArray.map(name => ({
-      name,
-      ...(base64Image && { image: base64Image }),
-    }));
-
-    const createdSubCategories = await SubCategory.insertMany(subCategoriesToCreate);
-
-    res.status(201).json({ success: true, data: createdSubCategories });
-  } catch (error: any) {
-    console.error('Create Multiple SubCategories Error:', error);
-    res.status(500).json({ success: false, message: `Error: ${error.message}` });
+  } catch (err: any) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
