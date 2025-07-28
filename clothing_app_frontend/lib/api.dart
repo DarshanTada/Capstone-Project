@@ -1,5 +1,5 @@
 // var webApi = {'domain': 'https://api.iteeha.co'}; //PROD
-var webApi = {'domain': 'http://localhost:3001/'}; //DEV PROD
+var webApi = {'domain': 'http://10.0.0.213:3001/'}; //DEV PROD
 
 var endPoint = {
   // Authentication
@@ -7,6 +7,10 @@ var endPoint = {
 
   // Home
   'getCategory': 'api/category/getCategory',
+  // Product
+  'getProducts': 'api/product/getProduct',
+  // SubCategory
+  'getSubCategories': 'api/subCategory/getAll',
 
   //Preference
   'getAllPreferences': 'api/preferences/getAllPreferences',

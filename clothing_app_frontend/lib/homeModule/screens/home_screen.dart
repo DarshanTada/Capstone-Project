@@ -115,15 +115,7 @@ class HomeScreenState extends State<HomeScreen> {
                             ),
                           ),
                           SizedBox(width: dW * 0.025),
-                          TextWidget(
-                            title:
-                                (categories.isNotEmpty &&
-                                    categories.first.name.isNotEmpty)
-                                ? categories.first.name
-                                : 'Loading...',
-                            fontSize: tS * 20,
-                            fontWeight: FontWeight.w500,
-                          ),
+
                           CircleAvatar(
                             backgroundColor: Colors.black,
                             radius: 22,
@@ -422,7 +414,7 @@ class HomeScreenState extends State<HomeScreen> {
                                     MainAxisAlignment.spaceEvenly,
                                 children: [
                                   CustomSmallProductCardGrid(
-                                    imageUrl:                                             'assets/images/g1.png',
+                                    imageUrl: 'assets/images/g1.png',
 
                                     price: '50',
                                     rating: 3.9,
@@ -437,14 +429,14 @@ class HomeScreenState extends State<HomeScreen> {
                                     },
                                   ),
                                   CustomSmallProductCardGrid(
-                                    imageUrl:                                             'assets/images/g1.png',
+                                    imageUrl: 'assets/images/g1.png',
 
                                     price: '44',
                                     rating: 4.7,
                                     onTap: () {},
                                   ),
                                   CustomSmallProductCardGrid(
-                                    imageUrl:                                            'assets/images/g1.png',
+                                    imageUrl: 'assets/images/g1.png',
 
                                     price: '90',
                                     rating: 4.5,
@@ -460,8 +452,7 @@ class HomeScreenState extends State<HomeScreen> {
                                   Column(
                                     children: [
                                       CustomSmallProductCardGrid(
-                                        imageUrl:
-                                            'assets/images/g1.png',
+                                        imageUrl: 'assets/images/g1.png',
                                         price: '90',
                                         rating: 4.5,
                                         onTap: () {},
@@ -469,8 +460,7 @@ class HomeScreenState extends State<HomeScreen> {
                                       SizedBox(height: dW * 0.02),
 
                                       CustomSmallProductCardGrid(
-                                        imageUrl:
-                                            'assets/images/g1.png',
+                                        imageUrl: 'assets/images/g1.png',
                                         price: '90',
                                         rating: 4.5,
                                         onTap: () {},
@@ -480,8 +470,8 @@ class HomeScreenState extends State<HomeScreen> {
                                   SizedBox(width: dW * 0.01),
                                   CustomBigProductCardGridWidget(
                                     productName: 'Charcoal Fade Jeans',
-                                    imageUrl:        'assets/images/g1.png',
-                                     
+                                    imageUrl: 'assets/images/g1.png',
+
                                     price: '90',
                                     rating: 4.5,
                                     onTap: () {},
