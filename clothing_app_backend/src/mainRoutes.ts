@@ -13,6 +13,9 @@ import { CareInstructorRouter } from './careInstructionModule/careInstruction.ro
 import { ProductRouter } from './productModule/product.routes';
 import { BannerRouter } from './bannerModule/banner.router';
 import { AddressRouter } from './addressModule/address.router';
+import { ContactUsRouter } from './contactUs/contactUs.routes';
+import { HomeRouter } from './homeModule/home.routes';
+import { SizeChartRouter } from './sizeChart/sizechart.routes';
 
 
 // import { UserRoutes } from './userModule/user.routes';
@@ -62,6 +65,10 @@ app.use('/careInstruction', CareInstructorRouter);
 app.use('/product', ProductRouter);
 app.use('/banner', BannerRouter);
 app.use('/address', AddressRouter);
+app.use('/contactUs', ContactUsRouter);
+app.use('/home', HomeRouter);
+app.use('/sizechart', SizeChartRouter);
+
 
 // // api/appConfig
 // app.use('/appConfig', AppConfigRoutes);

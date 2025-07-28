@@ -7,6 +7,7 @@
     "dev:frontend": "npm --prefix clothing_app_admin run dev"
   },
   "devDependencies": {
+    "@types/nodemailer": "^6.4.17",
     "npm-run-all": "^4.1.5"
   },
   "dependencies": {
@@ -14,6 +15,7 @@
     "bcryptjs": "^3.0.2",
     "express": "^5.1.0",
     "multer": "^2.0.1",
+    "nodemailer": "^7.0.5",
     "nodemon": "^3.1.10"
   }
 }
