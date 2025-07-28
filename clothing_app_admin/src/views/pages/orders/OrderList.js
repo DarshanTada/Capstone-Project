@@ -2,12 +2,14 @@ import React, { useEffect, useState } from 'react'
 import { CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CPagination, CPaginationItem, CButton, CFormInput } from '@coreui/react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import AddOrder from './AddOrder'
 
 const OrderList = () => {
   const [orders, setOrders] = useState([])
   const [search, setSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [ordersPerPage, setOrdersPerPage] = useState(10)
+  const [showAddOrder, setShowAddOrder] = useState(false)
   const navigate = useNavigate()
 
   useEffect(() => {

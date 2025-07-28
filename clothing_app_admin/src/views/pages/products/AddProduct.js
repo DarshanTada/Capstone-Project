@@ -29,9 +29,9 @@ const ProductAdd = () => {
     bodyType: '',
     productType: '',
     style: '',
-    season_objectId: '[]',
-    festival_objectId: '[]',
-    care_instruction_objectId: '[]',
+    season_objectId: [],
+    festival_objectId: [],
+    care_instruction_objectId: [],
   })
   const [variants, setVariants] = useState([])
   const [showVariantForm, setShowVariantForm] = useState(false)
@@ -68,7 +68,7 @@ const ProductAdd = () => {
     is_festival_ready: false,
     isTryOn: false,
   })
-  const [variantImages, setVariantImages] = useState([]) // Array of File objects
+  const [variantImages, setVariantImages] = useState([]) // Array of image objects
   const [categories, setCategories] = useState([])
   const [subCategories, setSubCategories] = useState([])
   const [careInstructions, setCareInstructions] = useState([])
@@ -155,17 +155,15 @@ const ProductAdd = () => {
           setCareInstructions(res.data.data.instructions)
           setForm((prev) => ({
             ...prev,
-            care_instruction_objectId: JSON.stringify(
-              res.data.data.instructions.map((ci, idx) => ci._id || idx)
-            ),
+            care_instruction_objectId: res.data.data.instructions.map((ci) => ci._id),
           }))
         } else {
           setCareInstructions([])
-          setForm((prev) => ({ ...prev, care_instruction_objectId: '[]' }))
+          setForm((prev) => ({ ...prev, care_instruction_objectId: [] }))
         }
       } catch {
         setCareInstructions([])
-        setForm((prev) => ({ ...prev, care_instruction_objectId: '[]' }))
+        setForm((prev) => ({ ...prev, care_instruction_objectId: [] }))
       }
     }
   }
@@ -180,6 +178,16 @@ const ProductAdd = () => {
     if (variantErrors[name]) {
       setVariantErrors(prev => ({ ...prev, [name]: '' }))
     }
+  }
+
+  // Convert file to base64
+  const convertFileToBase64 = (file) => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader()
+      reader.readAsDataURL(file)
+      reader.onload = () => resolve(reader.result)
+      reader.onerror = error => reject(error)
+    })
   }
 
   // Validate variant before saving
@@ -246,42 +254,49 @@ const ProductAdd = () => {
     setError('')
     setSuccess('')
 
-    // Validate form and variants
     if (!validateFormAndVariants()) {
-      // Scroll to top to show error message
       window.scrollTo({ top: 0, behavior: 'smooth' })
       return
     }
 
     try {
       const formData = new FormData()
-      
-      // Append form data
-      Object.entries(form).forEach(([key, value]) => formData.append(key, value))
-      
-      // Append variant images
+
+      // Append main fields
+      formData.append('name', form.name)
+      formData.append('description', form.description)
+      formData.append('fabric_type', form.fabric_type)
+      formData.append('category_id', form.category_id)
+      formData.append('gender', form.gender)
+      formData.append('bodyType', form.bodyType)
+      formData.append('productType', form.productType)
+      formData.append('style', JSON.stringify([form.style])) // backend expects array as JSON string
+
+      // Always send as arrays (even if empty)
+      formData.append('season_objectId', JSON.stringify(Array.isArray(form.season_objectId) ? form.season_objectId : form.season_objectId ? [form.season_objectId] : []))
+      formData.append('festival_objectId', JSON.stringify(Array.isArray(form.festival_objectId) ? form.festival_objectId : form.festival_objectId ? [form.festival_objectId] : []))
+      formData.append('care_instruction_objectId', JSON.stringify(Array.isArray(form.care_instruction_objectId) ? form.care_instruction_objectId : form.care_instruction_objectId ? [form.care_instruction_objectId] : []))
+
+      // Prepare variants array for backend
+      const variantsForBackend = variants.map((variant) => {
+        const { images, ...rest } = variant
+        return {
+          ...rest,
+          skin_tone: Array.isArray(variant.skin_tone) ? variant.skin_tone : [],
+          under_tone: Array.isArray(variant.under_tone) ? variant.under_tone : [],
+        }
+      })
+      formData.append('variants', JSON.stringify(variantsForBackend))
+
+      // Append images for each variant with correct field name
       variants.forEach((variant, vIdx) => {
         if (variant.images && variant.images.length > 0) {
-          variant.images.forEach((img, iIdx) => {
-            formData.append(`variantImages_${vIdx}_${iIdx}`, img.file)
+          variant.images.forEach((img, imgIdx) => {
+            formData.append(`variant_${vIdx}_image_${imgIdx}`, img.file)
+
           })
         }
       })
-      
-      // Append variants data (without image files)
-      formData.append('variants', JSON.stringify(
-        variants.map(v => ({
-          ...v,
-          skin_tone: JSON.parse(v.skin_tone || '[]'),
-          under_tone: JSON.parse(v.under_tone || '[]'),
-          stock_qty: parseInt(v.stock_qty),
-          price: parseFloat(v.price),
-          discount_price: v.discount_price ? parseFloat(v.discount_price) : null,
-          images: undefined // Don't send File objects in JSON
-        }))
-      ))
-
-      console.log('Submitting product with variants:', variants.length)
 
       const res = await axios.post('http://localhost:3001/api/product/createProducts', formData, {
         headers: { 'Content-Type': 'multipart/form-data' }
@@ -294,7 +309,6 @@ const ProductAdd = () => {
         setError(res.data.message || 'Failed to add product')
       }
     } catch (err) {
-      console.error('Error creating product:', err)
       setError(err.response?.data?.message || 'Failed to add product')
     }
   }
@@ -342,12 +356,13 @@ const ProductAdd = () => {
     return []
   }
 
-  const handleImageChange = (e) => {
+  const handleImageChange = async (e) => {
     const files = Array.from(e.target.files)
     const imageList = files.map((file, i) => ({
       file,
-      is_primary: i === 0,
+      is_primary: i === 0, // First image is primary by default
       sort_order: i,
+      preview: URL.createObjectURL(file) // For preview purposes
     }))
     setVariantImages(imageList)
     // Clear image error when user selects images
@@ -426,6 +441,32 @@ const ProductAdd = () => {
     setVariantImages(variantToEdit.images || [])
     setShowVariantForm(true)
     removeVariant(index)
+  }
+
+  // Remove individual image from variant
+  const removeVariantImage = (imageIndex) => {
+    const updatedImages = variantImages.filter((_, i) => i !== imageIndex)
+    // If we removed the primary image, make the first image primary
+    if (updatedImages.length > 0 && !updatedImages.some(img => img.is_primary)) {
+      updatedImages[0].is_primary = true
+    }
+    setVariantImages(updatedImages)
+  }
+
+  // Set primary image
+  const setPrimaryImage = (imageIndex) => {
+    const updatedImages = variantImages.map((img, i) => ({
+      ...img,
+      is_primary: i === imageIndex
+    }))
+    setVariantImages(updatedImages)
+  }
+
+  // Update image sort order
+  const updateImageSortOrder = (imageIndex, newSortOrder) => {
+    const updatedImages = [...variantImages]
+    updatedImages[imageIndex].sort_order = parseInt(newSortOrder, 10)
+    setVariantImages(updatedImages)
   }
 
   return (
@@ -722,7 +763,7 @@ const ProductAdd = () => {
                 type="file"
                 label="Upload Variant Images *"
                 multiple
-                accept=".png,.jpg,.jpeg"
+                accept=".png,.jpg,.jpeg,.webp"
                 className="mb-3"
                 onChange={handleImageChange}
                 invalid={!!variantErrors.images}
@@ -730,56 +771,60 @@ const ProductAdd = () => {
               {variantErrors.images && <div className="text-danger small mb-2">{variantErrors.images}</div>}
 
               {/* Image Management */}
-              {variantImages.map((img, idx) => (
-                <div key={idx} className="mb-3 p-2 border rounded">
-                  <div className="d-flex justify-content-between align-items-center mb-2">
-                    <strong>Image {idx + 1}: {img.file.name}</strong>
-                    <CButton 
-                      size="sm" 
-                      color="danger" 
-                      variant="outline"
-                      onClick={() => {
-                        const updated = variantImages.filter((_, i) => i !== idx)
-                        setVariantImages(updated)
-                      }}
-                    >
-                      Remove
-                    </CButton>
-                  </div>
-                  <CRow>
-                    <CCol md={6}>
-                      <CFormInput
-                        type="number"
-                        label="Sort Order"
-                        value={img.sort_order}
-                        onChange={(e) => {
-                          const updated = [...variantImages]
-                          updated[idx].sort_order = parseInt(e.target.value, 10)
-                          setVariantImages(updated)
-                        }}
-                      />
-                    </CCol>
-                    <CCol md={6}>
-                      <div className="form-check mt-4">
-                        <input
-                          type="radio"
-                          name="primaryImage"
-                          checked={img.is_primary}
-                          onChange={() => {
-                            const updated = variantImages.map((vimg, vidx) => ({
-                              ...vimg,
-                              is_primary: vidx === idx,
-                            }))
-                            setVariantImages(updated)
-                          }}
-                          className="form-check-input"
-                        />
-                        <label className="form-check-label">Set as Primary Image</label>
+              {variantImages.length > 0 && (
+                <div className="mb-3">
+                  <h6>Selected Images ({variantImages.length})</h6>
+                  <div className="row">
+                    {variantImages.map((img, idx) => (
+                      <div key={idx} className="col-md-4 mb-3">
+                        <div className="card">
+                          <img 
+                            src={img.preview} 
+                            alt={`Preview ${idx + 1}`}
+                            className="card-img-top"
+                            style={{ height: '150px', objectFit: 'cover' }}
+                          />
+                          <div className="card-body p-2">
+                            <div className="d-flex justify-content-between align-items-center mb-2">
+                              <small className="text-muted">{img.file.name}</small>
+                              <CButton 
+                                size="sm" 
+                                color="danger" 
+                                variant="outline"
+                                onClick={() => removeVariantImage(idx)}
+                              >
+                                ×
+                              </CButton>
+                            </div>
+                            <div className="mb-2">
+                              <CFormInput
+                                type="number"
+                                label="Sort Order"
+                                size="sm"
+                                value={img.sort_order}
+                                onChange={(e) => updateImageSortOrder(idx, e.target.value)}
+                              />
+                            </div>
+                            <div className="form-check">
+                              <input
+                                type="radio"
+                                name="primaryImage"
+                                checked={img.is_primary}
+                                onChange={() => setPrimaryImage(idx)}
+                                className="form-check-input"
+                                id={`primary-${idx}`}
+                              />
+                              <label className="form-check-label small" htmlFor={`primary-${idx}`}>
+                                Primary Image
+                              </label>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                    </CCol>
-                  </CRow>
+                    ))}
+                  </div>
                 </div>
-              ))}
+              )}
 
               {/* Feature Flags */}
               <div className="mb-3">
@@ -890,7 +935,26 @@ const ProductAdd = () => {
                             {AVAILABILITY_OPTIONS.find(opt => opt.value === v.available_status)?.label || v.available_status}
                           </span>
                         </td>
-                        <td>{v.images?.length || 0} images</td>
+                        <td>
+                          <div className="d-flex flex-wrap gap-1">
+                            {v.images?.slice(0, 3).map((img, imgIdx) => (
+                              <img 
+                                key={imgIdx}
+                                src={img.preview} 
+                                alt={`Variant ${i + 1} Image ${imgIdx + 1}`}
+                                style={{ width: '30px', height: '30px', objectFit: 'cover', borderRadius: '3px' }}
+                                title={img.is_primary ? 'Primary Image' : `Image ${imgIdx + 1}`}
+                              />
+                            ))}
+                            {v.images?.length > 3 && (
+                              <div className="d-flex align-items-center justify-content-center bg-light" 
+                                   style={{ width: '30px', height: '30px', borderRadius: '3px', fontSize: '10px' }}>
+                                +{v.images.length - 3}
+                              </div>
+                            )}
+                            <small className="text-muted">({v.images?.length || 0})</small>
+                          </div>
+                        </td>
                         <td>
                           <div className="d-flex gap-1">
                             <CButton 

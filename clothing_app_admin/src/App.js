@@ -15,6 +15,7 @@ const MainLayout = React.lazy(() => import('./layout/MainLayout'))// ...existing
 // Pages
 const Login = React.lazy(() => import('./views/pages/login/Login'))
 const Page404 = React.lazy(() => import('./views/pages/page404/Page404'))
+import AddOrder from './views/pages/orders/AddOrder'
 
 
 const App = () => {
@@ -42,6 +43,7 @@ const App = () => {
             path="/*"
             element={isLoggedIn ? <MainLayout /> : <Navigate to="/login" replace />}
           />
+          <Route path="/orders/add" element={<AddOrder />} />
           <Route path="*" element={<Page404 />} />
         </Routes>
       </Suspense>

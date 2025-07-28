@@ -468,7 +468,7 @@ const _nav = [
     component: CNavItem,
     name: 'Orders',
     to: '/orders',
-    icon: <CIcon icon={cilBarcode} customClassName="nav-icon" />,
+    icon: <CIcon icon={cilList} customClassName="nav-icon" />,
   },
   // {
   //   component: CNavTitle,
@@ -888,8 +888,12 @@ const _nav = [
   //   name: 'Docs',
   //   href: 'https://coreui.io/react/docs/templates/installation/',
   //   icon: <CIcon icon={cilDescription} customClassName="nav-icon" />,
+<<<<<<< HEAD
   // },
 >>>>>>> 8514b1a (product fetched from database and catogery is called)
+=======
+  // }
+>>>>>>> f645118 (able to save images)
 ]
 
 export default _nav
