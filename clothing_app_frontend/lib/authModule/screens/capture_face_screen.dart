@@ -1238,6 +1238,8 @@
 
 import 'package:clothing_app_frontend/navigation/navigators.dart';
 import 'package:clothing_app_frontend/navigation/routes.dart';
+import 'package:clothing_app_frontend/preferenceModule/service/ml_preference_service.dart';
+import 'package:clothing_app_frontend/preferenceModule/model/preference_model.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
@@ -1246,6 +1248,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
 import 'dart:async';
+import 'dart:convert';
 
 class CaptureFaceScreen extends StatefulWidget {
   const CaptureFaceScreen({Key? key}) : super(key: key);
@@ -1286,7 +1289,7 @@ class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
     }
   }
 
-  void _handlePhotoSaved(String savedPath) {
+  void _handlePhotoSaved(String savedPath) async {
     // Handle the saved photo path
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -1294,6 +1297,82 @@ class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
         backgroundColor: Colors.green,
       ),
     );
+
+    // Get the current user ID
+    final userId = await MLPreferenceService.getCurrentUserId();
+    
+    if (userId != null) {
+      try {
+        // Show loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Analyzing your preferences...'),
+              ],
+            ),
+          ),
+        );
+
+        // Get base64 image
+        final base64Image = await PhotoStorageHelper.getSavedSelfieAsBase64();
+        
+        if (base64Image != null) {
+          // Analyze preferences using ML service
+          final preferences = await MLPreferenceService.analyzeAndGetPreferences(
+            userId: userId,
+            imageBase64: base64Image,
+          );
+
+          // Close loading dialog
+          Navigator.pop(context);
+
+          if (preferences != null) {
+            // Save preferences locally using extension
+            await preferences.saveToPrefs();
+            
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Preferences analyzed and saved!'),
+                backgroundColor: Colors.green,
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Failed to analyze preferences. You can set them manually.'),
+                backgroundColor: Colors.orange,
+              ),
+            );
+          }
+        } else {
+          // Close loading dialog
+          Navigator.pop(context);
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Failed to get image data. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      } catch (e) {
+        // Close loading dialog if open
+        Navigator.pop(context);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error analyzing preferences: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
 
     // Navigate to preference screen after photo is saved
     Navigator.pushNamed(context, NamedRoute.preferenceScreen);
@@ -1497,7 +1576,7 @@ class PhotoStorageHelper {
 
       // Copy the photo to the new location
       final File originalFile = File(photo.path);
-      final File savedFile = await originalFile.copy(savedPath);
+      await originalFile.copy(savedPath);
 
       // Save the path in SharedPreferences
       final SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -1555,6 +1634,42 @@ class PhotoStorageHelper {
     } catch (e) {
       print('Error deleting saved selfie: $e');
       return false;
+    }
+  }
+
+  // Get saved selfie as Base64 string
+  static Future<String?> getSavedSelfieAsBase64() async {
+    try {
+      final String? savedPath = await getSavedSelfiePath();
+      if (savedPath == null) return null;
+
+      final File file = File(savedPath);
+      if (!await file.exists()) return null;
+
+      // Read file as bytes and convert to base64
+      final List<int> imageBytes = await file.readAsBytes();
+      final String base64String = base64Encode(imageBytes);
+      
+      return base64String;
+    } catch (e) {
+      print('Error getting saved selfie as base64: $e');
+      return null;
+    }
+  }
+
+  // Get saved selfie file directly
+  static Future<File?> getSavedSelfieFile() async {
+    try {
+      final String? savedPath = await getSavedSelfiePath();
+      if (savedPath == null) return null;
+
+      final File file = File(savedPath);
+      if (!await file.exists()) return null;
+
+      return file;
+    } catch (e) {
+      print('Error getting saved selfie file: $e');
+      return null;
     }
   }
 }
@@ -1628,20 +1743,34 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
           frontCamera,
           ResolutionPreset.medium,
           enableAudio: false,
+          imageFormatGroup: ImageFormatGroup.jpeg, // Specify format to reduce buffer issues
         );
 
         await _cameraController!.initialize();
+        
+        // Add a small delay to ensure camera is fully ready
+        await Future.delayed(const Duration(milliseconds: 500));
+        
         if (mounted) {
           setState(() {
             _isCameraInitialized = true;
           });
 
+          // Wait a bit longer before starting face detection to avoid buffer conflicts
           await Future.delayed(const Duration(seconds: 1));
           _startPeriodicFaceCheck();
         }
       }
     } catch (e) {
       print('Camera initialization error: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Camera initialization failed: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -1735,23 +1864,46 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
 
   Future<void> _capturePhoto() async {
     if (_cameraController == null || !_cameraController!.value.isInitialized) {
+      print('Camera not initialized for capture');
       return;
     }
+
+    // Stop face detection temporarily to free up resources
+    _faceCheckTimer?.cancel();
+    _faceDetectionWorking = false;
 
     setState(() {
       _isCapturing = true;
     });
 
     try {
+      // Add a small delay to ensure camera is ready
+      await Future.delayed(const Duration(milliseconds: 200));
+      
+      print('📸 Taking picture...');
       final XFile photo = await _cameraController!.takePicture();
+      print('✅ Picture taken successfully: ${photo.path}');
+      
       _showCapturedImage(photo);
     } catch (e) {
+      print('❌ Error capturing photo: $e');
       setState(() {
         _isCapturing = false;
       });
 
-      if (_faceDetectionWorking) {
-        await Future.delayed(const Duration(milliseconds: 500));
+      // Show error to user
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to capture photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+
+      // Restart face detection after a delay
+      if (mounted && _faceDetector != null) {
+        await Future.delayed(const Duration(milliseconds: 1000));
         _startPeriodicFaceCheck();
       }
     }
@@ -1861,9 +2013,30 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
 
   @override
   void dispose() {
+    // Stop any ongoing timers first
     _faceCheckTimer?.cancel();
-    _cameraController?.dispose();
-    _faceDetector?.close();
+    
+    // Stop image stream processing if active
+    _faceDetectionWorking = false;
+    _isCheckingFace = false;
+    
+    // Clean up camera controller
+    if (_cameraController != null) {
+      if (_cameraController!.value.isInitialized) {
+        _cameraController!.stopImageStream().catchError((e) {
+          print('Error stopping image stream: $e');
+        });
+      }
+      _cameraController!.dispose().catchError((e) {
+        print('Error disposing camera: $e');
+      });
+    }
+    
+    // Clean up face detector
+    _faceDetector?.close().catchError((e) {
+      print('Error closing face detector: $e');
+    });
+    
     super.dispose();
   }
 

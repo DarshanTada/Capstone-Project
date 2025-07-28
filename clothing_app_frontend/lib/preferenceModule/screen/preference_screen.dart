@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import '../service/ml_preference_service.dart';
+import '../model/preference_model.dart';
+import '../../authModule/screens/capture_face_screen.dart';
 
 void main() => runApp(PreferenceScreenApp());
 
@@ -36,6 +39,326 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   bool cameraEnabled = true;
   bool storageEnabled = true;
   bool microphoneEnabled = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPreferences();
+  }
+
+  /// Load preferences from local storage or server
+  Future<void> _loadPreferences() async {
+    try {
+      // First try to load from local storage
+      final localPrefs = await PreferencePrefs.loadFromPrefs();
+      
+      if (localPrefs != null) {
+        _populatePreferencesFromModel(localPrefs);
+        return;
+      }
+
+      // If no local preferences, try to fetch from server
+      final userId = await MLPreferenceService.getCurrentUserId();
+      if (userId != null) {
+        final serverPrefs = await MLPreferenceService.getUserPreferences(userId);
+        if (serverPrefs != null) {
+          _populatePreferencesFromModel(serverPrefs);
+          // Save to local storage for future use
+          await serverPrefs.saveToPrefs();
+        }
+      }
+    } catch (e) {
+      print('Error loading preferences: $e');
+    }
+  }
+
+  /// Populate UI fields from preference model
+  void _populatePreferencesFromModel(Preference prefs) {
+    setState(() {
+      if (prefs.gender != null) gender = prefs.gender!;
+      if (prefs.age != null) age = prefs.age!;
+      if (prefs.height != null) height = prefs.height!;
+      if (prefs.bodyType != null) bodyType = prefs.bodyType!;
+      if (prefs.skinTone != null) {
+        // Map skin tone string to index
+        selectedSkin = _mapSkinToneToIndex(prefs.skinTone!);
+      }
+      if (prefs.style != null) selectedStyles = prefs.style!.toSet();
+      if (prefs.occasion != null) selectedOccasions = prefs.occasion!.toSet();
+      if (prefs.festivals != null) selectedFestivals = prefs.festivals!.toSet();
+      if (prefs.undertone != null) selectedUndertone = prefs.undertone!;
+      if (prefs.colorTones != null) {
+        selectedColors = _mapColorTonesToIndices(prefs.colorTones!);
+      }
+    });
+  }
+
+  /// Map skin tone string to UI index
+  int _mapSkinToneToIndex(String skinTone) {
+    switch (skinTone.toLowerCase()) {
+      case 'very_fair':
+        return 0;
+      case 'fair':
+        return 1;
+      case 'light':
+        return 2;
+      case 'medium':
+        return 3;
+      case 'tan':
+        return 4;
+      case 'dark':
+      case 'very_dark':
+        return 5;
+      default:
+        return 3; // Default to medium
+    }
+  }
+
+  /// Map color tones to UI color indices
+  Set<int> _mapColorTonesToIndices(List<String> colorTones) {
+    Set<int> indices = {};
+    for (String tone in colorTones) {
+      switch (tone.toLowerCase()) {
+        case 'red':
+          indices.add(0);
+          indices.add(8); // red appears twice
+          break;
+        case 'white':
+          indices.add(1);
+          indices.add(9); // white appears twice
+          break;
+        case 'purple':
+          indices.add(2);
+          indices.add(10); // purple appears twice
+          break;
+        case 'orange':
+          indices.add(3);
+          indices.add(11); // orange appears twice
+          break;
+        case 'blue':
+          indices.add(4);
+          indices.add(12); // blue appears twice
+          break;
+        case 'black':
+          indices.add(5);
+          indices.add(13); // black appears twice
+          break;
+        case 'yellow':
+          indices.add(6);
+          indices.add(14); // yellow appears twice
+          break;
+        case 'green':
+          indices.add(7);
+          indices.add(15); // green appears twice
+          break;
+      }
+    }
+    return indices;
+  }
+
+  /// Save current preferences to local storage and server
+  Future<void> _savePreferences() async {
+    try {
+      final userId = await MLPreferenceService.getCurrentUserId();
+      if (userId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('User not found. Please login again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Create preference model from current UI state
+      final preference = Preference(
+        userObjectId: int.parse(userId), // Convert string to int
+        gender: gender,
+        age: age,
+        height: height,
+        bodyType: bodyType,
+        skinTone: _mapSkinIndexToTone(selectedSkin),
+        style: selectedStyles.toList(),
+        occasion: selectedOccasions.toList(),
+        festivals: selectedFestivals.toList(),
+        colorTones: _mapColorIndicesToTones(selectedColors),
+        undertone: selectedUndertone,
+      );
+
+      // Save to local storage
+      await preference.saveToPrefs();
+
+      // Try to get existing preference ID to update, or create new
+      final existingPrefs = await MLPreferenceService.getUserPreferences(userId);
+      
+      if (existingPrefs != null) {
+        // Update existing preference (we would need the preference ID for this)
+        // For now, just show success message as the backend handles create/update
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Preferences updated successfully!'),
+            backgroundColor: Color(0xFFB8956A),
+          ),
+        );
+      } else {
+        // New preference will be created by the backend
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Preferences saved successfully!'),
+            backgroundColor: Color(0xFFB8956A),
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error saving preferences: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to save preferences. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  /// Map skin tone index to string
+  String _mapSkinIndexToTone(int index) {
+    switch (index) {
+      case 0:
+        return 'very_fair';
+      case 1:
+        return 'fair';
+      case 2:
+        return 'light';
+      case 3:
+        return 'medium';
+      case 4:
+        return 'tan';
+      case 5:
+        return 'dark';
+      default:
+        return 'medium';
+    }
+  }
+
+  /// Map color indices to tone strings
+  List<String> _mapColorIndicesToTones(Set<int> indices) {
+    Set<String> tones = {};
+    List<String> colorNames = [
+      'red', 'white', 'purple', 'orange', 'blue', 'black', 'yellow', 'green',
+      'red', 'white', 'purple', 'orange', 'blue', 'black', 'yellow', 'green'
+    ];
+    
+    for (int index in indices) {
+      if (index >= 0 && index < colorNames.length) {
+        tones.add(colorNames[index]);
+      }
+    }
+    return tones.toList();
+  }
+
+  /// Re-analyze preferences from saved selfie
+  Future<void> _reAnalyzePreferences() async {
+    try {
+      print('🔄 Starting preference re-analysis...');
+      
+      final userId = await MLPreferenceService.getCurrentUserId();
+      if (userId == null) {
+        print('❌ No user ID found');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('User not found. Please login again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+      print('✅ User ID found: $userId');
+
+      // Get saved selfie
+      final base64Image = await PhotoStorageHelper.getSavedSelfieAsBase64();
+      if (base64Image == null) {
+        print('❌ No saved selfie found');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('No saved selfie found. Please capture a new photo.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
+      print('✅ Base64 image retrieved, length: ${base64Image.length}');
+
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(),
+              SizedBox(height: 16),
+              Text('Re-analyzing your preferences...'),
+              SizedBox(height: 8),
+              Text('This may take 10-30 seconds', 
+                style: TextStyle(fontSize: 12, color: Colors.grey)),
+            ],
+          ),
+        ),
+      );
+
+      print('🚀 Sending request to ML service...');
+      
+      // Analyze preferences
+      final preferences = await MLPreferenceService.analyzeAndGetPreferences(
+        userId: userId,
+        imageBase64: base64Image,
+      );
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (preferences != null) {
+        print('✅ Preferences received successfully');
+        print('📋 Gender: ${preferences.gender}');
+        print('📋 Age: ${preferences.age}');
+        print('📋 Skin Tone: ${preferences.skinTone}');
+        print('📋 Style: ${preferences.style}');
+        print('📋 Colors: ${preferences.colorTones}');
+        
+        // Update UI with new preferences
+        _populatePreferencesFromModel(preferences);
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Preferences re-analyzed successfully!'),
+            backgroundColor: Color(0xFFB8956A),
+          ),
+        );
+      } else {
+        print('❌ No preferences returned from ML service');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to re-analyze preferences. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      // Close loading dialog if open
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      
+      print('💥 Error re-analyzing preferences: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error re-analyzing preferences: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
 
   List<Color> skinTones = [
     Color(0xFFFFE0BD),
@@ -159,15 +482,36 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         ),
         actions: [
           IconButton(
-            icon: Icon(Icons.save_outlined, color: Colors.brown.shade300),
-            onPressed: () {
-              // Save preferences functionality
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(
-                  content: Text('Preferences saved successfully!'),
-                  backgroundColor: Color(0xFFB8956A),
-                ),
+            icon: Icon(Icons.camera_alt, color: Colors.brown.shade300),
+            onPressed: () async {
+              // Navigate to camera capture for testing
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => CaptureFaceScreen()),
               );
+              // The CaptureFaceScreen already handles ML analysis, so just refresh preferences
+              if (result == true || result == null) {
+                // Wait a moment for any background processing
+                await Future.delayed(Duration(seconds: 1));
+                // Reload preferences to see if they were updated
+                await _loadPreferences();
+              }
+            },
+            tooltip: 'Capture new photo and analyze',
+          ),
+          IconButton(
+            icon: Icon(Icons.auto_awesome, color: Colors.brown.shade300),
+            onPressed: () async {
+              // Re-analyze preferences from saved photo
+              await _reAnalyzePreferences();
+            },
+            tooltip: 'Re-analyze preferences from photo',
+          ),
+          IconButton(
+            icon: Icon(Icons.save_outlined, color: Colors.brown.shade300),
+            onPressed: () async {
+              // Save preferences functionality
+              await _savePreferences();
             },
           ),
         ],
