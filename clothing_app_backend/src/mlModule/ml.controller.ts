@@ -8,6 +8,31 @@ import { MLAnalysis, MLSession, ML_REQUEST_TYPES } from "./ml.model";
 
 const baseURL = process.env.PYTHON_SERVER_URL || "http://localhost:8000"; // fallback
 
+// Health check for Python server
+export const checkPythonServerHealth = async (req: Request, res: Response): Promise<void> => {
+  try {
+    console.log(`Checking Python server health at: ${baseURL}`);
+    const response = await axios.get(`${baseURL}/health`, { timeout: 10000 });
+    res.status(200).json({ 
+      status: "healthy", 
+      python_server: baseURL,
+      response: response.data 
+    });
+  } catch (err: any) {
+    console.error('Python server health check failed:', {
+      message: err.message,
+      code: err.code,
+      status: err.response?.status
+    });
+    res.status(503).json({ 
+      status: "unhealthy", 
+      python_server: baseURL,
+      error: err.message,
+      code: err.code
+    });
+  }
+};
+
 export const uploadFile = async (req: Request, res: Response): Promise<void> => {
   if (!req.file) {
     res.status(400).json({ error: "File is required." });
@@ -38,6 +63,14 @@ export const askQuestion = async (req: Request, res: Response): Promise<void> =>
   }
 
   try {
+    console.log(`Making request to: ${baseURL}/ask/`);
+    console.log('Request body:', { 
+      question, 
+      system_prompt: system_prompt || "", 
+      image_provided: !!image,
+      user_id: user_id || null 
+    });
+
     const response = await axios.post(
       `${baseURL}/ask/`,
       {
@@ -48,10 +81,41 @@ export const askQuestion = async (req: Request, res: Response): Promise<void> =>
       },
       { timeout: 120000 }
     );
+    
+    console.log('Response received:', response.status);
     res.status(200).json(response.data);
   } catch (err: any) {
-    console.error(err);
-    res.status(500).json({ error: "Query failed." });
+    console.error('Error details:', {
+      message: err.message,
+      status: err.response?.status,
+      statusText: err.response?.statusText,
+      data: err.response?.data,
+      code: err.code,
+      baseURL
+    });
+    
+    if (err.response) {
+      // Server responded with error status
+      res.status(err.response.status || 500).json({ 
+        error: "Query failed.", 
+        details: err.response.data || err.message,
+        python_server_status: err.response.status
+      });
+    } else if (err.code === 'ECONNREFUSED' || err.code === 'ENOTFOUND') {
+      // Connection refused or DNS error
+      res.status(503).json({ 
+        error: "Python ML server is not accessible.", 
+        details: `Cannot connect to ${baseURL}`,
+        code: err.code
+      });
+    } else {
+      // Other network or timeout errors
+      res.status(500).json({ 
+        error: "Query failed.", 
+        details: err.message,
+        code: err.code
+      });
+    }
   }
 };
 
