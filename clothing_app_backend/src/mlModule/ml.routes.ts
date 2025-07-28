@@ -7,10 +7,14 @@ import {
   getAnalysisHistory,
   getUserSessions,
   deleteAnalysis,
-  getMLStats
+  getMLStats,
+  checkPythonServerHealth
 } from './ml.controller';
 
 export const MlRouter = express.Router();
+
+// Health check
+MlRouter.get('/health', checkPythonServerHealth);
 
 // Core ML functionality
 MlRouter.post('/upload', upload.single("file"), uploadFile);
