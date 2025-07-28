@@ -68,7 +68,6 @@ const mlSessionSchema = new mongoose.Schema({
 mlAnalysisSchema.index({ user_objectId: 1, created_at: -1 });
 mlAnalysisSchema.index({ request_type: 1, status: 1 });
 mlSessionSchema.index({ user_objectId: 1, is_active: 1 });
-mlSessionSchema.index({ session_id: 1 });
 
 export const MLAnalysis = mongoose.model("MLAnalysis", mlAnalysisSchema);
 export const MLSession = mongoose.model("MLSession", mlSessionSchema);
