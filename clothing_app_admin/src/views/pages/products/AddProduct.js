@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react'
 
 import {
@@ -25,6 +24,7 @@ const ProductAdd = () => {
     description: '',
     fabric_type: '',
     category_id: '',
+    subcategory_id: '',
     gender: '',
     bodyType: '',
     productType: '',
@@ -132,13 +132,19 @@ const ProductAdd = () => {
         .then(res => {
           if (res.data.success) {
             setSubCategories(res.data.data)
+            setForm(prev => ({ ...prev, subcategory_id: '' })) // reset subcategory when category changes
           } else {
             setSubCategories([])
+            setForm(prev => ({ ...prev, subcategory_id: '' }))
           }
         })
-        .catch(() => setSubCategories([]))
+        .catch(() => {
+          setSubCategories([])
+          setForm(prev => ({ ...prev, subcategory_id: '' }))
+        })
     } else {
       setSubCategories([])
+      setForm(prev => ({ ...prev, subcategory_id: '' }))
     }
   }, [form.category_id])
 
@@ -193,41 +199,41 @@ const ProductAdd = () => {
   // Validate variant before saving
   const validateVariant = () => {
     const errors = {}
-    
+
     if (!variant.size.trim()) {
       errors.size = 'Size is required'
     }
-    
+
     if (!variant.color.trim()) {
       errors.color = 'Color is required'
     }
-    
+
     if (!variant.available_status) {
       errors.available_status = 'Availability status is required'
     }
-    
+
     if (!variant.stock_qty || variant.stock_qty <= 0) {
       errors.stock_qty = 'Stock quantity is required and must be greater than 0'
     }
-    
+
     if (!variant.price || variant.price <= 0) {
       errors.price = 'Price is required and must be greater than 0'
     }
-    
+
     if (!variant.sku.trim()) {
       errors.sku = 'SKU is required'
     }
-    
+
     if (variantImages.length === 0) {
       errors.images = 'At least one image is required for each variant'
     }
-    
+
     // Check if SKU already exists in other variants
     const existingSKU = variants.find(v => v.sku === variant.sku)
     if (existingSKU) {
       errors.sku = 'SKU must be unique across all variants'
     }
-    
+
     setVariantErrors(errors)
     return Object.keys(errors).length === 0
   }
@@ -238,14 +244,14 @@ const ProductAdd = () => {
       setError('At least one variant must be added before creating the product')
       return false
     }
-    
+
     // Check if all variants have required stock availability
     const variantsWithoutStock = variants.filter(v => !v.stock_qty || v.stock_qty <= 0)
     if (variantsWithoutStock.length > 0) {
       setError('All variants must have stock quantity greater than 0')
       return false
     }
-    
+
     return true
   }
 
@@ -386,7 +392,7 @@ const ProductAdd = () => {
     }
 
     setVariants([...variants, processedVariant])
-    
+
     // Reset variant form
     setVariant({
       size: '',
@@ -425,7 +431,7 @@ const ProductAdd = () => {
     setVariantErrors({})
     setShowVariantForm(false)
     setSuccess('Variant added successfully!')
-    
+
     // Clear success message after 3 seconds
     setTimeout(() => setSuccess(''), 3000)
   }
@@ -523,13 +529,19 @@ const ProductAdd = () => {
                   <option key={cat._id} value={cat._id}>{cat.name}</option>
                 ))}
               </CFormSelect>
-              <CFormTextarea
-                label="Subcategories"
-                value={subCategories.map(sub => sub.name).join('\n')}
-                disabled
-                rows={subCategories.length > 2 ? subCategories.length : 2}
+              <CFormSelect
+                label="Subcategory"
+                name="subcategory_id"
+                value={form.subcategory_id}
+                onChange={handleChange}
+                required
                 className="mb-3"
-              />
+              >
+                <option value="">Select Subcategory</option>
+                {subCategories.map(sub => (
+                  <option key={sub._id} value={sub._id}>{sub.name}</option>
+                ))}
+              </CFormSelect>
               <div className="mb-3">
                 <label className="form-label d-block">Gender</label>
                 {GENDER.map(opt => (
@@ -613,12 +625,12 @@ const ProductAdd = () => {
               </CFormSelect>
             </CCol>
           </CRow>
-          
+
           {/* Submit Button moved inside form but at the bottom */}
           <div className="mt-4 pt-3 border-top">
-            <CButton 
-              color="primary" 
-              type="submit" 
+            <CButton
+              color="primary"
+              type="submit"
               size="lg"
               disabled={variants.length === 0}
             >
@@ -655,7 +667,7 @@ const ProductAdd = () => {
           {showVariantForm && (
             <div className="mb-4 border p-3 rounded">
               <h6>Add New Variant</h6>
-              
+
               <CRow>
                 <CCol md={6}>
                   <CFormSelect
@@ -778,8 +790,8 @@ const ProductAdd = () => {
                     {variantImages.map((img, idx) => (
                       <div key={idx} className="col-md-4 mb-3">
                         <div className="card">
-                          <img 
-                            src={img.preview} 
+                          <img
+                            src={img.preview}
                             alt={`Preview ${idx + 1}`}
                             className="card-img-top"
                             style={{ height: '150px', objectFit: 'cover' }}
@@ -787,9 +799,9 @@ const ProductAdd = () => {
                           <div className="card-body p-2">
                             <div className="d-flex justify-content-between align-items-center mb-2">
                               <small className="text-muted">{img.file.name}</small>
-                              <CButton 
-                                size="sm" 
-                                color="danger" 
+                              <CButton
+                                size="sm"
+                                color="danger"
                                 variant="outline"
                                 onClick={() => removeVariantImage(idx)}
                               >
@@ -854,8 +866,8 @@ const ProductAdd = () => {
                 <CButton color="success" onClick={saveVariant}>
                   Save Variant
                 </CButton>
-                <CButton 
-                  color="secondary" 
+                <CButton
+                  color="secondary"
                   onClick={() => {
                     setShowVariantForm(false)
                     setVariant({
@@ -928,27 +940,26 @@ const ProductAdd = () => {
                         <td>{v.stock_qty}</td>
                         <td>${v.price}</td>
                         <td>
-                          <span className={`badge ${
-                            v.available_status === 'in_stock' ? 'bg-success' : 
+                          <span className={`badge ${v.available_status === 'in_stock' ? 'bg-success' :
                             v.available_status === 'out_of_stock' ? 'bg-danger' : 'bg-warning'
-                          }`}>
+                            }`}>
                             {AVAILABILITY_OPTIONS.find(opt => opt.value === v.available_status)?.label || v.available_status}
                           </span>
                         </td>
                         <td>
                           <div className="d-flex flex-wrap gap-1">
                             {v.images?.slice(0, 3).map((img, imgIdx) => (
-                              <img 
+                              <img
                                 key={imgIdx}
-                                src={img.preview} 
+                                src={img.preview}
                                 alt={`Variant ${i + 1} Image ${imgIdx + 1}`}
                                 style={{ width: '30px', height: '30px', objectFit: 'cover', borderRadius: '3px' }}
                                 title={img.is_primary ? 'Primary Image' : `Image ${imgIdx + 1}`}
                               />
                             ))}
                             {v.images?.length > 3 && (
-                              <div className="d-flex align-items-center justify-content-center bg-light" 
-                                   style={{ width: '30px', height: '30px', borderRadius: '3px', fontSize: '10px' }}>
+                              <div className="d-flex align-items-center justify-content-center bg-light"
+                                style={{ width: '30px', height: '30px', borderRadius: '3px', fontSize: '10px' }}>
                                 +{v.images.length - 3}
                               </div>
                             )}
@@ -957,18 +968,18 @@ const ProductAdd = () => {
                         </td>
                         <td>
                           <div className="d-flex gap-1">
-                            <CButton 
-                              size="sm" 
-                              color="info" 
+                            <CButton
+                              size="sm"
+                              color="info"
                               variant="outline"
                               onClick={() => editVariant(i)}
                               disabled={showVariantForm}
                             >
                               Edit
                             </CButton>
-                            <CButton 
-                              size="sm" 
-                              color="danger" 
+                            <CButton
+                              size="sm"
+                              color="danger"
                               variant="outline"
                               onClick={() => removeVariant(i)}
                             >
@@ -987,9 +998,9 @@ const ProductAdd = () => {
 
         {/* Submit Button */}
         <div className="mt-4 pt-3 border-top d-none">
-          <CButton 
-            color="primary" 
-            type="submit" 
+          <CButton
+            color="primary"
+            type="submit"
             size="lg"
             disabled={variants.length === 0}
             onClick={handleSubmit}
