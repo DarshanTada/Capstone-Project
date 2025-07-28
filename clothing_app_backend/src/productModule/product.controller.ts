@@ -2,7 +2,124 @@ import { Request, Response } from 'express';
 import Product from '../productModule/product.model';
 import ProductVariant from '../productModule/productVariant.model';
 import ProductImage from '../productModule/productImage.model';
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
+
+
+// Get Product Detail API
+export const getProductDetail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const productId = req.params.id;
+    // Populate subcategory inside body_type
+        const product = await Product.findById(productId)
+            .populate({
+                path: 'category_id',
+                populate: {
+                    path: 'body_type.subcategory',
+                }
+            })
+            .populate('care_instruction_objectId');
+    if (!product) {
+      res.status(404).json({ success: false, message: 'Product not found.' });
+      return;
+    }
+
+    // Get variants
+    const variants = await ProductVariant.find({ productObjectId: productId });
+
+    // Get images
+    const images = await ProductImage.find({ productObjectId: productId });
+
+    // Defensive: check populated fields
+    const categoryId = product.category_id?._id || product.category_id;
+    // Get similar products (same category, exclude current)
+    const similarProducts = await Product.find({
+      category_id: categoryId,
+      _id: { $ne: productId }
+    }).limit(10);
+
+    // Get user preferences from query
+    const { skinTone, undertone, bodyType } = req.query;
+
+    // Generate system prompt for askQuestion API
+    let systemPrompt = '';
+    if (product.productType === 'top') {
+      const categoryName = typeof product.category_id === 'object' && 'name' in product.category_id
+        ? (product.category_id as any).name
+        : '';
+      let subcategoryName = '';
+      if (Array.isArray(product.bodyType) && product.bodyType[0] && typeof product.bodyType[0] === 'object' && 'subcategory' in product.bodyType[0]) {
+        subcategoryName = product.bodyType[0].subcategory?.[0]?.name || '';
+      }
+      systemPrompt = `Given a user with skin tone: ${skinTone}, undertone: ${undertone}, body type: ${bodyType}, and a top from category: ${categoryName}, subcategory: ${subcategoryName}, suggest the most trendy and matching bottoms available in our catalog. Only recommend products that fit the user's body type and style preferences.`;
+    }
+
+    // Call askQuestion API (pseudo, replace with actual call)
+    let trendsResponse: any = null;
+    if (systemPrompt) {
+      // Replace with actual ML API call
+      // trendsResponse = await askQuestion(systemPrompt);
+      trendsResponse = null; // Placeholder
+    }
+
+    // Get matching products according to user preferences and ML response
+    // Call askQuestion API for actual matching response
+    let matchingAPIResponse = '';
+    if (systemPrompt) {
+        try {
+            const axios = require('axios');
+            const baseURL = process.env.PYTHON_SERVER_URL || 'http://localhost:8000';
+            const mlRes = await axios.post(`${baseURL}/ask/`, {
+                question: 'What bottoms match this top?',
+                system_prompt: systemPrompt,
+            }, { timeout: 120000 });
+            matchingAPIResponse = typeof mlRes.data === 'string' ? mlRes.data : JSON.stringify(mlRes.data);
+        } catch (mlErr: any) {
+            matchingAPIResponse = 'AI API call failed.';
+        }
+    }
+
+    let matchingProducts: any[] = [];
+    if (product.productType === 'top') {
+        // If ML API returns product IDs, fetch those products
+        let trendProductIds: string[] = [];
+        try {
+            const parsedTrend = typeof matchingAPIResponse === 'string' ? JSON.parse(matchingAPIResponse) : matchingAPIResponse;
+            if (parsedTrend && parsedTrend.matchingProductIds && Array.isArray(parsedTrend.matchingProductIds)) {
+                trendProductIds = parsedTrend.matchingProductIds;
+            }
+        } catch (e) {
+            // If matchingAPIResponse is not JSON, ignore
+        }
+        if (trendProductIds.length > 0) {
+            matchingProducts = await Product.find({ _id: { $in: trendProductIds } });
+        } else {
+            // Fallback: filter by user preferences
+            const matchQuery: any = {
+                productType: 'bottom',
+            };
+            if (bodyType) matchQuery.bodyType = bodyType;
+            if (skinTone) matchQuery.skin_tone = skinTone;
+            if (undertone) matchQuery.under_tone = undertone;
+            matchingProducts = await Product.find(matchQuery).limit(10);
+        }
+    }
+
+    res.status(200).json({
+        success: true,
+        data: {
+            product,
+            variants,
+            images,
+            similarProducts,
+            matchingProducts,
+            matchingAPIResponse,
+        }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 
 const safeParse = (value: any): any[] => {
   try {
@@ -201,7 +318,6 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         productObjectId: productId,
       });
 
-      // ✅ Handle only updates to existing images
       const variantImages = safeParse(variant.images || []);
       for (let j = 0; j < variantImages.length; j++) {
         const imageObj = variantImages[j];
@@ -263,6 +379,7 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
 
     const total = await Product.countDocuments();
     const products = await Product.find()
+      .populate('category_id')
       .skip(skip)
       .limit(limit)
       .lean();

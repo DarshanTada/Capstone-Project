@@ -5,6 +5,10 @@ import 'package:clothing_app_frontend/categoryModule/screens/product_detail_scre
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
+// import 'package:clothing_app_frontend/homeModule/screens/category_provider.dart';
+import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
+import 'package:clothing_app_frontend/profileModule/screens/profile_screen.dart';
+import 'package:clothing_app_frontend/categoryModule/screens/product_detail_screen.dart';
 // import 'package:clothing_app_frontend/cartModule/screens/cart_screen.dart';
 // import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
 // import 'package:clothing_app_frontend/homeModule/widgets/size_chart_screen.dart';
@@ -117,13 +121,13 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider()),
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
+
         // ChangeNotifierProvider(create: (_) => CafeProvider()),
         // ChangeNotifierProvider(create: (_) => CartProvider()),
         // ChangeNotifierProvider(create: (_) => OrderProvider()),
-      
-      
       ],
       child: Consumer(
         builder: (context, theme, _) => MaterialApp(
