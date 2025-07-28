@@ -9,6 +9,7 @@ import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart
 // import 'package:clothing_app_frontend/homeModule/screens/category_provider.dart';
 import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
 import 'package:clothing_app_frontend/profileModule/screens/profile_screen.dart';
+import 'package:clothing_app_frontend/categoryModule/screens/product_detail_screen.dart';
 // import 'package:clothing_app_frontend/cartModule/screens/cart_screen.dart';
 // import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
 // import 'package:clothing_app_frontend/homeModule/widgets/size_chart_screen.dart';
