@@ -4,12 +4,12 @@ import 'bodytype_model.dart';
 
 class Category {
   final String id;
-  String name;
-  String image; // base64 string
-  String gender;
-  List<BodyTypeEntry> bodyTypes;
-  DateTime? createdAt;
-  DateTime? updatedAt;
+  final String name;
+  final String image; // base64 string
+  final String gender;
+  final List<BodyTypeEntry> bodyTypes;
+  final DateTime? createdAt;
+  final DateTime? updatedAt;
 
   Category({
     required this.id,
