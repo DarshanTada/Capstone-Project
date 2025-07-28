@@ -1,51 +1,85 @@
 import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
-import { CCard, CCardBody, CCardHeader, CButton, CForm, CFormInput, CFormLabel, CRow, CCol, CFormTextarea } from '@coreui/react'
-import tshirtImg from 'src/assets/images/products/T-Shirt.png'
+import {
+  CCard, CCardBody, CCardHeader, CButton, CForm, CFormInput, CFormLabel,
+  CRow, CCol, CFormTextarea, CFormSelect, CAlert
+} from '@coreui/react'
+import axios from 'axios'
 
-const dummyProduct = {
-  objectId: '1',
-  name: 'Classic T-Shirt',
-  description: 'A comfortable cotton t-shirt.',
-  price: 19.99,
-  discount_price: 14.99,
-  size: 'M',
-  color: 'Blue',
-  fabric_type: 'Cotton',
-  images: [tshirtImg],
-  category_id: 'tops',
-  quantity: 120,
-  availabe_status: true,
-  average_rating: 4.5,
-  total_reviews: 12,
-  gender: 'Unisex',
-  season_objectId: 'summer',
-  festival_objectId: 'eid',
-  care_instruction_objectId: 'machine_wash',
-  sku: 'TSHIRT-001',
-  barcode: '1234567890123',
-  is_featured: true,
-  is_new_arrival: false,
-  is_best_seller: true,
-  is_on_sale: true,
-  is_on_trend: false,
-  weight: '200g',
-  isTryon: false,
-  productType: 'Apparel',
-}
+const SIZE_OPTIONS = [
+  { value: 'ex', label: 'Extra Small' },
+  { value: 's', label: 'Small' },
+  { value: 'm', label: 'Medium' },
+  { value: 'l', label: 'Large' },
+  { value: 'xl', label: 'Extra Large' },
+]
+const AVAILABILITY_OPTIONS = [
+  { value: 'in_stock', label: 'In Stock' },
+  { value: 'out_of_stock', label: 'Out of Stock' },
+  { value: 'pre_order', label: 'Pre Order' },
+]
 
 const ProductDetail = () => {
   const { id } = useParams()
   const navigate = useNavigate()
-  // In real app, fetch product by id
-  const [form, setForm] = useState(dummyProduct)
+  const [form, setForm] = useState(null)
+  const [variants, setVariants] = useState([])
+  const [images, setImages] = useState([])
+  const [categories, setCategories] = useState([])
+  const [seasons, setSeasons] = useState([])
+  const [festivals, setFestivals] = useState([])
+  const [careInstructions, setCareInstructions] = useState([])
+  const [subCategories, setSubCategories] = useState([])
   const [isEditing, setIsEditing] = useState(false)
+  const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
 
   useEffect(() => {
-    // Fetch product by id here if using API
-    setForm(dummyProduct)
-    setIsEditing(false)
+    const fetchProduct = async () => {
+      try {
+        const res = await axios.get('http://localhost:3001/api/product/getProduct', {
+          params: { id }
+        })
+        if (res.data.success && res.data.data.length > 0) {
+          const product = res.data.data[0]
+          setForm({
+            ...product,
+            style: Array.isArray(product.style) ? product.style.join(', ') : product.style || '',
+            season_objectId: product.season_objectId?.[0]?._id || '',
+            festival_objectId: product.festival_objectId?.[0]?._id || '',
+            care_instruction_objectId: product.care_instruction_objectId?.[0]?._id || '',
+          })
+          setVariants(product.variants || [])
+          setImages(product.images || [])
+        } else {
+          setError('Product not found')
+        }
+      } catch (err) {
+        setError('Failed to fetch product')
+      }
+    }
+    fetchProduct()
   }, [id])
+
+  useEffect(() => {
+    axios.get('http://localhost:3001/api/category/getCategory')
+      .then(res => setCategories(res.data.data || []))
+      .catch(() => setCategories([]))
+    axios.get('http://localhost:3001/api/season/getSeasons')
+      .then(res => setSeasons(res.data.data || []))
+      .catch(() => setSeasons([]))
+    axios.get('http://localhost:3001/api/festival/getFestivals')
+      .then(res => setFestivals(res.data.data || []))
+      .catch(() => setFestivals([]))
+  }, [])
+
+  useEffect(() => {
+    if (form?.category_id?._id) {
+      axios.get(`http://localhost:3001/api/subcategory/bycategory/${form.category_id._id}`)
+        .then(res => setSubCategories(res.data.data || []))
+        .catch(() => setSubCategories([]))
+    }
+  }, [form?.category_id])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -55,21 +89,49 @@ const ProductDetail = () => {
     }))
   }
 
-  const handleImageChange = (e) => {
-    setForm((prev) => ({
-      ...prev,
-      images: [e.target.value],
-    }))
+  const handleVariantChange = (idx, e) => {
+    const { name, value, type, checked } = e.target
+    setVariants((prev) =>
+      prev.map((v, i) =>
+        i === idx ? { ...v, [name]: type === 'checkbox' ? checked : value } : v
+      )
+    )
   }
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault()
-    setIsEditing(false)
-    // Save logic here (API call)
-    alert('Product details saved!')
+    setError('')
+    setSuccess('')
+    try {
+      const payload = {
+        productId: form._id,
+        name: form.name,
+        description: form.description,
+        fabric_type: form.fabric_type,
+        category_id: form.category_id?._id || form.category_id,
+        gender: form.gender,
+        bodyType: form.bodyType,
+        productType: form.productType,
+        style: form.style.split(',').map(s => s.trim()),
+        ...(form.season_objectId ? { season_objectId: [form.season_objectId] } : {}),
+        ...(form.festival_objectId ? { festival_objectId: [form.festival_objectId] } : {}),
+        ...(form.care_instruction_objectId ? { care_instruction_objectId: [form.care_instruction_objectId] } : {}),
+        variants: variants.map(v => ({
+          ...v,
+          stock_qty: parseInt(v.stock_qty),
+          price: parseFloat(v.price),
+          discount_price: v.discount_price ? parseFloat(v.discount_price) : null,
+        })),
+      }
+      await axios.put(`http://localhost:3001/api/product/updateProduct/${form._id}`, payload)
+      setSuccess('Product updated successfully!')
+      setIsEditing(false)
+    } catch (err) {
+      setError('Failed to update product')
+    }
   }
 
-  if (!form) return <div>Product not found</div>
+  if (!form) return <div>Loading...</div>
 
   return (
     <CRow className="justify-content-center mb-4">
@@ -87,147 +149,204 @@ const ProductDetail = () => {
             )}
           </CCardHeader>
           <CCardBody>
+            {error && <CAlert color="danger">{error}</CAlert>}
+            {success && <CAlert color="success">{success}</CAlert>}
+
+            {/* Display all product images */}
+            {images.length > 0 && (
+              <>
+                <h5 className="mb-3">All Product Images</h5>
+                <div className="d-flex flex-wrap gap-3 mb-4 justify-content-center">
+                  {images.map((img, idx) => (
+                    <img
+                      key={idx}
+                      src={`data:${img.image.contentType};base64,${img.image.base64}`}
+                      alt={`Product Image ${idx + 1}`}
+                      style={{
+                        width: 80,
+                        height: 80,
+                        objectFit: 'cover',
+                        borderRadius: 8,
+                        border: '1px solid #ccc',
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
             <CForm onSubmit={handleSave}>
-              <CRow className="mb-3">
-                <CCol md={12} className="text-center">
-                  <img
-                    src={form.images[0]}
-                    alt="Product"
-                    style={{
-                      maxWidth: 120,
-                      maxHeight: 120,
-                      borderRadius: 8,
-                      objectFit: 'contain',
-                      display: 'inline-block',
-                      verticalAlign: 'middle',
-                    }}
-                  />
-                  {isEditing && (
-                    <>
-                      <CFormLabel className="mt-2">Image URL</CFormLabel>
-                      <CFormInput name="image" value={form.images[0]} onChange={handleImageChange} />
-                    </>
-                  )}
-                </CCol>
-              </CRow>
               <CRow className="g-3">
                 <CCol md={6}>
                   <CFormLabel>Name</CFormLabel>
                   <CFormInput name="name" value={form.name} onChange={handleChange} disabled={!isEditing} />
                   <CFormLabel className="mt-2">Description</CFormLabel>
                   <CFormTextarea name="description" value={form.description} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">Price</CFormLabel>
-                  <CFormInput name="price" type="number" value={form.price} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">Discount Price</CFormLabel>
-                  <CFormInput name="discount_price" type="number" value={form.discount_price} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">Size</CFormLabel>
-                  <CFormInput name="size" value={form.size} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">Color</CFormLabel>
-                  <CFormInput name="color" value={form.color} onChange={handleChange} disabled={!isEditing} />
                   <CFormLabel className="mt-2">Fabric Type</CFormLabel>
-                  <CFormInput name="fabric_type" value={form.fabric_type} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">Category ID</CFormLabel>
-                  <CFormInput name="category_id" value={form.category_id} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">Quantity</CFormLabel>
-                  <CFormInput name="quantity" type="number" value={form.quantity} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">Available Status</CFormLabel>
-                  <div className="d-flex align-items-center mb-2">
-                    <input
-                      type="checkbox"
-                      name="availabe_status"
-                      checked={form.availabe_status}
-                      onChange={handleChange}
-                      disabled={!isEditing}
-                      className="me-2"
-                    />
-                    <span className="ms-2">{form.availabe_status ? 'Available' : 'Not Available'}</span>
-                  </div>
-                  <CFormLabel className="mt-2">Average Rating</CFormLabel>
-                  <CFormInput name="average_rating" type="number" value={form.average_rating} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">Total Reviews</CFormLabel>
-                  <CFormInput name="total_reviews" type="number" value={form.total_reviews} onChange={handleChange} disabled={!isEditing} />
+                  <CFormSelect name="fabric_type" value={form.fabric_type} onChange={handleChange} disabled={!isEditing}>
+                    <option value="">Select Fabric Type</option>
+                    <option value="Cotton">Cotton</option>
+                    <option value="Khadi">Khadi</option>
+                    <option value="Linen">Linen</option>
+                  </CFormSelect>
+                  <CFormLabel className="mt-2">Category</CFormLabel>
+                  <CFormSelect name="category_id" value={form.category_id?._id || form.category_id} onChange={handleChange} disabled={!isEditing}>
+                    <option value="">Select Category</option>
+                    {categories.map(cat => (
+                      <option key={cat._id} value={cat._id}>{cat.name}</option>
+                    ))}
+                  </CFormSelect>
+                  <CFormLabel className="mt-2">Subcategories</CFormLabel>
+                  <CFormTextarea value={subCategories.map(sub => sub.name).join('\n')} disabled rows={subCategories.length > 2 ? subCategories.length : 2} />
                   <CFormLabel className="mt-2">Gender</CFormLabel>
-                  <CFormInput name="gender" value={form.gender} onChange={handleChange} disabled={!isEditing} />
-                </CCol>
-                <CCol md={6}>
-                  <CFormLabel>Season ObjectId</CFormLabel>
-                  <CFormInput name="season_objectId" value={form.season_objectId} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">Festival ObjectId</CFormLabel>
-                  <CFormInput name="festival_objectId" value={form.festival_objectId} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">Care Instruction ObjectId</CFormLabel>
-                  <CFormInput name="care_instruction_objectId" value={form.care_instruction_objectId} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">SKU</CFormLabel>
-                  <CFormInput name="sku" value={form.sku} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">Barcode</CFormLabel>
-                  <CFormInput name="barcode" value={form.barcode} onChange={handleChange} disabled={!isEditing} />
-                  <CFormLabel className="mt-2">Weight</CFormLabel>
-                  <CFormInput name="weight" value={form.weight} onChange={handleChange} disabled={!isEditing} />
+                  <CFormSelect name="gender" value={form.gender} onChange={handleChange} disabled={!isEditing}>
+                    <option value="">Select Gender</option>
+                    <option value="male">Male</option>
+                    <option value="female">Female</option>
+                    <option value="other">Other</option>
+                  </CFormSelect>
+                  <CFormLabel className="mt-2">Body Type</CFormLabel>
+                  <CFormInput name="bodyType" value={form.bodyType} onChange={handleChange} disabled={!isEditing} />
                   <CFormLabel className="mt-2">Product Type</CFormLabel>
-                  <CFormInput name="productType" value={form.productType} onChange={handleChange} disabled={!isEditing} />
-                  <div className="mt-2 d-flex flex-wrap gap-3">
-                    <label className="mb-0">
-                      <input
-                        type="checkbox"
-                        name="is_featured"
-                        checked={form.is_featured}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        className="me-1"
-                      /> Featured
-                    </label>
-                    <label className="mb-0">
-                      <input
-                        type="checkbox"
-                        name="is_new_arrival"
-                        checked={form.is_new_arrival}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        className="me-1"
-                      /> New Arrival
-                    </label>
-                    <label className="mb-0">
-                      <input
-                        type="checkbox"
-                        name="is_best_seller"
-                        checked={form.is_best_seller}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        className="me-1"
-                      /> Best Seller
-                    </label>
-                    <label className="mb-0">
-                      <input
-                        type="checkbox"
-                        name="is_on_sale"
-                        checked={form.is_on_sale}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        className="me-1"
-                      /> On Sale
-                    </label>
-                    <label className="mb-0">
-                      <input
-                        type="checkbox"
-                        name="is_on_trend"
-                        checked={form.is_on_trend}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        className="me-1"
-                      /> On Trend
-                    </label>
-                    <label className="mb-0">
-                      <input
-                        type="checkbox"
-                        name="isTryon"
-                        checked={form.isTryon}
-                        onChange={handleChange}
-                        disabled={!isEditing}
-                        className="me-1"
-                      /> Try On
-                    </label>
-                  </div>
+                  <CFormSelect name="productType" value={form.productType} onChange={handleChange} disabled={!isEditing}>
+                    <option value="">Select Product Type</option>
+                    <option value="top">Top</option>
+                    <option value="bottom">Bottom</option>
+                  </CFormSelect>
+                  <CFormLabel className="mt-2">Style</CFormLabel>
+                  <CFormInput name="style" value={form.style} onChange={handleChange} disabled={!isEditing} />
+                  <CFormLabel className="mt-2">Season</CFormLabel>
+                  <CFormSelect name="season_objectId" value={form.season_objectId} onChange={handleChange} disabled={!isEditing}>
+                    <option value="">Select Season</option>
+                    {seasons.map(season => (
+                      <option key={season._id} value={season._id}>{season.season_name}</option>
+                    ))}
+                  </CFormSelect>
+                  <CFormLabel className="mt-2">Festival</CFormLabel>
+                  <CFormSelect name="festival_objectId" value={form.festival_objectId} onChange={handleChange} disabled={!isEditing}>
+                    <option value="">Select Festival</option>
+                    {festivals.map(festival => (
+                      <option key={festival._id} value={festival._id}>{festival.festival_name}</option>
+                    ))}
+                  </CFormSelect>
+                  <CFormLabel className="mt-2">Care Instructions</CFormLabel>
+                  <CFormTextarea value={careInstructions.map(ci => ci.instruction).join('\n')} disabled rows={careInstructions.length > 2 ? careInstructions.length : 2} />
                 </CCol>
               </CRow>
+              <hr />
+              <h5>Variants</h5>
+              {variants.map((variant, idx) => (
+                <div key={variant._id || idx} className="mb-4 border p-3 rounded">
+                  <CRow>
+                    <CCol md={4}>
+                      <CFormLabel>Size</CFormLabel>
+                      <CFormSelect
+                        name="size"
+                        value={variant.size}
+                        onChange={e => handleVariantChange(idx, e)}
+                        disabled={!isEditing}
+                      >
+                        <option value="">Select Size</option>
+                        {SIZE_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </CFormSelect>
+                    </CCol>
+                    <CCol md={4}>
+                      <CFormLabel>Color</CFormLabel>
+                      <CFormInput
+                        name="color"
+                        value={variant.color}
+                        onChange={e => handleVariantChange(idx, e)}
+                        disabled={!isEditing}
+                      />
+                    </CCol>
+                    <CCol md={4}>
+                      <CFormLabel>Available Status</CFormLabel>
+                      <CFormSelect
+                        name="available_status"
+                        value={variant.available_status}
+                        onChange={e => handleVariantChange(idx, e)}
+                        disabled={!isEditing}
+                      >
+                        <option value="">Select Availability</option>
+                        {AVAILABILITY_OPTIONS.map(opt => (
+                          <option key={opt.value} value={opt.value}>{opt.label}</option>
+                        ))}
+                      </CFormSelect>
+                    </CCol>
+                  </CRow>
+                  <CRow className="mt-2">
+                    <CCol md={4}>
+                      <CFormLabel>SKU</CFormLabel>
+                      <CFormInput
+                        name="sku"
+                        value={variant.sku}
+                        onChange={e => handleVariantChange(idx, e)}
+                        disabled={!isEditing}
+                      />
+                    </CCol>
+                    <CCol md={4}>
+                      <CFormLabel>Stock Quantity</CFormLabel>
+                      <CFormInput
+                        name="stock_qty"
+                        type="number"
+                        value={variant.stock_qty}
+                        onChange={e => handleVariantChange(idx, e)}
+                        disabled={!isEditing}
+                      />
+                    </CCol>
+                    <CCol md={4}>
+                      <CFormLabel>Price</CFormLabel>
+                      <CFormInput
+                        name="price"
+                        type="number"
+                        value={variant.price}
+                        onChange={e => handleVariantChange(idx, e)}
+                        disabled={!isEditing}
+                      />
+                    </CCol>
+                  </CRow>
+                  <CRow className="mt-2">
+                    <CCol md={4}>
+                      <CFormLabel>Discount Price</CFormLabel>
+                      <CFormInput
+                        name="discount_price"
+                        type="number"
+                        value={variant.discount_price}
+                        onChange={e => handleVariantChange(idx, e)}
+                        disabled={!isEditing}
+                      />
+                    </CCol>
+                    <CCol md={4}>
+                      <CFormLabel>Barcode</CFormLabel>
+                      <CFormInput
+                        name="barcode"
+                        value={variant.barcode}
+                        onChange={e => handleVariantChange(idx, e)}
+                        disabled={!isEditing}
+                      />
+                    </CCol>
+                  </CRow>
+                  <CRow className="mt-2">
+                    <CCol md={12}>
+                      <CFormLabel>Images</CFormLabel>
+                      <div className="d-flex flex-wrap gap-2">
+                        {images
+                          .filter(img => img.productVariantObjectId === variant._id)
+                          .map((img, i) => (
+                            <img
+                              key={i}
+                              src={`data:${img.image.contentType};base64,${img.image.base64}`}
+                              alt={`Variant ${idx + 1} Image ${i + 1}`}
+                              style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6 }}
+                            />
+                          ))}
+                      </div>
+                    </CCol>
+                  </CRow>
+                </div>
+              ))}
               {isEditing && (
                 <CRow>
                   <CCol className="d-flex justify-content-center">

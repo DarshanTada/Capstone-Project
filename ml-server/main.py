@@ -12,6 +12,7 @@ class AskRequest(BaseModel):
     question: str
     system_prompt: Optional[str] = None
     image_base64: Optional[str] = None
+    user_id: Optional[str] = None
 
 
 @app.post("/upload/")
@@ -43,3 +44,13 @@ async def ask_question(request: AskRequest):
             print("[RAG fallback failed]", e)
 
     return query_llava(prompt=request.question, system=request.system_prompt)
+
+
+@app.get("/health")
+async def health_check():
+    return {"status": "healthy", "message": "ML server is running"}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

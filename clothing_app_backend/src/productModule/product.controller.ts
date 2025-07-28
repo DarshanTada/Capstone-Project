@@ -2,7 +2,119 @@ import { Request, Response } from 'express';
 import Product from '../productModule/product.model';
 import ProductVariant from '../productModule/productVariant.model';
 import ProductImage from '../productModule/productImage.model';
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
+
+
+// Get Product Detail API
+export const getProductDetail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const productId = req.params.id;
+    
+    // Populate category and subcategory
+    const product = await Product.findById(productId)
+      .populate('category_id')
+      .populate('subcategory_id')
+      .populate('care_instruction_objectId')
+      .populate('season_objectId')
+      .populate('festival_objectId');
+
+    if (!product) {
+      res.status(404).json({ success: false, message: 'Product not found.' });
+      return;
+    }
+
+    // Get variants
+    const variants = await ProductVariant.find({ productObjectId: productId });
+
+    // Get images
+    const images = await ProductImage.find({ productObjectId: productId });
+
+    // Get similar products (same category, exclude current)
+    const categoryId = product.category_id?._id || product.category_id;
+    const similarProducts = await Product.find({
+      category_id: categoryId,
+      _id: { $ne: productId }
+    })
+    .populate('category_id')
+    .populate('subcategory_id')
+    .limit(10);
+
+    // Get user preferences from query
+    const { skinTone, undertone, bodyType } = req.query;
+
+    // Generate system prompt for askQuestion API
+    let systemPrompt = '';
+    if (product.productType === 'top') {
+      const categoryName = typeof product.category_id === 'object' && 'name' in product.category_id
+        ? (product.category_id as any).name
+        : '';
+      const subcategoryName = typeof product.subcategory_id === 'object' && 'name' in product.subcategory_id
+        ? (product.subcategory_id as any).name
+        : '';
+      systemPrompt = `Given a user with skin tone: ${skinTone}, undertone: ${undertone}, body type: ${bodyType}, and a top from category: ${categoryName}, subcategory: ${subcategoryName}, suggest the most trendy and matching bottoms available in our catalog. Only recommend products that fit the user's body type and style preferences.`;
+    }
+
+    // Call askQuestion API for actual matching response
+    let matchingAPIResponse = '';
+    if (systemPrompt) {
+        try {
+            const axios = require('axios');
+            const baseURL = process.env.PYTHON_SERVER_URL || 'http://localhost:8000';
+            const mlRes = await axios.post(`${baseURL}/ask/`, {
+                question: 'What bottoms match this top?',
+                system_prompt: systemPrompt,
+            }, { timeout: 120000 });
+            matchingAPIResponse = typeof mlRes.data === 'string' ? mlRes.data : JSON.stringify(mlRes.data);
+        } catch (mlErr: any) {
+            matchingAPIResponse = 'AI API call failed.';
+        }
+    }
+
+    let matchingProducts: any[] = [];
+    if (product.productType === 'top') {
+        // If ML API returns product IDs, fetch those products
+        let trendProductIds: string[] = [];
+        try {
+            const parsedTrend = typeof matchingAPIResponse === 'string' ? JSON.parse(matchingAPIResponse) : matchingAPIResponse;
+            if (parsedTrend && parsedTrend.matchingProductIds && Array.isArray(parsedTrend.matchingProductIds)) {
+                trendProductIds = parsedTrend.matchingProductIds;
+            }
+        } catch (e) {
+            // If matchingAPIResponse is not JSON, ignore
+        }
+        if (trendProductIds.length > 0) {
+            matchingProducts = await Product.find({ _id: { $in: trendProductIds } })
+              .populate('category_id')
+              .populate('subcategory_id');
+        } else {
+            // Fallback: filter by user preferences
+            const matchQuery: any = {
+                productType: 'bottom',
+            };
+            if (bodyType) matchQuery.bodyType = bodyType;
+            matchingProducts = await Product.find(matchQuery)
+              .populate('category_id')
+              .populate('subcategory_id')
+              .limit(10);
+        }
+    }
+
+    res.status(200).json({
+        success: true,
+        data: {
+            product,
+            variants,
+            images,
+            similarProducts,
+            matchingProducts,
+            matchingAPIResponse,
+        }
+    });
+  } catch (error: any) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 
 const safeParse = (value: any): any[] => {
   try {
@@ -23,6 +135,7 @@ export const createProduct = async (req: Request, res: Response) => {
       description,
       fabric_type,
       category_id,
+      subcategory_id,
       gender,
       bodyType,
       season_objectId,
@@ -46,6 +159,7 @@ export const createProduct = async (req: Request, res: Response) => {
       description,
       fabric_type,
       category_id,
+      subcategory_id,
       gender,
       bodyType,
       productType,
@@ -130,6 +244,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       description,
       fabric_type,
       category_id,
+      subcategory_id,
       gender,
       bodyType,
       season_objectId,
@@ -156,6 +271,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
     product.description = description;
     product.fabric_type = fabric_type;
     product.category_id = category_id;
+    product.subcategory_id = subcategory_id;
     product.gender = gender;
     product.bodyType = bodyType;
     product.productType = productType;
@@ -201,7 +317,6 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         productObjectId: productId,
       });
 
-      // ✅ Handle only updates to existing images
       const variantImages = safeParse(variant.images || []);
       for (let j = 0; j < variantImages.length; j++) {
         const imageObj = variantImages[j];
@@ -264,6 +379,10 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
     const total = await Product.countDocuments();
     const products = await Product.find()
       .populate('category_id')
+      .populate('subcategory_id')
+      .populate('care_instruction_objectId')
+      .populate('season_objectId')
+      .populate('festival_objectId')
       .skip(skip)
       .limit(limit)
       .lean();

@@ -1,27 +1,20 @@
-
 import express from 'express';
 import {
-    uploadSubCategoryImage,
+  uploadSubCategoryImage,
   createSubCategory,
   getAllSubCategories,
-  getSubCategoryById,
+  getSubCategoriesByCategory,
   uploadUpdateSubCategoryImage,
   updateSubCategory,
-  deleteSubCategory,
-  getSubCategoriesByCategoryId,
-  createMultipleSubCategories
-} from '../subCategoryModule/subCategory.controller';
+  deleteSubCategory
+} from './subCategory.controller';
 
 export const SubCategoryRoute = express.Router();
 
-SubCategoryRoute.post('/createSubcategory',uploadSubCategoryImage, createSubCategory);
+SubCategoryRoute.post('/createSubCategory', uploadSubCategoryImage, createSubCategory);
 SubCategoryRoute.get('/getAll', getAllSubCategories);
-SubCategoryRoute.get('/getSubcategory/:id', getSubCategoryById);
-SubCategoryRoute.put('/updateSubcategory/:id',
-  uploadUpdateSubCategoryImage,
-  updateSubCategory);
-SubCategoryRoute.delete('/deleteSubcategory/:id', deleteSubCategory);
-SubCategoryRoute.get('/bycategory/:categoryId', getSubCategoriesByCategoryId);
-SubCategoryRoute.post('/multipleSubCategory', createMultipleSubCategories);
+SubCategoryRoute.get('/getByCategory/:categoryId', getSubCategoriesByCategory);
+SubCategoryRoute.put('/updateSubCategory/:id', uploadUpdateSubCategoryImage, updateSubCategory);
+SubCategoryRoute.delete('/deleteSubCategory/:id', deleteSubCategory);
 
 export default SubCategoryRoute;

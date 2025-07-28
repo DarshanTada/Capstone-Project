@@ -12,3 +12,4 @@ UserRoutes.post("/registerAdmin",registerAdmin);
 UserRoutes.post('/loginAdmin',loginAdmin);
 UserRoutes.post('/user', upload.none(), getUserById);
 UserRoutes.post('/users', getAllUsers);
+

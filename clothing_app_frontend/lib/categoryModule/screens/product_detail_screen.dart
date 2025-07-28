@@ -1,15 +1,15 @@
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
+import 'package:clothing_app_frontend/cartModule/screens/cart_screen.dart';
 import 'package:clothing_app_frontend/categoryModule/widgets/similar_product_card_widget.dart';
-import 'package:clothing_app_frontend/colors.dart';
+import 'package:clothing_app_frontend/checkoutModule/screens/checkout_screen.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
-import 'package:clothing_app_frontend/common_widgets/custom_app_bar.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_big_product_card_grid.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_small_product_card_grid.dart';
+import 'package:clothing_app_frontend/homeModule/widgets/size_chart_screen.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
-import 'package:clothing_app_frontend/navigation/navigators.dart';
-import 'package:clothing_app_frontend/navigation/routes.dart';
+import 'package:clothing_app_frontend/profileModule/screens/viewer.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -25,25 +25,25 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
   // Add this for dynamic images
   int selectedImageIndex = 0;
   List<String> productImages = [
-    'assets/images/b4.png',
-    'assets/images/b1.png',
-    'assets/images/b3.png',
+    'assets/images/product_1_1.jpg',
+    'assets/images/product_1_2.jpg',
+    'assets/images/product_1_4.jpg',
+    'assets/images/product_1_3.jpg',
     // Add more images from API here
   ];
 
   // Add these state variables
-  String selectedSize = 'M';
-  int selectedColorIndex = 3; // Example: Beige
+  String selectedSize = '32';
+  int selectedColorIndex = 3; // Example: Sky Blue
 
-  final List<String> sizes = ['S', 'M', 'L', 'XL', 'XXL'];
+  final List<String> sizes = ['28', '30', '32', '34', '36'];
   final List<Color> colors = [
-    Colors.red,
-    Colors.black,
-    Colors.yellow,
-    Colors.brown.shade200,
-    Colors.brown.shade400,
-    Colors.brown.shade600,
-    Colors.brown.shade800,
+    Color(0xFF000000), // Black
+    Color(0xFF7D7D7D), // Gray
+    Color(0xFF1A1F71), // Dark Blue
+    Color(0xFF87CEEB), // Sky Blue
+    Color(0xFFC3B091), // Tan
+    Color(0xFF556B2F), // Dark Olive Green
   ];
 
   double dH = 0.0;
@@ -53,6 +53,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
   Map language = {};
   bool isLoading = false;
   bool isFavourite = false;
+  int cartItemCount = 0; // Add cart counter
 
   fetchData() async {}
   @override
@@ -69,8 +70,101 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
     language = Provider.of<AuthProvider>(context).selectedLanguage;
     customTextTheme = Theme.of(context).textTheme;
     return Scaffold(
-      backgroundColor: white,
-      appBar: CustomAppBar(title: 'Product Detail', dW: dW, bgColor: white),
+      backgroundColor: Colors.grey.shade50,
+      appBar: AppBar(
+        title: const Text('Product Detail', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+        centerTitle: true,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        leading: IconButton(
+          icon: Icon(Icons.arrow_back_ios_new, color: Color(0xFFB8956A)),
+          onPressed: () => Navigator.pop(context),
+        ),
+        actions: [
+          // Cart Icon with Badge
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(Icons.shopping_cart_outlined, color: Color(0xFFB8956A)),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const MyCartScreen(),
+                    ),
+                  );
+                },
+              ),
+              if (cartItemCount > 0)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    constraints: BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '$cartItemCount',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          IconButton(
+            icon: Icon(
+              isFavourite ? Icons.favorite : Icons.favorite_border, 
+              color: isFavourite ? Colors.red : Color(0xFFB8956A)
+            ),
+            onPressed: () {
+              setState(() {
+                isFavourite = !isFavourite;
+              });
+              
+              // Show appropriate message
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Row(
+                    children: [
+                      Icon(
+                        isFavourite ? Icons.favorite : Icons.heart_broken,
+                        color: Colors.white,
+                      ),
+                      SizedBox(width: 8),
+                      Text(isFavourite 
+                        ? 'Added to favorites!' 
+                        : 'Removed from favorites'
+                      ),
+                    ],
+                  ),
+                  backgroundColor: isFavourite ? Colors.red : Colors.grey,
+                  behavior: SnackBarBehavior.floating,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  margin: EdgeInsets.all(16),
+                  duration: Duration(seconds: 2),
+                ),
+              );
+            },
+          ),
+          IconButton(
+            icon: Icon(Icons.share, color: Color(0xFFB8956A)),
+            onPressed: () {},
+          ),
+        ],
+      ),
       body: iOSCondition(dH) ? screenBody() : SafeArea(child: screenBody()),
     );
   }
@@ -92,18 +186,22 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                   // Product Image & Gallery
                   Container(
                     margin: EdgeInsets.only(bottom: dW * 0.04),
+                    padding: EdgeInsets.all(dW * 0.02),
                     decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(
-                        32,
-                      ), // Increased for more rounding
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.08),
+                          blurRadius: 20,
+                          offset: Offset(0, 10),
+                        ),
+                      ],
                     ),
-                    // padding: EdgeInsets.all(dW * 0.02),
                     child: Stack(
                       children: [
                         ClipRRect(
-                          borderRadius: BorderRadius.circular(
-                            32,
-                          ), // Match container
+                          borderRadius: BorderRadius.circular(20),
                           child: Image.asset(
                             productImages[selectedImageIndex],
                             height: dW * 0.7,
@@ -191,7 +289,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
 
                   // Product Title
                   TextWidget(
-                    title: 'KIDS STYLISH JACKET',
+                    title: 'High Waist Wide Leg Denim Baggy Jeans',
                     fontWeight: FontWeight.w500,
                     fontSize: 27,
                   ),
@@ -200,7 +298,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                   // Ratings, Reviews, Sold
                   Row(
                     children: [
-                      _ratingChip('4.5'),
+                      _ratingChip('4.7'),
                       SizedBox(width: 8),
                       TextWidget(
                         title: 'Ratings',
@@ -209,13 +307,13 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       SizedBox(width: 16),
                       TextWidget(
-                        title: '• 1.5k+ Review',
+                        title: '• 2.8k+ Reviews',
                         fontWeight: FontWeight.w400,
                         fontSize: 14,
                       ),
                       SizedBox(width: 16),
                       TextWidget(
-                        title: '• 3.4k+ Sold',
+                        title: '• 5.2k+ Sold',
                         fontWeight: FontWeight.w400,
                         fontSize: 14,
                       ),
@@ -228,13 +326,13 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       TextWidget(
-                        title: '\$250.99',
+                        title: '\$89.99',
                         fontWeight: FontWeight.w700,
                         fontSize: 22,
                       ),
                       SizedBox(width: 12),
                       TextWidget(
-                        title: '\$320.99',
+                        title: '\$119.99',
                         fontWeight: FontWeight.w400,
                         fontSize: 16,
                         textDecoration: TextDecoration.lineThrough,
@@ -248,11 +346,11 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.brown.shade300,
+                          color: Color(0xFF8FBC8F), // Subtle green that complements brown theme
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: TextWidget(
-                          title: '15%',
+                          title: '25% OFF',
                           fontWeight: FontWeight.w600,
                           fontSize: 13,
                           color: Colors.white,
@@ -265,7 +363,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                   // Description
                   TextWidget(
                     title:
-                        'Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod',
+                        'Premium high-rise denim jeans featuring a relaxed wide-leg silhouette. Crafted from 100% cotton denim with a comfortable baggy fit. Perfect for casual and street style looks.',
                     fontWeight: FontWeight.w400,
                     fontSize: 15,
                     color: Colors.grey.shade700,
@@ -313,7 +411,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                           vertical: 2,
                         ),
                         decoration: BoxDecoration(
-                          color: Colors.grey.shade200,
+                          color: Color(0xFFD2B193).withOpacity(0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Row(
@@ -322,9 +420,10 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                               title: 'Suggested',
                               fontWeight: FontWeight.w400,
                               fontSize: 13,
+                              color: Color(0xFFB8956A),
                             ),
                             SizedBox(width: 4),
-                            Icon(Icons.star, color: Colors.amber, size: 16),
+                            Icon(Icons.star, color: Color(0xFFB8956A), size: 16),
                           ],
                         ),
                       ),
@@ -351,27 +450,241 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                   ),
                   SizedBox(height: 30),
 
-                  // Add to Cart Button
-                  ElevatedButton.icon(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.brown.shade700,
-                      padding: EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
+                  // Size Chart and Try On Options
+                  Row(
+                    children: [
+                      // Size Chart Button
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () {
+                            SizeChartScreen.show(context);
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              border: Border.all(color: Color(0xFFD2B193), width: 1.5),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.08),
+                                  blurRadius: 12,
+                                  offset: Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.straighten,
+                                  color: Color(0xFFB8956A),
+                                  size: 20,
+                                ),
+                                SizedBox(width: 8),
+                                TextWidget(
+                                  title: 'Size Chart',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  color: Color(0xFFB8956A),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
-                    ),
-                    onPressed: () {},
-                    icon: Icon(
-                      Icons.add_shopping_cart,
-                      size: 28,
-                      color: Colors.white,
-                    ),
-                    label: Text(
-                      'Add to Cart',
-                      style: customTextTheme.titleLarge?.copyWith(
-                        color: Colors.white,
+                      SizedBox(width: 12),
+                      // Try On Button
+                      Expanded(
+                        child: GestureDetector(
+                          onTap: () async {
+                            await _openTryOnModel();
+                          },
+                          child: Container(
+                            padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(16),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(0xFFB8956A).withOpacity(0.3),
+                                  blurRadius: 12,
+                                  offset: Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(
+                                  Icons.visibility,
+                                  color: Colors.white,
+                                  size: 20,
+                                ),
+                                SizedBox(width: 8),
+                                TextWidget(
+                                  title: 'Try On',
+                                  fontWeight: FontWeight.w600,
+                                  fontSize: 14,
+                                  color: Colors.white,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
                       ),
+                    ],
+                  ),
+                  SizedBox(height: 30),
+
+                  // Product Details Section
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.grey.shade200),
                     ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        TextWidget(
+                          title: 'Product Details',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 18,
+                        ),
+                        SizedBox(height: 12),
+                        _detailRow('Fabric', '100% Cotton Denim'),
+                        _detailRow('Fit', 'Relaxed Baggy Fit'),
+                        _detailRow('Rise', 'High Waist'),
+                        _detailRow('Length', 'Full Length'),
+                        _detailRow('Style', 'Wide Leg'),
+                        _detailRow('Closure', 'Button & Zip Fly'),
+                        SizedBox(height: 16),
+                        TextWidget(
+                          title: 'Care Instructions',
+                          fontWeight: FontWeight.w600,
+                          fontSize: 16,
+                        ),
+                        SizedBox(height: 8),
+                        TextWidget(
+                          title: '• Machine wash cold with like colors\n• Tumble dry low heat\n• Do not bleach\n• Iron on medium heat if needed',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 14,
+                          color: Colors.grey.shade700,
+                        ),
+                      ],
+                    ),
+                  ),
+                  SizedBox(height: 30),
+
+                  // Add to Cart and Checkout Buttons
+                  Row(
+                    children: [
+                      // Add to Cart Button
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            border: Border.all(color: Color(0xFFD2B193), width: 1.5),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.08),
+                                blurRadius: 12,
+                                offset: Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            onPressed: () {
+                              _addToCart();
+                            },
+                            icon: Icon(
+                              Icons.add_shopping_cart,
+                              size: 20,
+                              color: Color(0xFFB8956A),
+                            ),
+                            label: Text(
+                              'Add to Cart',
+                              style: TextStyle(
+                                color: Color(0xFFB8956A),
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 12),
+                      // Checkout Button
+                      Expanded(
+                        child: Container(
+                          decoration: BoxDecoration(
+                            gradient: LinearGradient(
+                              colors: [
+                                Color(0xFFD2B193),
+                                Color(0xFFB8956A),
+                                Color(0xFFA67C52),
+                              ],
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Color(0xFFB8956A).withOpacity(0.3),
+                                blurRadius: 12,
+                                offset: Offset(0, 6),
+                              ),
+                            ],
+                          ),
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.transparent,
+                              shadowColor: Colors.transparent,
+                              padding: EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(16),
+                              ),
+                            ),
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => const CheckoutScreen(),
+                                ),
+                              );
+                            },
+                            icon: Icon(
+                              Icons.payment,
+                              size: 20,
+                              color: Colors.white,
+                            ),
+                            label: Text(
+                              'Checkout',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   SizedBox(height: 20),
 
@@ -390,7 +703,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                           title: 'View all',
                           fontWeight: FontWeight.w400,
                           fontSize: 15,
-                          color: Colors.brown,
+                          color: Color(0xFFB8956A),
                         ),
                       ),
                     ],
@@ -452,20 +765,20 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           CustomSmallProductCardGrid(
-                            imageUrl: 'https://tinyurl.com/42s53ezd',
+                            imageUrl: 'assets/images/g1.png',
                             price: '50',
                             rating: 3.9,
                             onTap: () {},
                           ),
                           CustomSmallProductCardGrid(
-                            imageUrl: 'https://tinyurl.com/5n8zedmz',
+                            imageUrl: 'assets/images/g2.png',
                             price: '44',
                             rating: 4.7,
                             onTap: () {},
                           ),
                           CustomSmallProductCardGrid(
                             imageUrl:
-                                'https://m.media-amazon.com/images/I/61emW3sXLOL._AC_SX679_.jpg',
+                                'assets/images/g3.png',
                             price: '90',
                             rating: 4.5,
                             onTap: () {},
@@ -474,33 +787,39 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                       ),
                       SizedBox(height: dW * 0.02),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          Column(
-                            children: [
-                              CustomSmallProductCardGrid(
-                                imageUrl: 'https://tinyurl.com/ek2mf8hb',
-                                price: '90',
-                                rating: 4.5,
-                                onTap: () {},
-                              ),
-                              SizedBox(height: dW * 0.02),
-
-                              CustomSmallProductCardGrid(
-                                imageUrl: 'https://tinyurl.com/2jjbmthn',
-                                price: '90',
-                                rating: 4.5,
-                                onTap: () {},
-                              ),
-                            ],
+                          // Left column with small cards
+                          Flexible(
+                            flex: 3,
+                            child: Column(
+                              children: [
+                                CustomSmallProductCardGrid(
+                                  imageUrl: 'assets/images/g2.png',
+                                  price: '90',
+                                  rating: 4.5,
+                                  onTap: () {},
+                                ),
+                                SizedBox(height: dW * 0.02),
+                                CustomSmallProductCardGrid(
+                                  imageUrl: 'assets/images/g2.png',
+                                  price: '90',
+                                  rating: 4.5,
+                                  onTap: () {},
+                                ),
+                              ],
+                            ),
                           ),
-                          SizedBox(width: dW * 0.01),
-                          CustomBigProductCardGridWidget(
-                            productName: 'Charcoal Fade Jeans',
-                            imageUrl: 'https://tinyurl.com/2jjbmthn',
-                            price: '90',
-                            rating: 4.5,
-                            onTap: () {},
+                          SizedBox(width: dW * 0.02),
+                          // Right side with big card
+                          Flexible(
+                            flex: 5,
+                            child: CustomBigProductCardGridWidget(
+                              productName: 'Charcoal Fade Jeans',
+                              imageUrl: 'assets/images/g2.png',
+                              price: '90',
+                              rating: 4.5,
+                              onTap: () {},
+                            ),
                           ),
                         ],
                       ),
@@ -517,49 +836,118 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
   String _getColorName(int index) {
     switch (index) {
       case 0:
-        return 'Red';
-      case 1:
         return 'Black';
+      case 1:
+        return 'Gray';
       case 2:
-        return 'Yellow';
+        return 'Dark Blue';
       case 3:
-        return 'Beige';
+        return 'Sky Blue';
       case 4:
-        return 'Brown';
+        return 'Tan';
       case 5:
-        return 'Dark Brown';
-      case 6:
-        return 'Chocolate';
+        return 'Dark Olive Green';
       default:
         return '';
     }
   }
 
-  // Helper widgets
-  Widget _galleryThumb(String assetPath, {String? label}) {
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Image.asset(
-            assetPath,
-            height: 48,
-            width: 48,
-            fit: BoxFit.cover,
-          ),
+  // Helper method to open Try On 3D model
+  Future<void> _openTryOnModel() async {
+    const url = 'https://models.readyplayer.me/68840d454f328601275c3f78.glb';
+    try {
+      // Use AvatarViewerPage to view the 3D model
+      AvatarViewerPage.viewModel(context, url, title: "Try On");
+    } catch (e) {
+      // Handle any errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error opening Try On viewer'),
+          backgroundColor: Colors.red,
         ),
-        if (label != null)
-          Container(
-            color: Colors.black54,
+      );
+    }
+  }
+
+  // Helper method to add product to cart
+  void _addToCart() {
+    setState(() {
+      cartItemCount++; // Increment cart counter
+    });
+    
+    // Show success toast
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Added to cart successfully!',
+                    style: TextStyle(fontWeight: FontWeight.w600),
+                  ),
+                  Text(
+                    'High Waist Wide Leg Denim Baggy Jeans - Size $selectedSize',
+                    style: TextStyle(fontSize: 12, color: Colors.white70),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: Color(0xFF8FBC8F),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+        margin: EdgeInsets.all(16),
+        duration: Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'VIEW CART',
+          textColor: Colors.white,
+          onPressed: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => const MyCartScreen(),
+              ),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _detailRow(String label, String value) {
+    return Padding(
+      padding: EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          SizedBox(
+            width: 100,
             child: TextWidget(
-              title: label,
-              fontWeight: FontWeight.w700,
-              fontSize: 13,
-              color: Colors.white,
+              title: '$label:',
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+              color: Colors.grey.shade700,
             ),
           ),
-      ],
+          Expanded(
+            child: TextWidget(
+              title: value,
+              fontWeight: FontWeight.w400,
+              fontSize: 14,
+              color: Colors.grey.shade800,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -567,7 +955,11 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.black,
+        gradient: LinearGradient(
+          colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Row(
@@ -590,14 +982,26 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
       margin: EdgeInsets.only(right: 8),
       padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
-        color: selected ? Colors.brown.shade100 : Colors.white,
+        color: selected ? Color(0xFFD2B193).withOpacity(0.2) : Colors.white,
         border: Border.all(
-          color: selected ? Colors.brown : Colors.black,
-          width: 1,
+          color: selected ? Color(0xFFB8956A) : Colors.grey.shade300,
+          width: 1.5,
         ),
-        borderRadius: BorderRadius.circular(8),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: selected ? [
+          BoxShadow(
+            color: Color(0xFFB8956A).withOpacity(0.1),
+            blurRadius: 8,
+            offset: Offset(0, 2),
+          ),
+        ] : [],
       ),
-      child: TextWidget(title: size, fontWeight: FontWeight.w600, fontSize: 15),
+      child: TextWidget(
+        title: size, 
+        fontWeight: FontWeight.w600, 
+        fontSize: 15,
+        color: selected ? Color(0xFFB8956A) : Colors.black87,
+      ),
     );
   }
 

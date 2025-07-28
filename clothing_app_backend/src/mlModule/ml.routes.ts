@@ -1,24 +1,30 @@
-import { Router } from "express";
-import { uploadFile, askQuestion } from "./ml.controller";
-import { upload } from '../utils/common/multer'
+import express from 'express';
+import { upload } from '../utils/common/multer';
+import { 
+  uploadFile, 
+  askQuestion, 
+  analyzeUserPreferences,
+  getAnalysisHistory,
+  getUserSessions,
+  deleteAnalysis,
+  getMLStats,
+  checkPythonServerHealth
+} from './ml.controller';
 
-const router = Router();
+export const MlRouter = express.Router();
 
-router.post("/upload", upload.single("file"), async (req, res, next) => {
-  try {
-    await uploadFile(req, res);
-  } catch (err) {
-    next(err);
-  }
-});
+// Health check
+MlRouter.get('/health', checkPythonServerHealth);
 
-// Accepts JSON body: { question, system_prompt, image }
-router.post("/ask", async (req, res, next) => {
-  try {
-    await askQuestion(req, res);
-  } catch (err) {
-    next(err);
-  }
-});
+// Core ML functionality
+MlRouter.post('/upload', upload.single("file"), uploadFile);
+MlRouter.post('/ask', askQuestion);
+MlRouter.post('/analyze-preferences', analyzeUserPreferences);
 
-export const MlRoutes = router;
+// Analysis management
+MlRouter.get('/analysis-history/:userId', getAnalysisHistory);
+MlRouter.get('/sessions/:userId', getUserSessions);
+MlRouter.delete('/analysis/:id', deleteAnalysis);
+MlRouter.get('/stats', getMLStats);
+
+export default MlRouter;

@@ -17,4 +17,8 @@ var endPoint = {
   'getPrefByUserId': 'api/preferences/getPrefByUserId',
   'updatePreference': 'api/preferences/updatePreference',
   'deletePreference': 'api/preferences/deletePreference',
+
+  // ML Services
+  'mlAsk': 'api/ml/ask',
+  'mlAnalyzePreferences': 'api/ml/analyze-preferences',
 };
