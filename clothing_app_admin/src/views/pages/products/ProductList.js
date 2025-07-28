@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react'
 import {
   CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow, CTableHeaderCell,
-  CTableBody, CTableDataCell, CButton, CAvatar, CPagination, CPaginationItem, CFormInput
+  CTableBody, CTableDataCell, CButton, CPagination, CPaginationItem, CFormInput
 } from '@coreui/react'
 import { useNavigate } from 'react-router-dom'
 import { ROLE, hasPermission } from 'src/roles/permissions'
 import axios from 'axios'
+
 
 const ProductList = () => {
   const [products, setProducts] = useState([])
@@ -44,16 +45,11 @@ const ProductList = () => {
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(search.toLowerCase()) ||
-      (product.category_id && product.category_id.toLowerCase().includes(search.toLowerCase()))
+      (product.category_id && product.category_id.name && product.category_id.name.toLowerCase().includes(search.toLowerCase()))
   )
 
-  // Pagination logic (frontend filter, backend paginates)
-  // If you want to paginate only on backend, use products as-is and remove this slice
-  // const paginatedProducts = filteredProducts.slice(
-  //   (currentPage - 1) * productsPerPage,
-  //   currentPage * productsPerPage
-  // )
   const paginatedProducts = filteredProducts // backend already paginates
+
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
@@ -100,6 +96,7 @@ const ProductList = () => {
             {pageOptions.map((num) => (
               <option key={num} value={num}>
                 {num === products.length ? 'All' : num}
+                {num === products.length ? 'All' : num}
               </option>
             ))}
           </select>
@@ -124,7 +121,6 @@ const ProductList = () => {
           <CTableHead>
             <CTableRow>
               <CTableHeaderCell>Product ID</CTableHeaderCell>
-              <CTableHeaderCell>Image</CTableHeaderCell>
               <CTableHeaderCell>Name</CTableHeaderCell>
               <CTableHeaderCell>Category</CTableHeaderCell>
               <CTableHeaderCell>Price</CTableHeaderCell>
@@ -135,7 +131,7 @@ const ProductList = () => {
           <CTableBody>
             {paginatedProducts.length === 0 ? (
               <CTableRow>
-                <CTableDataCell colSpan={7} className="text-center">
+                <CTableDataCell colSpan={hasPermission(role, 'manage_products') ? 6 : 5} className="text-center">
                   No products found.
                 </CTableDataCell>
               </CTableRow>
@@ -143,30 +139,11 @@ const ProductList = () => {
               paginatedProducts.map((product) => (
                 <CTableRow key={product._id}>
                   <CTableDataCell>{product._id}</CTableDataCell>
-                  <CTableDataCell style={{ textAlign: 'center', verticalAlign: 'middle', height: '80px' }}>
-                    <CAvatar
-                      src={
-                        product.images &&
-                        product.images[0] &&
-                        product.images[0].image &&
-                        product.images[0].image.base64
-                          ? `data:${product.images[0].image.contentType};base64,${product.images[0].image.base64}`
-                          : undefined
-                      }
-                      style={{
-                        height: '60px',
-                        width: '60px',
-                        objectFit: 'cover',
-                        borderRadius: '8px',
-                        background: '#f8f9fa',
-                        display: 'inline-block',
-                      }}
-                    />
-                  </CTableDataCell>
                   <CTableDataCell>{product.name}</CTableDataCell>
-                  <CTableDataCell>{product.category_id.name}</CTableDataCell>
                   <CTableDataCell>
-                    {/* If you have price in variants, show min price */}
+                    {product.category_id && product.category_id.name ? product.category_id.name : '-'}
+                  </CTableDataCell>
+                  <CTableDataCell>
                     {product.variants && product.variants.length > 0
                       ? `₹${product.variants[0].price}`
                       : '-'}
@@ -222,6 +199,7 @@ const ProductList = () => {
       </CCardBody>
     </CCard>
   )
+
 }
 
 export default ProductList
