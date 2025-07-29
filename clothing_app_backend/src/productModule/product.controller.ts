@@ -378,8 +378,6 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
 
     const total = await Product.countDocuments();
     const products = await Product.find()
-      .populate('category_id')
-      .populate('subcategory_id')
       .populate('care_instruction_objectId')
       .populate('season_objectId')
       .populate('festival_objectId')
