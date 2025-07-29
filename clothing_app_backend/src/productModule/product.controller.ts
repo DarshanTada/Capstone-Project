@@ -9,7 +9,7 @@ import mongoose from 'mongoose';
 export const getProductDetail = async (req: Request, res: Response): Promise<void> => {
   try {
     const productId = req.params.id;
-    
+
     // Populate category and subcategory
     const product = await Product.findById(productId)
       .populate('category_id')
@@ -35,9 +35,9 @@ export const getProductDetail = async (req: Request, res: Response): Promise<voi
       category_id: categoryId,
       _id: { $ne: productId }
     })
-    .populate('category_id')
-    .populate('subcategory_id')
-    .limit(10);
+      .populate('category_id')
+      .populate('subcategory_id')
+      .limit(10);
 
     // Get user preferences from query
     const { skinTone, undertone, bodyType } = req.query;
@@ -57,58 +57,58 @@ export const getProductDetail = async (req: Request, res: Response): Promise<voi
     // Call askQuestion API for actual matching response
     let matchingAPIResponse = '';
     if (systemPrompt) {
-        try {
-            const axios = require('axios');
-            const baseURL = process.env.PYTHON_SERVER_URL || 'http://localhost:8000';
-            const mlRes = await axios.post(`${baseURL}/ask/`, {
-                question: 'What bottoms match this top?',
-                system_prompt: systemPrompt,
-            }, { timeout: 120000 });
-            matchingAPIResponse = typeof mlRes.data === 'string' ? mlRes.data : JSON.stringify(mlRes.data);
-        } catch (mlErr: any) {
-            matchingAPIResponse = 'AI API call failed.';
-        }
+      try {
+        const axios = require('axios');
+        const baseURL = process.env.PYTHON_SERVER_URL || 'http://localhost:8000';
+        const mlRes = await axios.post(`${baseURL}/ask/`, {
+          question: 'What bottoms match this top?',
+          system_prompt: systemPrompt,
+        }, { timeout: 120000 });
+        matchingAPIResponse = typeof mlRes.data === 'string' ? mlRes.data : JSON.stringify(mlRes.data);
+      } catch (mlErr: any) {
+        matchingAPIResponse = 'AI API call failed.';
+      }
     }
 
     let matchingProducts: any[] = [];
     if (product.productType === 'top') {
-        // If ML API returns product IDs, fetch those products
-        let trendProductIds: string[] = [];
-        try {
-            const parsedTrend = typeof matchingAPIResponse === 'string' ? JSON.parse(matchingAPIResponse) : matchingAPIResponse;
-            if (parsedTrend && parsedTrend.matchingProductIds && Array.isArray(parsedTrend.matchingProductIds)) {
-                trendProductIds = parsedTrend.matchingProductIds;
-            }
-        } catch (e) {
-            // If matchingAPIResponse is not JSON, ignore
+      // If ML API returns product IDs, fetch those products
+      let trendProductIds: string[] = [];
+      try {
+        const parsedTrend = typeof matchingAPIResponse === 'string' ? JSON.parse(matchingAPIResponse) : matchingAPIResponse;
+        if (parsedTrend && parsedTrend.matchingProductIds && Array.isArray(parsedTrend.matchingProductIds)) {
+          trendProductIds = parsedTrend.matchingProductIds;
         }
-        if (trendProductIds.length > 0) {
-            matchingProducts = await Product.find({ _id: { $in: trendProductIds } })
-              .populate('category_id')
-              .populate('subcategory_id');
-        } else {
-            // Fallback: filter by user preferences
-            const matchQuery: any = {
-                productType: 'bottom',
-            };
-            if (bodyType) matchQuery.bodyType = bodyType;
-            matchingProducts = await Product.find(matchQuery)
-              .populate('category_id')
-              .populate('subcategory_id')
-              .limit(10);
-        }
+      } catch (e) {
+        // If matchingAPIResponse is not JSON, ignore
+      }
+      if (trendProductIds.length > 0) {
+        matchingProducts = await Product.find({ _id: { $in: trendProductIds } })
+          .populate('category_id')
+          .populate('subcategory_id');
+      } else {
+        // Fallback: filter by user preferences
+        const matchQuery: any = {
+          productType: 'bottom',
+        };
+        if (bodyType) matchQuery.bodyType = bodyType;
+        matchingProducts = await Product.find(matchQuery)
+          .populate('category_id')
+          .populate('subcategory_id')
+          .limit(10);
+      }
     }
 
     res.status(200).json({
-        success: true,
-        data: {
-            product,
-            variants,
-            images,
-            similarProducts,
-            matchingProducts,
-            matchingAPIResponse,
-        }
+      success: true,
+      data: {
+        product,
+        variants,
+        images,
+        similarProducts,
+        matchingProducts,
+        matchingAPIResponse,
+      }
     });
   } catch (error: any) {
     res.status(500).json({ success: false, message: error.message });
@@ -378,6 +378,8 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
 
     const total = await Product.countDocuments();
     const products = await Product.find()
+      .populate('category_id')
+      .populate('subcategory_id')
       .populate('care_instruction_objectId')
       .populate('season_objectId')
       .populate('festival_objectId')
