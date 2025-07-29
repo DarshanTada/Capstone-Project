@@ -67,6 +67,8 @@ const routes = [
   { path: '/products/:id', name: 'Product Detail', element: ProductDetail },
   { path: '/products/add', name: 'Add Product', element: AddProduct },
   { path: '/products/edit/:id', name: 'Edit Product', element: AddProduct },
+  { path: '/categories', name: 'Categories', element: React.lazy(() => import('./views/pages/category/CategoryManagement')) },
+  { path: '/subcategories', name: 'Subcategories', element: React.lazy(() => import('./views/pages/subcategory/SubcategoryManagement')) },
   { path: '/orders', exact: true, name: 'Orders', element: OrderList },
   { path: '/theme', name: 'Theme', element: Colors, exact: true },
   { path: '/theme/colors', name: 'Colors', element: Colors },
