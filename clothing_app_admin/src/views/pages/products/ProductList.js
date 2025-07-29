@@ -145,7 +145,7 @@ const ProductList = () => {
                   </CTableDataCell>
                   <CTableDataCell>
                     {product.variants && product.variants.length > 0
-                      ? `₹${product.variants[0].price}`
+                      ? `$${product.variants[0].price}`
                       : '-'}
                   </CTableDataCell>
                   <CTableDataCell>
