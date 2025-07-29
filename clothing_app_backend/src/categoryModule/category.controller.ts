@@ -69,9 +69,9 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
 // Get Products by Category with specific structure (POST version)
 export const getProductsByCategoryPost = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { bodyType } = req.body;
+    const { bodyType, gender } = req.body;
 
-    // Build match condition for products based on bodyType
+    // Build match condition for products based on bodyType and gender
     let topMatchCondition: any = { productType: 'top' };
     let bottomMatchCondition: any = { productType: 'bottom' };
 
@@ -80,7 +80,15 @@ export const getProductsByCategoryPost = async (req: Request, res: Response): Pr
       bottomMatchCondition['subcategory.body_type'] = bodyType;
     }
 
-    // Get random 6 top products (filtered by bodyType if provided)
+    if (gender) {
+      // Match gender in both subcategory and product
+      topMatchCondition['subcategory.gender'] = gender;
+      topMatchCondition['gender'] = gender;
+      bottomMatchCondition['subcategory.gender'] = gender;
+      bottomMatchCondition['gender'] = gender;
+    }
+
+    // Get 6 random top products (filtered by bodyType and gender if provided)
     const topProducts = await Product.aggregate([
       {
         $lookup: {
@@ -96,7 +104,7 @@ export const getProductsByCategoryPost = async (req: Request, res: Response): Pr
       { $sample: { size: 6 } }
     ]);
 
-    // Get random 6 bottom products (filtered by bodyType if provided)
+    // Get 6 random bottom products (filtered by bodyType and gender if provided)
     const bottomProducts = await Product.aggregate([
       {
         $lookup: {
@@ -114,20 +122,20 @@ export const getProductsByCategoryPost = async (req: Request, res: Response): Pr
 
     // Populate product details for tops
     const populatedTopProducts = await Product.populate(topProducts, [
-      { path: 'category_id' },
-      { path: 'subcategory_id' },
-      { path: 'care_instruction_objectId' },
-      { path: 'season_objectId' },
-      { path: 'festival_objectId' }
+      // { path: 'category_id' },
+      // { path: 'subcategory_id' },
+      // { path: 'care_instruction_objectId' },
+      // { path: 'season_objectId' },
+      // { path: 'festival_objectId' }
     ]);
 
     // Populate product details for bottoms
     const populatedBottomProducts = await Product.populate(bottomProducts, [
-      { path: 'category_id' },
-      { path: 'subcategory_id' },
-      { path: 'care_instruction_objectId' },
-      { path: 'season_objectId' },
-      { path: 'festival_objectId' }
+      // { path: 'category_id' },
+      // { path: 'subcategory_id' },
+      // { path: 'care_instruction_objectId' },
+      // { path: 'season_objectId' },
+      // { path: 'festival_objectId' }
     ]);
 
     // Get variants and images for top products
@@ -154,11 +162,39 @@ export const getProductsByCategoryPost = async (req: Request, res: Response): Pr
       return { ...product, variants: productVariants, images: productImages };
     });
 
-    // Get seasonal banners
-    const banners = await Banner.find({ isActive: true }).limit(5);
+    // Get ALL seasonal banners with type "seasonal"
+    const banners = await Banner.find({ is_active: true, type: "seasonal" });
 
-    // Get all categories for the category list
-    const categories = await Category.find();
+    // Get categories filtered by gender if provided
+    let categories;
+    if (gender) {
+      // Get ALL categories that have subcategories with matching gender
+      categories = await Category.aggregate([
+        {
+          $lookup: {
+            from: 'subcategories',
+            localField: '_id',
+            foreignField: 'category_id',
+            as: 'subcategories'
+          }
+        },
+        {
+          $match: {
+            'subcategories.gender': gender
+          }
+        },
+        {
+          $project: {
+            _id: 1,
+            name: 1,
+            image: 1
+          }
+        }
+      ]);
+    } else {
+      // Get ALL categories if no gender filter
+      categories = await Category.find();
+    }
 
     // Build response structure
     const response = [
@@ -173,20 +209,21 @@ export const getProductsByCategoryPost = async (req: Request, res: Response): Pr
       {
         banners: banners
       },
-      ...categories.map(category => ({
-        category: {
+      {
+        category: categories.map(category => ({
           _id: category._id,
           name: category.name,
           image: category.image?.toString('base64') || null
-        }
-      }))
+        }))
+      }
     ];
 
     res.status(200).json({
       success: true,
       data: response,
       filters: {
-        bodyType: bodyType || 'all'
+        bodyType: bodyType || 'all',
+        gender: gender || 'all'
       }
     });
 
