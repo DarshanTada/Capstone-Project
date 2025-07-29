@@ -44,6 +44,7 @@ const ProductDetail = () => {
           const product = res.data.data[0]
           setForm({
             ...product,
+            subcategory_id: product.subcategory_id?._id || product.subcategory_id || '',
             style: Array.isArray(product.style) ? product.style.join(', ') : product.style || '',
             season_objectId: product.season_objectId?.[0]?._id || '',
             festival_objectId: product.festival_objectId?.[0]?._id || '',
@@ -196,8 +197,31 @@ const ProductDetail = () => {
                       <option key={cat._id} value={cat._id}>{cat.name}</option>
                     ))}
                   </CFormSelect>
-                  <CFormLabel className="mt-2">Subcategories</CFormLabel>
-                  <CFormTextarea value={subCategories.map(sub => sub.name).join('\n')} disabled rows={subCategories.length > 2 ? subCategories.length : 2} />
+                  <CFormLabel className="mt-2">Subcategory</CFormLabel>
+                  {isEditing ? (
+                    <CFormSelect
+                      name="subcategory_id"
+                      value={form.subcategory_id?._id || form.subcategory_id || ''}
+                      onChange={handleChange}
+                      disabled={!isEditing}
+                    >
+                      <option value="">Select Subcategory</option>
+                      {subCategories.map(sub => (
+                        <option key={sub._id} value={sub._id}>{sub.name}</option>
+                      ))}
+                    </CFormSelect>
+                  ) : (
+                    <CFormInput
+                      value={
+                        form.subcategory_id && typeof form.subcategory_id === 'object'
+                          ? form.subcategory_id.name
+                          : (
+                            subCategories.find(sub => sub._id === form.subcategory_id)?.name || ''
+                          )
+                      }
+                      disabled
+                    />
+                  )}
                   <CFormLabel className="mt-2">Gender</CFormLabel>
                   <CFormSelect name="gender" value={form.gender} onChange={handleChange} disabled={!isEditing}>
                     <option value="">Select Gender</option>

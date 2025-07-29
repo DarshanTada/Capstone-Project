@@ -68,7 +68,7 @@ const ProductAdd = () => {
     is_festival_ready: false,
     isTryOn: false,
   })
-  const [variantImages, setVariantImages] = useState([]) // Array of image objects
+  const [variantImages, setVariantImages] = useState([])
   const [categories, setCategories] = useState([])
   const [subCategories, setSubCategories] = useState([])
   const [careInstructions, setCareInstructions] = useState([])
@@ -128,7 +128,7 @@ const ProductAdd = () => {
   // Fetch subcategories when category changes
   useEffect(() => {
     if (form.category_id) {
-      axios.get(`http://localhost:3001/api/subcategory/bycategory/${form.category_id}`)
+      axios.get(`http://localhost:3001/api/subcategory/getByCategory/${form.category_id}`)
         .then(res => {
           if (res.data.success) {
             setSubCategories(res.data.data)
