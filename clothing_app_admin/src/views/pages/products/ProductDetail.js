@@ -20,6 +20,11 @@ const AVAILABILITY_OPTIONS = [
 ]
 
 const ProductDetail = () => {
+  // Handler for updating a single variant (for demo, just shows a success message)
+  const handleUpdateVariant = (idx) => {
+    setSuccess(`Variant ${idx + 1} updated! (This is a placeholder, implement backend call as needed)`);
+    setTimeout(() => setSuccess(''), 2000);
+  }
   const { id } = useParams()
   const navigate = useNavigate()
   const [form, setForm] = useState(null)
@@ -33,15 +38,14 @@ const ProductDetail = () => {
   const [isEditing, setIsEditing] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
+  const [showAddVariantForm, setShowAddVariantForm] = useState(false)
 
   useEffect(() => {
     const fetchProduct = async () => {
       try {
-        const res = await axios.get('http://localhost:3001/api/product/getProduct', {
-          params: { id }
-        })
-        if (res.data.success && res.data.data.length > 0) {
-          const product = res.data.data[0]
+        const res = await axios.get(`http://localhost:3001/api/product/getProductDetail/${id}`)
+        if (res.data.success && res.data.data && res.data.data.product) {
+          const product = res.data.data.product
           setForm({
             ...product,
             subcategory_id: product.subcategory_id?._id || product.subcategory_id || '',
@@ -50,8 +54,8 @@ const ProductDetail = () => {
             festival_objectId: product.festival_objectId?.[0]?._id || '',
             care_instruction_objectId: product.care_instruction_objectId?.[0]?._id || '',
           })
-          setVariants(product.variants || [])
-          setImages(product.images || [])
+          setVariants(res.data.data.variants || [])
+          setImages(res.data.data.images || [])
         } else {
           setError('Product not found')
         }
@@ -75,12 +79,25 @@ const ProductDetail = () => {
   }, [])
 
   useEffect(() => {
-    if (form?.category_id?._id) {
-      axios.get(`http://localhost:3001/api/subcategory/bycategory/${form.category_id._id}`)
+    if (form?.category_id?._id || form?.category_id) {
+      axios.get(`http://localhost:3001/api/subcategory/getByCategory/${form.category_id?._id || form.category_id}`)
         .then(res => setSubCategories(res.data.data || []))
         .catch(() => setSubCategories([]))
     }
   }, [form?.category_id])
+
+  useEffect(() => {
+    if (form && form.fabric_type) {
+      axios.post('http://localhost:3001/api/careinstruction/get-care-instructions/by-fabric', { fabricType: form.fabric_type })
+        .then(res => {
+          // The backend returns { success, data: { fabricType, instructions: [...] } }
+          setCareInstructions(res.data.data?.instructions || [])
+        })
+        .catch(() => setCareInstructions([]))
+    } else {
+      setCareInstructions([])
+    }
+  }, [form?.fabric_type])
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target
@@ -110,6 +127,7 @@ const ProductDetail = () => {
         description: form.description,
         fabric_type: form.fabric_type,
         category_id: form.category_id?._id || form.category_id,
+        subcategory_id: form.subcategory_id?._id || form.subcategory_id || '', // Always pass subcategory_id
         gender: form.gender,
         bodyType: form.bodyType,
         productType: form.productType,
@@ -132,6 +150,7 @@ const ProductDetail = () => {
     }
   }
 
+
   if (!form) return <div>Loading...</div>
 
   return (
@@ -144,7 +163,11 @@ const ProductDetail = () => {
               Back
             </CButton>
             {!isEditing && (
-              <CButton color="primary" className="float-end" onClick={() => setIsEditing(true)}>
+              <CButton
+                color="primary"
+                className="float-end"
+                onClick={() => navigate('/products/add', { state: { product: form, subcategory: form.subcategory_id } })}
+              >
                 Edit
               </CButton>
             )}
@@ -351,6 +374,13 @@ const ProductDetail = () => {
                         disabled={!isEditing}
                       />
                     </CCol>
+                    <CCol md={4} className="d-flex align-items-end">
+                      {isEditing && (
+                        <CButton color="info" size="sm" onClick={() => handleUpdateVariant(idx)}>
+                          Update Variant
+                        </CButton>
+                      )}
+                    </CCol>
                   </CRow>
                   <CRow className="mt-2">
                     <CCol md={12}>
@@ -367,15 +397,33 @@ const ProductDetail = () => {
                             />
                           ))}
                       </div>
+                      {isEditing && (
+                        <CFormInput
+                          type="file"
+                          multiple
+                          accept=".png,.jpg,.jpeg,.webp"
+                          className="mt-2"
+                          onChange={e => handleVariantImageUpload(idx, e)}
+                        />
+                      )}
                     </CCol>
                   </CRow>
                 </div>
               ))}
               {isEditing && (
+                <CButton
+                  color="success"
+                  className="mb-3"
+                  onClick={() => setShowAddVariantForm(true)}
+                >
+                  Add New Variant
+                </CButton>
+              )}
+              {isEditing && (
                 <CRow>
                   <CCol className="d-flex justify-content-center">
                     <CButton className="my-3" color="primary" type="submit">
-                      Save
+                      Update Product
                     </CButton>
                   </CCol>
                 </CRow>

@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react'
-
 import {
   CCard, CCardBody, CCardHeader, CForm, CFormInput, CButton, CRow, CCol, CAlert, CFormSelect, CFormTextarea
 } from '@coreui/react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useParams, useLocation } from 'react-router-dom'
 import axios from 'axios'
 
 const SIZE_OPTIONS = [
@@ -19,20 +18,37 @@ const AVAILABILITY_OPTIONS = [
   { value: 'pre_order', label: 'Pre Order' },
 ]
 const ProductAdd = () => {
-  const [form, setForm] = useState({
-    name: '',
-    description: '',
-    fabric_type: '',
-    category_id: '',
-    subcategory_id: '',
-    gender: '',
-    bodyType: '',
-    productType: '',
-    style: '',
-    season_objectId: [],
-    festival_objectId: [],
-    care_instruction_objectId: [],
-  })
+  const location = useLocation();
+  // Check if editing: product data passed via location.state
+  const isEditMode = location.state && location.state.product;
+  // Initial form state: use product if editing, else defaults
+  const [form, setForm] = useState(() => {
+    if (location && location.state && location.state.product) {
+      const product = location.state.product;
+      return {
+        ...product,
+        subcategory_id:
+          product.subcategory_id?._id ||
+          product.subcategory_id ||
+          (location.state.subcategory || ''),
+      };
+    } else {
+      return {
+        name: '',
+        description: '',
+        fabric_type: '',
+        category_id: '',
+        subcategory_id: '',
+        gender: '',
+        bodyType: '',
+        productType: '',
+        style: '',
+        season_objectId: [],
+        festival_objectId: [],
+        care_instruction_objectId: [],
+      };
+    }
+  });
   const [variants, setVariants] = useState([])
   const [showVariantForm, setShowVariantForm] = useState(false)
   const [variant, setVariant] = useState({
@@ -78,6 +94,8 @@ const ProductAdd = () => {
   const [success, setSuccess] = useState('')
   const [variantErrors, setVariantErrors] = useState({})
   const navigate = useNavigate()
+
+
 
   const flags = {
     'is_featured': 'Featured',
@@ -266,56 +284,79 @@ const ProductAdd = () => {
     }
 
     try {
-      const formData = new FormData()
-
-      // Append main fields
-      formData.append('name', form.name)
-      formData.append('description', form.description)
-      formData.append('fabric_type', form.fabric_type)
-      formData.append('category_id', form.category_id)
-      formData.append('gender', form.gender)
-      formData.append('bodyType', form.bodyType)
-      formData.append('productType', form.productType)
-      formData.append('style', JSON.stringify([form.style])) // backend expects array as JSON string
-
-      // Always send as arrays (even if empty)
-      formData.append('season_objectId', JSON.stringify(Array.isArray(form.season_objectId) ? form.season_objectId : form.season_objectId ? [form.season_objectId] : []))
-      formData.append('festival_objectId', JSON.stringify(Array.isArray(form.festival_objectId) ? form.festival_objectId : form.festival_objectId ? [form.festival_objectId] : []))
-      formData.append('care_instruction_objectId', JSON.stringify(Array.isArray(form.care_instruction_objectId) ? form.care_instruction_objectId : form.care_instruction_objectId ? [form.care_instruction_objectId] : []))
-
-      // Prepare variants array for backend
-      const variantsForBackend = variants.map((variant) => {
-        const { images, ...rest } = variant
-        return {
-          ...rest,
-          skin_tone: Array.isArray(variant.skin_tone) ? variant.skin_tone : [],
-          under_tone: Array.isArray(variant.under_tone) ? variant.under_tone : [],
+      if (isEditMode) {
+        // Update product
+        const payload = {
+          productId: id,
+          name: form.name,
+          description: form.description,
+          fabric_type: form.fabric_type,
+          category_id: form.category_id,
+          subcategory_id: form.subcategory_id,
+          gender: form.gender,
+          bodyType: form.bodyType,
+          productType: form.productType,
+          style: form.style.split(',').map(s => s.trim()),
+          season_objectId: Array.isArray(form.season_objectId) ? form.season_objectId : form.season_objectId ? [form.season_objectId] : [],
+          festival_objectId: Array.isArray(form.festival_objectId) ? form.festival_objectId : form.festival_objectId ? [form.festival_objectId] : [],
+          care_instruction_objectId: Array.isArray(form.care_instruction_objectId) ? form.care_instruction_objectId : form.care_instruction_objectId ? [form.care_instruction_objectId] : [],
+          variants: variants.map(v => ({
+            ...v,
+            stock_qty: parseInt(v.stock_qty),
+            price: parseFloat(v.price),
+            discount_price: v.discount_price ? parseFloat(v.discount_price) : null,
+          })),
         }
-      })
-      formData.append('variants', JSON.stringify(variantsForBackend))
-
-      // Append images for each variant with correct field name
-      variants.forEach((variant, vIdx) => {
-        if (variant.images && variant.images.length > 0) {
-          variant.images.forEach((img, imgIdx) => {
-            formData.append(`variant_${vIdx}_image_${imgIdx}`, img.file)
-
-          })
+        const res = await axios.put(`http://localhost:3001/api/product/updateProduct/${id}`, payload)
+        if (res.data.success) {
+          setSuccess('Product updated successfully!')
+          setTimeout(() => navigate('/products'), 1000)
+        } else {
+          setError(res.data.message || 'Failed to update product')
         }
-      })
-
-      const res = await axios.post('http://localhost:3001/api/product/createProducts', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      })
-
-      if (res.data.success) {
-        setSuccess('Product added successfully!')
-        setTimeout(() => navigate('/products'), 1000)
       } else {
-        setError(res.data.message || 'Failed to add product')
+        // Create product
+        const formData = new FormData()
+        formData.append('name', form.name)
+        formData.append('description', form.description)
+        formData.append('fabric_type', form.fabric_type)
+        formData.append('category_id', form.category_id)
+        formData.append('subcategory_id', form.subcategory_id)
+        formData.append('gender', form.gender)
+        formData.append('bodyType', form.bodyType)
+        formData.append('productType', form.productType)
+        formData.append('style', JSON.stringify([form.style]))
+        formData.append('season_objectId', JSON.stringify(Array.isArray(form.season_objectId) ? form.season_objectId : form.season_objectId ? [form.season_objectId] : []))
+        formData.append('festival_objectId', JSON.stringify(Array.isArray(form.festival_objectId) ? form.festival_objectId : form.festival_objectId ? [form.festival_objectId] : []))
+        formData.append('care_instruction_objectId', JSON.stringify(Array.isArray(form.care_instruction_objectId) ? form.care_instruction_objectId : form.care_instruction_objectId ? [form.care_instruction_objectId] : []))
+        const variantsForBackend = variants.map((variant) => {
+          const { images, ...rest } = variant
+          return {
+            ...rest,
+            skin_tone: Array.isArray(variant.skin_tone) ? variant.skin_tone : [],
+            under_tone: Array.isArray(variant.under_tone) ? variant.under_tone : [],
+          }
+        })
+        formData.append('variants', JSON.stringify(variantsForBackend))
+        variants.forEach((variant, vIdx) => {
+          if (variant.images && variant.images.length > 0) {
+            variant.images.forEach((img, imgIdx) => {
+              formData.append(`variant_${vIdx}_image_${imgIdx}`, img.file)
+            })
+          }
+        })
+        const res = await axios.post('http://localhost:3001/api/product/createProducts', formData, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        })
+        if (res.data.success) {
+          setSuccess('Product added successfully!')
+          setTimeout(() => navigate('/products'), 1000)
+        } else {
+          setError(res.data.message || 'Failed to add product')
+        }
       }
     } catch (err) {
-      setError(err.response?.data?.message || 'Failed to add product')
+      setError(err.response?.data?.message || 'Failed to save product')
     }
   }
 
@@ -478,7 +519,7 @@ const ProductAdd = () => {
   return (
     <CCard className="mb-4">
       <CCardHeader>
-        <strong>Add Product</strong>
+        <strong>{isEditMode ? 'Edit Product' : 'Add Product'}</strong>
       </CCardHeader>
       <CCardBody>
         {error && <CAlert color="danger">{error}</CAlert>}
@@ -634,11 +675,11 @@ const ProductAdd = () => {
               size="lg"
               disabled={variants.length === 0}
             >
-              Create Product
+              {isEditMode ? 'Update Product' : 'Create Product'}
             </CButton>
             {variants.length === 0 && (
               <div className="text-muted small mt-2">
-                Add at least one variant to create the product
+                Add at least one variant to {isEditMode ? 'update' : 'create'} the product
               </div>
             )}
           </div>
