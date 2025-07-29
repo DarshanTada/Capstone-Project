@@ -1,6 +1,6 @@
 // var webApi = {'domain': 'https://api.iteeha.co'}; //PROD
-// var webApi = {'domain': 'http://localhost:3001/'}; //DEV LOCAL
-var webApi = {'domain': 'https://naturally-giving-chow.ngrok-free.app/'}; //DEV NGROK
+var webApi = {'domain': 'http://10.0.0.213:3001/'}; //DEV PROD
+var mlApi = {'domain': 'https://naturally-giving-chow.ngrok-free.app/'}; //ML NGROK
 
 var endPoint = {
   // Authentication
@@ -8,6 +8,10 @@ var endPoint = {
 
   // Home
   'getCategory': 'api/category/getCategory',
+  // Product
+  'getProducts': 'api/product/getProduct',
+  // SubCategory
+  'getSubCategories': 'api/subCategory/getAll',
 
   //Preference
   'getAllPreferences': 'api/preferences/getAllPreferences',
@@ -15,7 +19,7 @@ var endPoint = {
   'updatePreference': 'api/preferences/updatePreference',
   'deletePreference': 'api/preferences/deletePreference',
 
-  // ML Services (direct ngrok routes)
+  // ML Services (use ngrok for ML only)
   'mlAsk': 'ask/',
   'mlAnalyzePreferences': 'ask/',
 };

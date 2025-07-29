@@ -9,15 +9,15 @@ import mongoose from 'mongoose';
 export const getProductDetail = async (req: Request, res: Response): Promise<void> => {
   try {
     const productId = req.params.id;
-    // Populate subcategory inside body_type
-        const product = await Product.findById(productId)
-            .populate({
-                path: 'category_id',
-                populate: {
-                    path: 'body_type.subcategory',
-                }
-            })
-            .populate('care_instruction_objectId');
+    
+    // Populate category and subcategory
+    const product = await Product.findById(productId)
+      .populate('category_id')
+      .populate('subcategory_id')
+      .populate('care_instruction_objectId')
+      .populate('season_objectId')
+      .populate('festival_objectId');
+
     if (!product) {
       res.status(404).json({ success: false, message: 'Product not found.' });
       return;
@@ -29,13 +29,15 @@ export const getProductDetail = async (req: Request, res: Response): Promise<voi
     // Get images
     const images = await ProductImage.find({ productObjectId: productId });
 
-    // Defensive: check populated fields
-    const categoryId = product.category_id?._id || product.category_id;
     // Get similar products (same category, exclude current)
+    const categoryId = product.category_id?._id || product.category_id;
     const similarProducts = await Product.find({
       category_id: categoryId,
       _id: { $ne: productId }
-    }).limit(10);
+    })
+    .populate('category_id')
+    .populate('subcategory_id')
+    .limit(10);
 
     // Get user preferences from query
     const { skinTone, undertone, bodyType } = req.query;
@@ -46,22 +48,12 @@ export const getProductDetail = async (req: Request, res: Response): Promise<voi
       const categoryName = typeof product.category_id === 'object' && 'name' in product.category_id
         ? (product.category_id as any).name
         : '';
-      let subcategoryName = '';
-      if (Array.isArray(product.bodyType) && product.bodyType[0] && typeof product.bodyType[0] === 'object' && 'subcategory' in product.bodyType[0]) {
-        subcategoryName = product.bodyType[0].subcategory?.[0]?.name || '';
-      }
+      const subcategoryName = typeof product.subcategory_id === 'object' && 'name' in product.subcategory_id
+        ? (product.subcategory_id as any).name
+        : '';
       systemPrompt = `Given a user with skin tone: ${skinTone}, undertone: ${undertone}, body type: ${bodyType}, and a top from category: ${categoryName}, subcategory: ${subcategoryName}, suggest the most trendy and matching bottoms available in our catalog. Only recommend products that fit the user's body type and style preferences.`;
     }
 
-    // Call askQuestion API (pseudo, replace with actual call)
-    let trendsResponse: any = null;
-    if (systemPrompt) {
-      // Replace with actual ML API call
-      // trendsResponse = await askQuestion(systemPrompt);
-      trendsResponse = null; // Placeholder
-    }
-
-    // Get matching products according to user preferences and ML response
     // Call askQuestion API for actual matching response
     let matchingAPIResponse = '';
     if (systemPrompt) {
@@ -91,16 +83,19 @@ export const getProductDetail = async (req: Request, res: Response): Promise<voi
             // If matchingAPIResponse is not JSON, ignore
         }
         if (trendProductIds.length > 0) {
-            matchingProducts = await Product.find({ _id: { $in: trendProductIds } });
+            matchingProducts = await Product.find({ _id: { $in: trendProductIds } })
+              .populate('category_id')
+              .populate('subcategory_id');
         } else {
             // Fallback: filter by user preferences
             const matchQuery: any = {
                 productType: 'bottom',
             };
             if (bodyType) matchQuery.bodyType = bodyType;
-            if (skinTone) matchQuery.skin_tone = skinTone;
-            if (undertone) matchQuery.under_tone = undertone;
-            matchingProducts = await Product.find(matchQuery).limit(10);
+            matchingProducts = await Product.find(matchQuery)
+              .populate('category_id')
+              .populate('subcategory_id')
+              .limit(10);
         }
     }
 
@@ -140,6 +135,7 @@ export const createProduct = async (req: Request, res: Response) => {
       description,
       fabric_type,
       category_id,
+      subcategory_id,
       gender,
       bodyType,
       season_objectId,
@@ -163,6 +159,7 @@ export const createProduct = async (req: Request, res: Response) => {
       description,
       fabric_type,
       category_id,
+      subcategory_id,
       gender,
       bodyType,
       productType,
@@ -247,6 +244,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
       description,
       fabric_type,
       category_id,
+      subcategory_id,
       gender,
       bodyType,
       season_objectId,
@@ -273,6 +271,7 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
     product.description = description;
     product.fabric_type = fabric_type;
     product.category_id = category_id;
+    product.subcategory_id = subcategory_id;
     product.gender = gender;
     product.bodyType = bodyType;
     product.productType = productType;
@@ -379,7 +378,9 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
 
     const total = await Product.countDocuments();
     const products = await Product.find()
-      .populate('category_id')
+      .populate('care_instruction_objectId')
+      .populate('season_objectId')
+      .populate('festival_objectId')
       .skip(skip)
       .limit(limit)
       .lean();

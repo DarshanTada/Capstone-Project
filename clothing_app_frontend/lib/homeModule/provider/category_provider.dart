@@ -75,29 +75,4 @@ class CategoryProvider with ChangeNotifier {
   //     };
   //   }
   // }
-
-  // fetchCafeById(
-  //     {required String accessToken,
-  //     required String query,
-  //     required String cafeType}) async {
-  //   try {
-  //     final url = '${webApi['domain']}${endPoint['fetchSingleCafeById']}$query';
-  //     final response = await RemoteServices.httpRequest(
-  //         method: 'GET', url: url, accessToken: accessToken);
-
-  //     if (response['success']) {
-  //       if (cafeType == 'cafe') {
-  //         Cafe fetchedCafe = Cafe.jsonToCafe(response['result']);
-  //         response['cafe'] = fetchedCafe;
-  //       }
-  //       notifyListeners();
-  //     }
-  //     return response;
-  //   } catch (e) {
-  //     return {
-  //       'success': false,
-  //       'message': 'Failed to get cafe',
-  //     };
-  //   }
-  // }
 }

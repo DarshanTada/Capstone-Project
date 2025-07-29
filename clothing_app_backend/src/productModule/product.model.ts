@@ -28,6 +28,11 @@ const productSchema = new mongoose.Schema(
     description: String,
     fabric_type: String,
     category_id: { type: mongoose.Schema.Types.ObjectId, ref: "Category", required: true },
+    subcategory_id: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "SubCategory",
+      required: true
+    },
     reviewObjectId: { type: mongoose.Schema.Types.ObjectId, ref: "Review" },
     gender: {
       type: String,

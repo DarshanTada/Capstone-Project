@@ -2,6 +2,7 @@ import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/asset_svg_icon.dart';
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
+import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_big_product_card_grid.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_small_product_card_grid.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
@@ -22,7 +23,22 @@ class CategoryScreenState extends State<CategoryScreen> {
   TextTheme customTextTheme = const TextTheme();
   Map language = {};
   bool isLoading = false;
-  fetchData() async {}
+
+  fetchCategories() async {
+    final response = await Provider.of<CategoryProvider>(context, listen: false)
+        .fetchCategory(
+          // accessToken: User.accessToken,
+          query: 'page=1&limit=10',
+        );
+    if (!response['success']) {
+      showSnackbar(response['message']);
+    }
+  }
+
+  fetchData() async {
+    await fetchCategories();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -35,6 +51,8 @@ class CategoryScreenState extends State<CategoryScreen> {
     dW = MediaQuery.of(context).size.width;
     tS = MediaQuery.of(context).textScaleFactor;
     language = Provider.of<AuthProvider>(context).selectedLanguage;
+    final categories = Provider.of<CategoryProvider>(context).categories;
+
     customTextTheme = Theme.of(context).textTheme;
     return Scaffold(
       backgroundColor: Colors.white,

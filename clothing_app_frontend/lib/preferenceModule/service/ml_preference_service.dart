@@ -17,74 +17,34 @@ class MLPreferenceService {
     while (attempt < maxRetries) {
       attempt++;
       
-      try {
-        print('🔄 Starting ML analysis for user: $userId (Attempt $attempt/$maxRetries)');
-        print('📱 Image size: ${imageBase64.length} characters');
-        
-        final url = Uri.parse('${webApi['domain']}${endPoint['mlAnalyzePreferences']}');
-        print('🌐 Request URL: $url');
-        
-        final requestBody = {
-          'question': 'Analyze this person\'s characteristics and return only the JSON response with their style profile.',
-          'system_prompt': 'You are a fashion and style analysis expert. Analyze the person in the image and provide specific details about their characteristics that would help determine clothing preferences. CRITICAL: You MUST respond with ONLY a valid JSON object. Do not include any explanatory text before or after the JSON. Return EXACTLY this JSON structure with your analysis: {"gender": "male/female/other", "age": 25, "height": 170, "body_type": "ectomorph/mesomorph/endomorph/hourglass/pear/apple/rectangle/inverted_triangle", "skin_tone": "very_fair/fair/light/medium/tan/dark/very_dark", "style": ["casual", "formal", "sporty", "bohemian", "classic", "trendy"], "color_tones": ["warm", "cool", "neutral"], "undertone": "warm/cool/neutral"}',
-          'user_id': userId,
-          'image_base64': imageBase64,
-        };
-        
-        print('📤 Sending request to backend...');
-        final response = await http.post(
-          url,
-          headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-            'Accept': 'application/json',
-          },
-          body: jsonEncode(requestBody),
-        ).timeout(Duration(seconds: 120)); // Add timeout to prevent hanging
-  
-        print('📥 Response status: ${response.statusCode}');
-        print('📥 Response body preview: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}...');
-  
-        if (response.statusCode == 200 || response.statusCode == 201) {
-          final responseData = jsonDecode(response.body);
-          print('✅ Analysis successful on attempt $attempt');
-          return responseData;
-        } else {
-          print('❌ Failed to analyze preferences: ${response.statusCode}');
-          print('📄 Full response body: ${response.body}');
-          
-          // Check if it's a timeout or connection error that we should retry
-          if (response.body.contains('Read timed out') || 
-              response.body.contains('HTTPConnectionPool') ||
-              response.body.contains('Connection refused') ||
-              response.statusCode >= 500) {
-            
-            if (attempt < maxRetries) {
-              print('🔄 Retrying in 2 seconds... (Attempt ${attempt + 1}/$maxRetries)');
-              await Future.delayed(Duration(seconds: 2));
-              continue; // Retry
-            }
-          }
-          
-          // For non-retryable errors, return null immediately
-          return null;
-        }
-      } catch (e) {
-        print('💥 Error analyzing user preferences (Attempt $attempt/$maxRetries): $e');
-        
-        // Check if it's a timeout or connection error that we should retry
-        final errorString = e.toString().toLowerCase();
-        if ((errorString.contains('timeout') || 
-             errorString.contains('connection') ||
-             errorString.contains('socket')) && 
-            attempt < maxRetries) {
-          
-          print('🔄 Network error detected, retrying in 2 seconds... (Attempt ${attempt + 1}/$maxRetries)');
-          await Future.delayed(Duration(seconds: 2));
-          continue; // Retry
-        }
-        
-        // For non-retryable errors or final attempt, return null
+      final url = Uri.parse('${mlApi['domain']}${endPoint['mlAnalyzePreferences']}');
+      print('🌐 Request URL: $url');
+      
+      final requestBody = {
+        'user_id': userId,
+        'image_base64': imageBase64,
+      };
+      
+      print('📤 Sending request to backend...');
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
+        },
+        body: jsonEncode(requestBody),
+      );
+
+      print('📥 Response status: ${response.statusCode}');
+      print('📥 Response body preview: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}...');
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final responseData = jsonDecode(response.body);
+        print('✅ Analysis successful');
+        return responseData;
+      } else {
+        print('❌ Failed to analyze preferences: ${response.statusCode}');
+        print('📄 Full response body: ${response.body}');
         return null;
       }
     }
