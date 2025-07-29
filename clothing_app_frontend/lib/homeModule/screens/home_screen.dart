@@ -54,8 +54,19 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
+   fetchProductsByCategory({String? bodyType}) async {
+    final response = await Provider.of<CategoryProvider>(context, listen: false)
+        .getProductsByCategory(
+          bodyType: '',
+        );
+    if (!response['success']) {
+      showSnackbar(response['message']);
+    }
+  }
+
   fetchData() async {
     await fetchCategories();
+    await fetchProductsByCategory();
   }
 
   @override
@@ -81,6 +92,8 @@ class HomeScreenState extends State<HomeScreen> {
 
   screenBody() {
     final categories = Provider.of<CategoryProvider>(context).categories;
+    final getProductsByCategory =
+        Provider.of<CategoryProvider>(context).categoryProducts;
     return SizedBox(
       height: dH,
       width: dW,

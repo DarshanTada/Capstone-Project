@@ -4,6 +4,7 @@ class Product {
   final String description;
   final String fabricType;
   final String categoryId;
+  final String subCategoryId;
   final String reviewObjectId;
   final String gender;
   final String bodyType;
@@ -22,6 +23,7 @@ class Product {
     required this.description,
     required this.fabricType,
     required this.categoryId,
+    required this.subCategoryId,
     required this.reviewObjectId,
     required this.gender,
     required this.bodyType,
@@ -42,6 +44,7 @@ class Product {
       description: json['description'] ?? '',
       fabricType: json['fabric_type'] ?? '',
       categoryId: json['categoryId'] ?? json['category_id'] ?? '',
+      subCategoryId: json['subCategoryId'] ?? json['sub_category_id'] ?? '',
       reviewObjectId: json['reviewObjectId']?.toString() ?? '',
       gender: json['gender'] ?? '',
       bodyType: json['bodyType'] ?? '',

@@ -8,6 +8,7 @@ var endPoint = {
 
   // Home
   'getCategory': 'api/category/getCategory',
+  'getProductsByCategory': 'api/category/getProductsByCategory',
   // Product
   'getProducts': 'api/product/getProduct',
   // SubCategory

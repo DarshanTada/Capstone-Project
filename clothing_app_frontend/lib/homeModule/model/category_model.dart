@@ -1,24 +1,17 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'bodytype_model.dart';
 
 class Category {
   final String id;
   final String name;
   final String image; // base64 string
-  final String gender;
-  final List<BodyTypeEntry> bodyTypes;
-  final DateTime? createdAt;
-  final DateTime? updatedAt;
+ 
 
   Category({
     required this.id,
     required this.name,
     required this.image,
-    required this.gender,
-    required this.bodyTypes,
-    this.createdAt,
-    this.updatedAt,
+    
   });
 
   /// Factory to safely create a Category from JSON
@@ -27,14 +20,7 @@ class Category {
       id: json['_id']?.toString() ?? '',
       name: (json['name'] ?? '').toString(),
       image: (json['image'] ?? '').toString(),
-      gender: (json['gender'] ?? '').toString(),
-      bodyTypes: (json['body_type'] as List? ?? [])
-          .map(
-            (bt) => BodyTypeEntry.jsonToBodyType(Map<String, dynamic>.from(bt)),
-          )
-          .toList(),
-      createdAt: _parseDateTime(json['createdAt']),
-      updatedAt: _parseDateTime(json['updatedAt']),
+    
     );
   }
 
@@ -46,10 +32,6 @@ class Category {
     '_id': id,
     'name': name,
     'image': image,
-    'gender': gender,
-    'body_type': bodyTypes.map((b) => b.toJson()).toList(),
-    'createdAt': createdAt?.toIso8601String(),
-    'updatedAt': updatedAt?.toIso8601String(),
   };
 
   /// Returns `Uint8List` from base64-encoded image string
