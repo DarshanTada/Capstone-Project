@@ -1,5 +1,6 @@
 // var webApi = {'domain': 'https://api.iteeha.co'}; //PROD
 var webApi = {'domain': 'http://10.0.0.213:3001/'}; //DEV PROD
+var mlApi = {'domain': 'https://naturally-giving-chow.ngrok-free.app/'}; //ML NGROK
 
 var endPoint = {
   // Authentication
@@ -18,7 +19,7 @@ var endPoint = {
   'updatePreference': 'api/preferences/updatePreference',
   'deletePreference': 'api/preferences/deletePreference',
 
-  // ML Services
-  'mlAsk': 'api/ml/ask',
-  'mlAnalyzePreferences': 'api/ml/analyze-preferences',
+  // ML Services (use ngrok for ML only)
+  'mlAsk': 'ask/',
+  'mlAnalyzePreferences': 'ask/',
 };
