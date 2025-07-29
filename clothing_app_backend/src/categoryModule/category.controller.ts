@@ -1,5 +1,9 @@
 import { Request, Response } from 'express';
 import Category from './category.model';
+import Product from '../productModule/product.model';
+import ProductVariant from '../productModule/productVariant.model';
+import ProductImage from '../productModule/productImage.model';
+import Banner from '../bannerModule/banner.model';
 import { upload } from '../utils/common/multer';
 
 export const uploadCategoryImage = upload.fields([
@@ -62,6 +66,136 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
   }
 };
 
+// Get Products by Category with specific structure (POST version)
+export const getProductsByCategoryPost = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { bodyType } = req.body;
+
+    // Build match condition for products based on bodyType
+    let topMatchCondition: any = { productType: 'top' };
+    let bottomMatchCondition: any = { productType: 'bottom' };
+
+    if (bodyType) {
+      topMatchCondition['subcategory.body_type'] = bodyType;
+      bottomMatchCondition['subcategory.body_type'] = bodyType;
+    }
+
+    // Get random 6 top products (filtered by bodyType if provided)
+    const topProducts = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'subcategories',
+          localField: 'subcategory_id',
+          foreignField: '_id',
+          as: 'subcategory'
+        }
+      },
+      {
+        $match: topMatchCondition
+      },
+      { $sample: { size: 6 } }
+    ]);
+
+    // Get random 6 bottom products (filtered by bodyType if provided)
+    const bottomProducts = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'subcategories',
+          localField: 'subcategory_id',
+          foreignField: '_id',
+          as: 'subcategory'
+        }
+      },
+      {
+        $match: bottomMatchCondition
+      },
+      { $sample: { size: 6 } }
+    ]);
+
+    // Populate product details for tops
+    const populatedTopProducts = await Product.populate(topProducts, [
+      { path: 'category_id' },
+      { path: 'subcategory_id' },
+      { path: 'care_instruction_objectId' },
+      { path: 'season_objectId' },
+      { path: 'festival_objectId' }
+    ]);
+
+    // Populate product details for bottoms
+    const populatedBottomProducts = await Product.populate(bottomProducts, [
+      { path: 'category_id' },
+      { path: 'subcategory_id' },
+      { path: 'care_instruction_objectId' },
+      { path: 'season_objectId' },
+      { path: 'festival_objectId' }
+    ]);
+
+    // Get variants and images for top products
+    const topProductIds = populatedTopProducts.map(p => p._id);
+    const topVariants = await ProductVariant.find({ productObjectId: { $in: topProductIds } });
+    const topImages = await ProductImage.find({ productObjectId: { $in: topProductIds } });
+
+    // Get variants and images for bottom products
+    const bottomProductIds = populatedBottomProducts.map(p => p._id);
+    const bottomVariants = await ProductVariant.find({ productObjectId: { $in: bottomProductIds } });
+    const bottomImages = await ProductImage.find({ productObjectId: { $in: bottomProductIds } });
+
+    // Enrich top products with variants and images
+    const enrichedTopProducts = populatedTopProducts.map(product => {
+      const productVariants = topVariants.filter(v => String(v.productObjectId) === String(product._id));
+      const productImages = topImages.filter(img => String(img.productObjectId) === String(product._id));
+      return { ...product, variants: productVariants, images: productImages };
+    });
+
+    // Enrich bottom products with variants and images
+    const enrichedBottomProducts = populatedBottomProducts.map(product => {
+      const productVariants = bottomVariants.filter(v => String(v.productObjectId) === String(product._id));
+      const productImages = bottomImages.filter(img => String(img.productObjectId) === String(product._id));
+      return { ...product, variants: productVariants, images: productImages };
+    });
+
+    // Get seasonal banners
+    const banners = await Banner.find({ isActive: true }).limit(5);
+
+    // Get all categories for the category list
+    const categories = await Category.find();
+
+    // Build response structure
+    const response = [
+      {
+        name: "Top",
+        products: enrichedTopProducts
+      },
+      {
+        name: "Bottom", 
+        products: enrichedBottomProducts
+      },
+      {
+        banners: banners
+      },
+      ...categories.map(category => ({
+        category: {
+          _id: category._id,
+          name: category.name,
+          image: category.image?.toString('base64') || null
+        }
+      }))
+    ];
+
+    res.status(200).json({
+      success: true,
+      data: response,
+      filters: {
+        bodyType: bodyType || 'all'
+      }
+    });
+
+  } catch (error: any) {
+    console.error('Get Products by Category Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // Delete Category
 export const deleteCategory = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -75,5 +209,4 @@ export const deleteCategory = async (req: Request, res: Response): Promise<void>
     res.status(500).json({ success: false, message: err.message });
   }
 };
-
 
