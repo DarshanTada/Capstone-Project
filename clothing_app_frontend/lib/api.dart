@@ -1,11 +1,11 @@
-// var webApi = {'domain': 'https://api.iteeha.co'}; //PROD
-
-var webApi = {'domain': 'http://10.0.0.213:3001/'}; //DEV PROD
+var webApi = {'domain': 'http://10.144.121.67:3001/'}; //PC IP ADDRESS
 var mlApi = {'domain': 'https://naturally-giving-chow.ngrok-free.app/'}; //ML NGROK
 
 var endPoint = {
   // Authentication
   'login': 'api/user/loginOrRegisterUser',
+  'updateUser': 'api/user/updateUser',
+  'getUserById': 'api/user/getUserById',
 
   // Home
   'getCategory': 'api/category/getCategory',
@@ -20,6 +20,12 @@ var endPoint = {
   'getPrefByUserId': 'api/preferences/user',
   'updatePreference': 'api/preferences/updatePreference',
   'deletePreference': 'api/preferences/deletePreference',
+
+  // Address
+  'addAddress': 'api/address/addAddress',
+  'getAddressesByUserId': 'api/address/getAddressesByUserId',
+  'updateAddress': 'api/address/updateAddress',
+  'deleteAddress': 'api/address/deleteAddress',
 
   // ML Services (use ngrok for ML only)
   'mlAsk': 'ask/',

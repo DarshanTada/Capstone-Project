@@ -36,9 +36,6 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case NamedRoute.myCartScreen:
       return _getPageRoute(const MyCartScreen());
 
-       case NamedRoute.preferenceScreen:
-      return _getPageRoute( PreferenceScreen());
-
     case NamedRoute.verifyOtpScreen:
       return _getPageRoute(
         VerifyOtpScreen2(args: settings.arguments as VerifyOtpArguments),
