@@ -8,12 +8,66 @@ class UserApiService {
     final prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('auth_token');
     
-    // For testing purposes, use hardcoded token if none exists
-    if (token == null || token.isEmpty) {
-      token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2ODY1OTcxN2ZkZThiNWM5OTk0MjYzZTMiLCJwaG9uZV9udW1iZXIiOiIrMTIyMjIyMjIyMjIiLCJpYXQiOjE3NTE0ODgyODAsImV4cCI6MTc1MjA5MzA4MH0.-_P76H6GyJUXfhcsKOwtC2bTu1tSlhc7_J7TPS0IWCk";
-      print('🔑 Using test token for authentication');
+    // Check if we need to get a fresh token
+    if (token == null || token.isEmpty || token.contains('eyJhbGciOiRS') || token == 'test_token_placeholder') {
+      print('🔄 Getting fresh authentication token...');
+      token = await _getNewAuthToken();
+      if (token != null) {
+        await prefs.setString('auth_token', token);
+        print('✅ Fresh token obtained and saved');
+      } else {
+        print('❌ Failed to obtain valid authentication token');
+        // Clear any invalid token
+        await prefs.remove('auth_token');
+      }
     }
+    
     return token;
+  }
+
+  /// Get a new authentication token from the backend
+  static Future<String?> _getNewAuthToken() async {
+    try {
+      final url = Uri.parse('${webApi['domain']}${endPoint['login']}');
+      
+      print('🔐 Requesting new token with phone: +12222222222');
+      
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: {
+          'phone_number': '+12222222222',
+        },
+      );
+
+      print('📊 Token Response status: ${response.statusCode}');
+      print('📄 Token Response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final token = responseData['data']['token'];
+          if (token != null && token.isNotEmpty) {
+            // Validate that the token looks like a JWT (has 3 parts separated by dots)
+            final tokenParts = token.split('.');
+            if (tokenParts.length == 3) {
+              print('✅ Valid JWT token received successfully');
+              return token;
+            } else {
+              print('⚠️ Received token is not a valid JWT format: $token');
+            }
+          }
+        }
+      }
+      
+      print('⚠️ Could not get valid JWT token from backend');
+      return null; // Return null instead of placeholder to indicate failure
+    } catch (e) {
+      print('❌ Error getting new token: $e');
+      return null; // Return null to indicate authentication failure
+    }
   }
 
   static Future<String?> getUserId() async {
@@ -112,6 +166,48 @@ class UserApiService {
           return responseData['data'];
         } else {
           throw Exception(responseData['message'] ?? 'Update failed');
+        }
+      } else if (response.statusCode == 500) {
+        // Check if it's a JWT expiration error
+        final errorData = json.decode(response.body);
+        final errorMessage = errorData['message'] ?? '';
+        
+        if (errorMessage.contains('jwt expired') || errorMessage.contains('token')) {
+          print('🔄 JWT token expired, attempting to get new token...');
+          
+          // Clear the old token and get a new one
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.remove('auth_token');
+          
+          // Get a fresh token and retry the request once
+          final newToken = await getAuthToken();
+          if (newToken != null && newToken != 'test_token_placeholder') {
+            print('🔄 Retrying request with new token...');
+            
+            // Retry the request with the new token
+            final retryResponse = await http.put(
+              url,
+              headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+                'Authorization': 'Bearer $newToken',
+              },
+              body: body.map((key, value) => MapEntry(key, value.toString())),
+            );
+            
+            print('📊 Retry Response status: ${retryResponse.statusCode}');
+            
+            if (retryResponse.statusCode == 200) {
+              final retryData = json.decode(retryResponse.body);
+              if (retryData['success'] == true) {
+                print('✅ Request successful with new token');
+                return retryData['data'];
+              }
+            }
+          }
+          
+          throw Exception('Authentication failed - please login again');
+        } else {
+          throw Exception(errorMessage);
         }
       } else {
         final errorData = json.decode(response.body);
