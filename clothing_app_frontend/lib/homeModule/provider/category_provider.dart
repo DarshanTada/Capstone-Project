@@ -317,7 +317,7 @@ class CategoryProvider with ChangeNotifier {
 
       return response;
     } catch (error) {
-      debugPrint('Error fetching categories: $error');
+
       return {'success': false, 'message': 'failedGetCategories'};
     }
   }

@@ -10,7 +10,7 @@ import '../../navigation/routes.dart';
 import '../../homeModule/screens/product_list_screen.dart';
 
 class OrderPlacedScreen extends StatefulWidget {
-  const OrderPlacedScreen({Key? key}) : super(key: key);
+  const OrderPlacedScreen({super.key});
 
   @override
   State<OrderPlacedScreen> createState() => _OrderPlacedScreenState();

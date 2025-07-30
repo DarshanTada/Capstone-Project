@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
@@ -39,6 +40,15 @@ export default defineConfig(() => {
     },
     server: {
       port: 3000,
+      host: true,
+      allowedHosts: [
+        'localhost',
+        '127.0.0.1',
+        'profound-hyena-horribly.ngrok-free.app',
+        'naturally-giving-chow.ngrok-free.app',
+        '.ngrok-free.app',
+        '.ngrok.io'
+      ],
       proxy: {
         '/api': {
           target: 'http://localhost:3001',

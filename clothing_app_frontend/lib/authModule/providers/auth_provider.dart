@@ -1,8 +1,8 @@
-import 'dart:io';
-
 import 'dart:convert';
 import '../../http_helper.dart';
 import '../model/user_model.dart';
+import '../model/preference_model.dart';
+import '../model/relation_profile_model.dart';
 import 'package:flutter/material.dart';
 import 'package:localstorage/localstorage.dart';
 import '../../api.dart';
@@ -68,8 +68,144 @@ class AuthProvider with ChangeNotifier {
   String iOSVersion = '0';
   Map? deleteFeature;
 
+  AuthProvider() {
+    // Initialize with guest user by default
+    setGuestUser();
+  }
+
+  // Debug method to test model creation
+  void testModelCreation() {
+    try {
+      // Test creating models manually
+      print('Testing model creation...');
+
+      final testUser = User(
+        id: 'test123',
+        phoneNumber: '+1234567890',
+        email: 'test@example.com',
+        role: 'user',
+        token: 'test_token',
+        isGuest: false,
+      );
+
+      print('User model created successfully: ${testUser.id}');
+
+      final testPreference = Preference(
+        id: 'pref123',
+        userId: 'test123',
+        username: 'Test User',
+        gender: 'male',
+        age: 25,
+      );
+
+      print(
+        'Preference model created successfully: ${testPreference.username}',
+      );
+    } catch (error) {
+      print('Error testing model creation: $error');
+    }
+  }
+
   setGuestUser() {
     user = User(isGuest: true, id: '');
+  }
+
+  // Load user from shared preferences
+  Future<void> loadUserFromPrefs() async {
+    try {
+      final savedUser = await UserPrefs.loadFromPrefs();
+      if (savedUser != null) {
+        user = savedUser;
+        notifyListeners();
+      } else {
+        // If no saved user, set as guest
+        setGuestUser();
+      }
+    } catch (error) {
+      print('Error loading user from preferences: $error');
+      // Fallback to guest user
+      setGuestUser();
+    }
+  }
+
+  // Check if user is logged in
+  bool get isLoggedIn {
+    try {
+      return !user.isGuest && user.id != null && user.id!.isNotEmpty;
+    } catch (error) {
+      print('Error checking isLoggedIn: $error');
+      return false;
+    }
+  }
+
+  // Get active preference (either from relation profile or user's own preference)
+  Preference? get activePreference {
+    try {
+      return user.activePreference;
+    } catch (error) {
+      print('Error getting activePreference: $error');
+      return null;
+    }
+  }
+
+  // Helper method to update only preference fields
+  Future<Map<String, dynamic>> updatePreference({
+    String? username,
+    String? gender,
+    int? age,
+    double? height,
+    String? bodyType,
+    String? skinTone,
+    List<String>? style,
+    List<String>? occasion,
+    List<String>? festivals,
+    List<String>? colorTones,
+    String? size,
+    String? undertone,
+    String? userPhotoBase64,
+    String? userPhotoContentType,
+    String? avatarURL,
+  }) async {
+    if (!isLoggedIn) {
+      return {'status': false, 'message': 'User not logged in'};
+    }
+
+    return await updateUser(
+      token: user.token!,
+      username: username,
+      gender: gender,
+      age: age,
+      height: height,
+      bodyType: bodyType,
+      skinTone: skinTone,
+      style: style,
+      occasion: occasion,
+      festivals: festivals,
+      colorTones: colorTones,
+      size: size,
+      undertone: undertone,
+      userPhotoBase64: userPhotoBase64,
+      userPhotoContentType: userPhotoContentType,
+      avatarURL: avatarURL,
+    );
+  }
+
+  // Helper method to update only user account fields
+  Future<Map<String, dynamic>> updateUserAccount({
+    String? phoneNumber,
+    String? email,
+    String? role,
+  }) async {
+    if (!isLoggedIn) {
+      return {'status': false, 'message': 'User not logged in'};
+    }
+
+    return await updateUser(
+      token: user.token!,
+      phoneNumber: phoneNumber,
+      email: email,
+      role: role,
+    );
   }
 
   // void updatePermission({
@@ -93,27 +229,64 @@ class AuthProvider with ChangeNotifier {
     Map<String, String> body = {'phone_number': phoneNumber};
 
     try {
-      final response = await RemoteServices.httpRequest(
+      print('Making login request to: $url');
+      print('Request body: $body');
+
+      final responseData = await RemoteServices.httpRequest(
         method: 'POST',
         url: url,
         body: body,
       );
 
-      print('Status code: ${response.statusCode}');
-      print('Response body: ${response.body}');
+      print('Raw response data: $responseData');
+      print('Response type: ${responseData.runtimeType}');
 
-      final responseData = response.body;
+      // The response is already parsed JSON, not an HttpResult object
+      if (responseData['success'] == true) {
+        // Debug: Print the structure we're receiving
+        print('Login Response Data Structure:');
+        print('- data: ${responseData['data']}');
+        print('- token: ${responseData['token']}');
 
-      if (response.statusCode == 200 && responseData['success'] == true) {
-        final user = User(
-          id: responseData['userId'],
-          phone: phoneNumber,
-          token: responseData['token'],
-        );
+        try {
+          User userData;
 
-        await user.saveToPrefs();
+          // Check if response has the expected 'data' structure
+          if (responseData['data'] != null) {
+            // Use the new structured response
+            userData = User.jsonToUser(
+              responseData['data'],
+              token: responseData['token'],
+            );
+          } else if (responseData['userId'] != null) {
+            // Handle legacy response format with just userId
+            print('Using legacy response format with userId');
+            userData = User(
+              id: responseData['userId'],
+              token: responseData['token'],
+              phoneNumber: null, // Will be populated later if needed
+              email: null,
+              role: 'user',
+              isGuest: false,
+            );
+          } else {
+            throw Exception('No user data or userId found in response');
+          }
 
-        return {'status': true, 'data': user};
+          await userData.saveToPrefs();
+
+          // Update the provider's user instance
+          user = userData;
+          notifyListeners();
+
+          return {'status': true, 'data': userData};
+        } catch (parseError) {
+          print('Error parsing user data: $parseError');
+          return {
+            'status': false,
+            'message': 'Failed to parse user data: $parseError',
+          };
+        }
       } else {
         return {
           'status': false,
@@ -121,9 +294,142 @@ class AuthProvider with ChangeNotifier {
         };
       }
     } catch (error) {
+      print('Login API Error: $error');
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Error: $error')));
+      return {'status': false, 'message': 'Unexpected error occurred: $error'};
+    }
+  }
+
+  // Update user data including preferences
+  Future<Map<String, dynamic>> updateUser({
+    required String token,
+    String? phoneNumber,
+    String? email,
+    String? role,
+    String? username,
+    String? gender,
+    int? age,
+    double? height,
+    String? bodyType,
+    String? skinTone,
+    List<String>? style,
+    List<String>? occasion,
+    List<String>? festivals,
+    List<String>? colorTones,
+    String? size,
+    String? undertone,
+    String? userPhotoBase64,
+    String? userPhotoContentType,
+    String? avatarURL,
+  }) async {
+    final String url = '${webApi['domain']}api/user/updateUser';
+
+    Map<String, dynamic> body = {};
+
+    // Add user fields
+    if (phoneNumber != null) body['phone_number'] = phoneNumber;
+    if (email != null) body['email'] = email;
+    if (role != null) body['role'] = role;
+
+    // Add preference fields
+    if (username != null) body['username'] = username;
+    if (gender != null) body['gender'] = gender;
+    if (age != null) body['age'] = age.toString();
+    if (height != null) body['height'] = height.toString();
+    if (bodyType != null) body['body_type'] = bodyType;
+    if (skinTone != null) body['skin_tone'] = skinTone;
+    if (style != null) body['style'] = style;
+    if (occasion != null) body['occasion'] = occasion;
+    if (festivals != null) body['festivals'] = festivals;
+    if (colorTones != null) body['color_tones'] = colorTones;
+    if (size != null) body['size'] = size;
+    if (undertone != null) body['undertone'] = undertone;
+    if (avatarURL != null) body['avartarURL'] = avatarURL;
+
+    // Handle user photo
+    if (userPhotoBase64 != null && userPhotoContentType != null) {
+      body['userPhoto'] = {
+        'base64': userPhotoBase64,
+        'contentType': userPhotoContentType,
+      };
+    }
+
+    try {
+      print('Making update request to: $url');
+      print('Request body: $body');
+
+      final responseData = await RemoteServices.httpRequest(
+        method: 'POST',
+        url: url,
+        body: body,
+        accessToken: token,
+      );
+
+      print('Update Response data: $responseData');
+
+      if (responseData['success'] == true) {
+        // Update the current user with new data
+        final updatedUser = User.jsonToUser(responseData['data'], token: token);
+
+        await updatedUser.saveToPrefs();
+
+        // Update the provider's user instance
+        user = updatedUser;
+        notifyListeners();
+
+        return {'status': true, 'data': updatedUser};
+      } else {
+        return {
+          'status': false,
+          'message': responseData['message'] ?? 'Update failed',
+        };
+      }
+    } catch (error) {
+      print('Update error: $error');
+      return {'status': false, 'message': 'Unexpected error occurred'};
+    }
+  }
+
+  // Get user by ID (useful for refreshing user data)
+  Future<Map<String, dynamic>> getUserById(String userId, String token) async {
+    final String url = '${webApi['domain']}api/user/getUserById';
+
+    try {
+      print('Making getUserById request to: $url');
+      print('Request body: ${{'userId': userId}}');
+
+      final responseData = await RemoteServices.httpRequest(
+        method: 'POST',
+        url: url,
+        body: {'userId': userId},
+        accessToken: token,
+      );
+
+      print('GetUserById Response data: $responseData');
+
+      if (responseData['success'] == true) {
+        final refreshedUser = User.jsonToUser(
+          responseData['data'],
+          token: token,
+        );
+
+        await refreshedUser.saveToPrefs();
+
+        // Update the provider's user instance
+        user = refreshedUser;
+        notifyListeners();
+
+        return {'status': true, 'data': refreshedUser};
+      } else {
+        return {
+          'status': false,
+          'message': responseData['message'] ?? 'Failed to fetch user data',
+        };
+      }
+    } catch (error) {
+      print('Get user error: $error');
       return {'status': false, 'message': 'Unexpected error occurred'};
     }
   }
@@ -290,11 +596,6 @@ class AuthProvider with ChangeNotifier {
     required Map<String, String> body,
     required Map<String, String> files,
   }) async {
-    // String? fcmToken = await FirebaseMessaging.instance.getToken();
-    // if (fcmToken != null && fcmToken != '') {
-    //   body['fcmToken'] = fcmToken;
-    // }
-
     try {
       final url = '${webApi['domain']}${endPoint['register']}';
       final response = await RemoteServices.formDataRequest(
@@ -305,17 +606,12 @@ class AuthProvider with ChangeNotifier {
       );
 
       if (response['success']) {
-        user = User.jsonToUser(
-          response['result'],
-          // token: response['accessToken'],
-        );
-
-        // user.fcmToken = fcmToken ?? '';
+        user = User.jsonToUser(response['result'], token: response['token']);
 
         await storage.ready;
         await storage.setItem(
           'accessToken',
-          json.encode({"token": user.accessToken, "phone": user.phone}),
+          json.encode({"token": user.token, "phone": user.phoneNumber}),
         );
       }
       notifyListeners();
@@ -364,9 +660,12 @@ class AuthProvider with ChangeNotifier {
   // }
 
   logout() async {
-    // user = null;
-    // await deleteFCMToken();
+    // Clear all user data including preferences and relation profiles
+    await UserPrefs.clearPrefs();
     await storage.clear();
+
+    // Reset to guest user
+    setGuestUser();
     notifyListeners();
     return true;
   }

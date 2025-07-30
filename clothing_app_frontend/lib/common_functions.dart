@@ -4,11 +4,9 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
-import 'package:clothing_app_frontend/authModule/widgets/single_response_dialog_box.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:clothing_app_frontend/authModule/model/user_model.dart';
 // import 'package:clothing_app_frontend/homeModule/models/cafe_model.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -19,7 +17,6 @@ import 'colors.dart';
 
 import 'common_widgets/asset_svg_icon.dart';
 import 'common_widgets/text_widget.dart';
-import 'main.dart';
 // import 'navigation/navigators.dart';
 
 String networkDummy =

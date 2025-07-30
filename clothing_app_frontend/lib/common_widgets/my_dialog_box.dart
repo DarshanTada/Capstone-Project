@@ -19,7 +19,7 @@ class MyDialogBox extends StatefulWidget {
   final bool highlightRight;
 
   const MyDialogBox({
-    Key? key,
+    super.key,
     required this.header,
     required this.confirmDescription,
     required this.rightBtnFunc,
@@ -27,7 +27,7 @@ class MyDialogBox extends StatefulWidget {
     required this.leftBtnFunc,
     required this.leftBtnTxt,
     this.highlightRight = true,
-  }) : super(key: key);
+  });
 
   @override
   State<MyDialogBox> createState() => MyDialogBoxState();

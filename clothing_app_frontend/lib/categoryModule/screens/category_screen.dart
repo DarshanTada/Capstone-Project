@@ -149,7 +149,29 @@ class CategoryScreenState extends State<CategoryScreen> {
                                   ],
                                 ),
                               ),
+
+                            ),
+                            SizedBox(height: dW * 0.04),
+                            SingleChildScrollView(
+                              scrollDirection: Axis.horizontal,
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  SizedBox(
+                                    height: dW * 0.675,
+                                    child: Image.asset(
+                                      "assets/images/b3.png",
+                                      fit: BoxFit.cover,
+                                    ),
+                                  ),
+                                  Image.asset("assets/images/b4.png"),
+                                  Image.asset("assets/images/b5.png"),
+                                ],
+                              ),
+                            ),
+
                             ],
+
                           ],
                         ),
                       ),

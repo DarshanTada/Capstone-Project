@@ -11,7 +11,7 @@ import { sendMail } from '../utils/sendMail';
 
 export const createOrder = async (req: Request, res: Response): Promise<void> => {
   try {
-   
+
     let {
       products,
       user,
@@ -71,9 +71,9 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
 
     // Check if user has email for order notifications
     if (!userExists.email) {
-      res.status(400).json({ 
-        success: false, 
-        message: "User must have an email address to place orders" 
+      res.status(400).json({
+        success: false,
+        message: "User must have an email address to place orders"
       });
       return;
     }
@@ -121,38 +121,38 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
 
       // Get variant details first
       const variant = await ProductVariant.findById(variantId).populate('productObjectId');
-      
+
       if (!variant) {
-        res.status(404).json({ 
-          success: false, 
-          message: `Product variant not found: ${variantId}` 
+        res.status(404).json({
+          success: false,
+          message: `Product variant not found: ${variantId}`
         });
         return;
       }
 
       const product = variant.productObjectId;
       if (!product) {
-        res.status(404).json({ 
-          success: false, 
-          message: `Product not found for variant: ${variantId}` 
+        res.status(404).json({
+          success: false,
+          message: `Product not found for variant: ${variantId}`
         });
         return;
       }
 
       // Check availability status
       if (variant.available_status !== 'in_stock') {
-        res.status(400).json({ 
-          success: false, 
-          message: `Product variant is not available or out of stock for ${(product as any).name} (Size: ${variant.size})` 
+        res.status(400).json({
+          success: false,
+          message: `Product variant is not available or out of stock for ${(product as any).name} (Size: ${variant.size})`
         });
         return;
       }
 
       // Check stock quantity
       if (variant.stock_qty && variant.stock_qty < parsedQuantity) {
-        res.status(400).json({ 
-          success: false, 
-          message: `Insufficient stock for ${(product as any).name}. Available: ${variant.stock_qty}, Requested: ${parsedQuantity}` 
+        res.status(400).json({
+          success: false,
+          message: `Insufficient stock for ${(product as any).name}. Available: ${variant.stock_qty}, Requested: ${parsedQuantity}`
         });
         return;
       }
@@ -171,9 +171,9 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       // Validate variant price
       const variantPrice = parseFloat(variant.price?.toString() || '0');
       if (isNaN(variantPrice) || variantPrice <= 0) {
-        res.status(400).json({ 
-          success: false, 
-          message: `Invalid variant price for ${(product as any).name} (Size: ${variant.size}). Price: ${variant.price}` 
+        res.status(400).json({
+          success: false,
+          message: `Invalid variant price for ${(product as any).name} (Size: ${variant.size}). Price: ${variant.price}`
         });
         return;
       }
@@ -405,13 +405,13 @@ export const updateProductStatus = async (req: Request, res: Response): Promise<
       const user = (order as any).user;
       const product = (order as any).products[productIndex].product;
       const productItem = (order as any).products[productIndex];
-      
+
       // Only send email if user has email address
       if (user.email) {
         // Get user's name from preference
         const userPreference = await Preference.findOne({ user: user._id });
         const userName = userPreference?.username || user.email?.split('@')[0] || 'Customer';
-        
+
         await sendMail({
           to: user.email,
           subject: `Order Status Update - Order #${(order as any)._id}`,
@@ -521,7 +521,7 @@ export const cancelProduct = async (req: Request, res: Response): Promise<void> 
 
     // Restore stock using variantId
     let variant = null;
-    
+
     if (productItem.variantId) {
       variant = await ProductVariant.findById(productItem.variantId);
     }
@@ -530,11 +530,11 @@ export const cancelProduct = async (req: Request, res: Response): Promise<void> 
       if (variant.stock_qty !== undefined) {
         variant.stock_qty = (variant.stock_qty ?? 0) + productItem.quantity;
       }
-      
+
       if (variant.available_status === 'out_of_stock') {
         variant.available_status = 'in_stock';
       }
-      
+
       await variant.save();
     }
 
@@ -583,13 +583,13 @@ export const cancelProduct = async (req: Request, res: Response): Promise<void> 
     try {
       const user = (order as any).user;
       const product = productItem.product;
-      
+
       // Only send email if user has email address
       if (user.email) {
         // Get user's name from preference
         const userPreference = await Preference.findOne({ user: user._id });
         const userName = userPreference?.username || user.email?.split('@')[0] || 'Customer';
-        
+
         await sendMail({
           to: user.email,
           subject: `Product Cancelled - Order #${(order as any)._id}`,
@@ -818,7 +818,7 @@ export const getOrderById = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    // Get order with full details
+    // Fetch order with full details
     const order = await Order.findById(orderId)
       .populate('products.product', 'name price images description')
       .populate('user', 'email phone_number')

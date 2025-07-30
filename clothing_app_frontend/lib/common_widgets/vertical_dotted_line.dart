@@ -4,10 +4,10 @@ class VerticalSeparator extends StatelessWidget {
   Color? color;
 
   VerticalSeparator({
-    Key? key,
+    super.key,
     this.color,
     this.width = 1,
-  }) : super(key: key);
+  });
   final double width;
 
   @override

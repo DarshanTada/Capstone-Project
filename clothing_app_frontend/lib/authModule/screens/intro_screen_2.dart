@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'intro_screen_3.dart';
+import '../../navigation/routes.dart';
 
 class IntroScreen2 extends StatelessWidget {
   const IntroScreen2({super.key});
@@ -16,7 +16,7 @@ class IntroScreen2 extends StatelessWidget {
             children: [
               // Images section takes all available space
               Expanded(
-                child: Container(
+                child: SizedBox(
                   width: double.infinity,
                   child: Stack(
                     children: [
@@ -183,10 +183,7 @@ class IntroScreen2 extends StatelessWidget {
               Center(
                 child: GestureDetector(
                   onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => IntroScreen3()),
-                    );
+                    Navigator.pushNamed(context, NamedRoute.onBoardingScreen3);
                   },
                   child: Container(
                     width: 60,

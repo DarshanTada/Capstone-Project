@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../service/ml_preference_service.dart';
 import '../model/preference_model.dart';
+import '../services/user_api_service.dart';
 import '../../authModule/screens/capture_face_screen.dart';
 
 void main() => runApp(PreferenceScreenApp());
 
 class PreferenceScreenApp extends StatelessWidget {
+  const PreferenceScreenApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -16,21 +20,28 @@ class PreferenceScreenApp extends StatelessWidget {
 }
 
 class PreferenceScreen extends StatefulWidget {
+  const PreferenceScreen({super.key});
+
   @override
   State<PreferenceScreen> createState() => _PreferenceScreenState();
 }
 
 class _PreferenceScreenState extends State<PreferenceScreen> {
+  String name = '';
+  String email = '';
   String gender = 'Male';
   int age = 24;
   int height = 176;
   String bodyType = 'Ectomorph';
+  String phoneNumber = ''; // Non-editable, populated from user data
 
-  int selectedSkin = 3;
+  int selectedSkin = 2;
   Set<String> selectedStyles = {};
   Set<String> selectedOccasions = {};
   Set<String> selectedFestivals = {};
-  Set<int> selectedColors = {};
+  List<String> mlColorTones = []; // Store hex codes from ML model
+  List<String> mlRecommendedStyles = []; // Store ML-recommended styles
+  bool _hasLoadedMLRecommendations = false; // Track if ML recommendations have been loaded
   String selectedUndertone = 'Neutral';
 
   // App permissions state
@@ -44,6 +55,35 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   void initState() {
     super.initState();
     _loadPreferences();
+    _loadUserData();
+  }
+
+  /// Load user data from SharedPreferences (including phone number)
+  Future<void> _loadUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storedPhone = prefs.getString('user_phone') ?? prefs.getString('phone_number');
+      
+      if (storedPhone != null && storedPhone.isNotEmpty) {
+        setState(() {
+          phoneNumber = storedPhone;
+        });
+      }
+      
+      // Also try to get user info from JWT token if available
+      final token = await UserApiService.getAuthToken();
+      if (token != null) {
+        // For testing, we know the phone from the JWT token
+        // In production, you might decode the JWT or call a user info API
+        setState(() {
+          if (phoneNumber.isEmpty) {
+            phoneNumber = "+12222222222"; // From the test token
+          }
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
   }
 
   /// Load preferences from local storage or server
@@ -83,12 +123,30 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         // Map skin tone string to index
         selectedSkin = _mapSkinToneToIndex(prefs.skinTone!);
       }
-      if (prefs.style != null) selectedStyles = prefs.style!.toSet();
+      if (prefs.style != null) {
+        // Convert styles to title case for UI display
+        final titleCaseStyles = prefs.style!.map((style) => 
+          style[0].toUpperCase() + style.substring(1).toLowerCase()
+        ).toList();
+        
+        // If this is the first time loading ML recommendations, auto-select them
+        if (!_hasLoadedMLRecommendations && titleCaseStyles.isNotEmpty) {
+          selectedStyles = titleCaseStyles.toSet();
+          _hasLoadedMLRecommendations = true;
+        }
+        
+        // Always update ML-recommended styles for display purposes
+        mlRecommendedStyles = titleCaseStyles;
+      }
       if (prefs.occasion != null) selectedOccasions = prefs.occasion!.toSet();
       if (prefs.festivals != null) selectedFestivals = prefs.festivals!.toSet();
-      if (prefs.undertone != null) selectedUndertone = prefs.undertone!;
+      if (prefs.undertone != null) {
+        // Capitalize first letter to match UI display
+        selectedUndertone = prefs.undertone![0].toUpperCase() + prefs.undertone!.substring(1);
+      }
       if (prefs.colorTones != null) {
-        selectedColors = _mapColorTonesToIndices(prefs.colorTones!);
+        // Handle hex codes directly from ML model
+        mlColorTones = prefs.colorTones!;
       }
     });
   }
@@ -100,60 +158,17 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         return 0;
       case 'fair':
         return 1;
-      case 'light':
-        return 2;
       case 'medium':
+        return 2;
+      case 'olive':
         return 3;
-      case 'tan':
+      case 'brown':
         return 4;
-      case 'dark':
-      case 'very_dark':
+      case 'deep':
         return 5;
       default:
-        return 3; // Default to medium
+        return 2; // Default to medium
     }
-  }
-
-  /// Map color tones to UI color indices
-  Set<int> _mapColorTonesToIndices(List<String> colorTones) {
-    Set<int> indices = {};
-    for (String tone in colorTones) {
-      switch (tone.toLowerCase()) {
-        case 'red':
-          indices.add(0);
-          indices.add(8); // red appears twice
-          break;
-        case 'white':
-          indices.add(1);
-          indices.add(9); // white appears twice
-          break;
-        case 'purple':
-          indices.add(2);
-          indices.add(10); // purple appears twice
-          break;
-        case 'orange':
-          indices.add(3);
-          indices.add(11); // orange appears twice
-          break;
-        case 'blue':
-          indices.add(4);
-          indices.add(12); // blue appears twice
-          break;
-        case 'black':
-          indices.add(5);
-          indices.add(13); // black appears twice
-          break;
-        case 'yellow':
-          indices.add(6);
-          indices.add(14); // yellow appears twice
-          break;
-        case 'green':
-          indices.add(7);
-          indices.add(15); // green appears twice
-          break;
-      }
-    }
-    return indices;
   }
 
   /// Save current preferences to local storage and server
@@ -178,11 +193,11 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         height: height,
         bodyType: bodyType,
         skinTone: _mapSkinIndexToTone(selectedSkin),
-        style: selectedStyles.toList(),
+        style: selectedStyles.map((style) => style.toLowerCase()).toList(),
         occasion: selectedOccasions.toList(),
         festivals: selectedFestivals.toList(),
-        colorTones: _mapColorIndicesToTones(selectedColors),
-        undertone: selectedUndertone,
+        colorTones: mlColorTones, // Use hex codes directly
+        undertone: selectedUndertone.toLowerCase(), // Convert to lowercase for ML model
       );
 
       // Save to local storage
@@ -228,32 +243,16 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       case 1:
         return 'fair';
       case 2:
-        return 'light';
-      case 3:
         return 'medium';
+      case 3:
+        return 'olive';
       case 4:
-        return 'tan';
+        return 'brown';
       case 5:
-        return 'dark';
+        return 'deep';
       default:
         return 'medium';
     }
-  }
-
-  /// Map color indices to tone strings
-  List<String> _mapColorIndicesToTones(Set<int> indices) {
-    Set<String> tones = {};
-    List<String> colorNames = [
-      'red', 'white', 'purple', 'orange', 'blue', 'black', 'yellow', 'green',
-      'red', 'white', 'purple', 'orange', 'blue', 'black', 'yellow', 'green'
-    ];
-    
-    for (int index in indices) {
-      if (index >= 0 && index < colorNames.length) {
-        tones.add(colorNames[index]);
-      }
-    }
-    return tones.toList();
   }
 
   /// Re-analyze preferences from saved selfie
@@ -360,6 +359,43 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     }
   }
 
+  /// Convert hex code to readable color name
+  String _getColorName(String hexCode) {
+    try {
+      // Remove # if present
+      String cleanHex = hexCode.replaceFirst('#', '');
+      
+      // Parse RGB values
+      int colorValue = int.parse(cleanHex, radix: 16);
+      int r = (colorValue >> 16) & 0xFF;
+      int g = (colorValue >> 8) & 0xFF;
+      int b = colorValue & 0xFF;
+      
+      // Determine dominant color channel
+      if (r > g && r > b) {
+        return 'Red';
+      } else if (g > r && g > b) {
+        return 'Green';
+      } else if (b > r && b > g) {
+        return 'Blue';
+      } else if (r == g && r > b) {
+        return 'Yellow';
+      } else if (r == b && r > g) {
+        return 'Magenta';
+      } else if (g == b && g > r) {
+        return 'Cyan';
+      } else {
+        // Similar RGB values - neutral color
+        int avg = (r + g + b) ~/ 3;
+        if (avg < 85) return 'Dark';
+        if (avg > 170) return 'Light';
+        return 'Gray';
+      }
+    } catch (e) {
+      return hexCode; // Return original hex if parsing fails
+    }
+  }
+
   List<Color> skinTones = [
     Color(0xFFFFE0BD),
     Color(0xFFFFCD94),
@@ -367,25 +403,6 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     Color(0xFFC68642),
     Color(0xFF8D5524),
     Color(0xFF5C4033),
-  ];
-
-  List<Color> colorPalette = [
-    Colors.red,
-    Colors.white,
-    Colors.purple,
-    Colors.orange,
-    Colors.blue,
-    Colors.black,
-    Colors.yellow,
-    Colors.green,
-    Colors.red,
-    Colors.white,
-    Colors.purple,
-    Colors.orange,
-    Colors.blue,
-    Colors.black,
-    Colors.yellow,
-    Colors.green,
   ];
 
   void toggleSelection(Set<String> list, String value) {
@@ -404,13 +421,13 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     } else if (gender == "Female") {
       return [
         "Hourglass",
-        "Pear (Triangle)",
-        "Apple (Round)",
-        "Rectangle (Straight)",
-        "Inverted Triangle",
+        "Triangle", // Changed from "pear"
+        "Round", // Changed from "apple"
+        "Straight", // Changed from "rectangle"
+        "Inverted Triangle", // Changed from "inverted_triangle"
       ];
     } else {
-      return ["Slim", "Athletic", "Average", "Heavy"];
+      return ["Ectomorph", "Mesomorph", "Endomorph", "Hourglass", "Triangle", "Round", "Straight", "Inverted Triangle"];
     }
   }
 
@@ -430,11 +447,11 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       switch (bodyType) {
         case "Hourglass":
           return Icons.hourglass_bottom; // Hourglass shape
-        case "Pear (Triangle)":
+        case "Triangle":
           return Icons.change_history; // Triangle shape
-        case "Apple (Round)":
+        case "Round":
           return Icons.circle; // Round shape
-        case "Rectangle (Straight)":
+        case "Straight":
           return Icons.crop_portrait; // Rectangle shape
         case "Inverted Triangle":
           return Icons.details; // Inverted triangle
@@ -443,14 +460,22 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       }
     } else {
       switch (bodyType) {
-        case "Slim":
+        case "Ectomorph":
           return Icons.accessibility_new;
-        case "Athletic":
+        case "Mesomorph":
           return Icons.fitness_center;
-        case "Average":
-          return Icons.person;
-        case "Heavy":
-          return Icons.sports_martial_arts; // Better representation for fuller figure
+        case "Endomorph":
+          return Icons.sports_martial_arts;
+        case "Hourglass":
+          return Icons.hourglass_bottom;
+        case "Triangle":
+          return Icons.change_history;
+        case "Round":
+          return Icons.circle;
+        case "Straight":
+          return Icons.crop_portrait;
+        case "Inverted Triangle":
+          return Icons.details;
         default:
           return Icons.person;
       }
@@ -461,6 +486,207 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     List<String> options = getBodyTypeOptions(newGender);
     if (!options.contains(bodyType)) {
       bodyType = options.first;
+    }
+  }
+
+  /// Validate all required fields before API call
+  String? _validateFields() {
+    // Name validation
+    if (name.isEmpty || name.trim().isEmpty) {
+      return 'Please enter your name';
+    }
+
+    // Email validation
+    if (email.isEmpty || email.trim().isEmpty) {
+      return 'Please enter your email address';
+    }
+    
+    if (!UserApiService.isValidEmail(email.trim())) {
+      return 'Please enter a valid email address';
+    }
+
+    // Basic info validation
+    if (age < 13 || age > 120) {
+      return 'Please enter a valid age between 13 and 120';
+    }
+
+    if (height < 100 || height > 250) {
+      return 'Please enter a valid height between 100 and 250 cm';
+    }
+
+    // Style preferences validation
+    if (selectedStyles.isEmpty) {
+      return 'Please select at least one style preference';
+    }
+
+    if (selectedOccasions.isEmpty) {
+      return 'Please select at least one occasion';
+    }
+
+    return null; // All validations passed
+  }
+
+  /// Update user profile and preferences via API
+  Future<void> _updateUserPreferences() async {
+    try {
+      // Validate fields first
+      final validationError = _validateFields();
+      if (validationError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.warning, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(child: Text(validationError)),
+              ],
+            ),
+            backgroundColor: Colors.orange.shade700,
+            duration: Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFB8956A)),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Updating your preferences...',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'This may take a few seconds',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      print('🚀 Starting profile update...');
+
+      // Call the API
+      final result = await UserApiService.updateUserProfile(
+        email: email.trim().toLowerCase(),
+        username: name.trim(),
+        gender: gender,
+        age: age,
+        height: height,
+        bodyType: bodyType,
+        skinTone: _mapSkinIndexToTone(selectedSkin),
+        styles: selectedStyles.toList(),
+        occasions: selectedOccasions.toList(),
+        festivals: selectedFestivals.toList(),
+        colorTones: mlColorTones.isNotEmpty ? mlColorTones : null,
+        undertone: selectedUndertone,
+        size: 'L', // Default size - could be made configurable
+      );
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (result != null) {
+        print('✅ Profile updated successfully');
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text('Profile updated successfully! Getting your curated results...'),
+                ),
+              ],
+            ),
+            backgroundColor: Color(0xFFB8956A),
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        // TODO: Navigate to curated results screen or trigger recommendation API
+        // For now, just show another message about curated results
+        Future.delayed(Duration(seconds: 1), () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.auto_awesome, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text('Your personalized recommendations are ready!'),
+                  ),
+                ],
+              ),
+              backgroundColor: Color(0xFFD2B193),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        });
+
+      } else {
+        print('❌ Update failed - no result returned');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(child: Text('Failed to update profile. Please try again.')),
+              ],
+            ),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+
+    } catch (e) {
+      // Close loading dialog if open
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      print('💥 Error updating profile: $e');
+      
+      String errorMessage = 'Failed to update profile. Please try again.';
+      if (e.toString().contains('No authentication token')) {
+        errorMessage = 'Please log in again to continue.';
+      } else if (e.toString().contains('email')) {
+        errorMessage = 'Please check your email address and try again.';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text(errorMessage)),
+            ],
+          ),
+          backgroundColor: Colors.red.shade700,
+          duration: Duration(seconds: 4),
+        ),
+      );
     }
   }
 
@@ -602,7 +828,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Jerry Wilson",
+                              name.isEmpty ? 'Your Name' : name,
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -631,7 +857,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                                 Icon(Icons.phone_outlined, size: 16, color: Colors.grey.shade600),
                                 SizedBox(width: 6),
                                 Text(
-                                  "+1 000-000-0000",
+                                  phoneNumber.isEmpty ? "+1 000-000-0000" : phoneNumber,
                                   style: TextStyle(
                                     color: Colors.grey.shade600,
                                     fontSize: 13,
@@ -708,6 +934,18 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               "Basic Information",
               Icons.person_outline,
               [
+                _infoTile("Name", name.isEmpty ? "Enter your name" : name, () async {
+                  final selected = await _showTextInputDialog("Enter Name", name);
+                  if (selected != null && selected.isNotEmpty) {
+                    setState(() => name = selected);
+                  }
+                }),
+                _infoTile("Email", email.isEmpty ? "Enter your email" : email, () async {
+                  final selected = await _showTextInputDialog("Enter Email", email);
+                  if (selected != null && selected.isNotEmpty) {
+                    setState(() => email = selected);
+                  }
+                }),
                 _infoTile("Gender", gender, () async {
                   final selected = await _showOptionsDialog("Select Gender", [
                     "Male",
@@ -732,7 +970,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                   );
                   if (selected != null) setState(() => height = selected);
                 }),
-                _infoTile("Body Type", bodyType, () async {
+                _infoTile("Body Type", formatBodyTypeName(bodyType), () async {
                   final options = getBodyTypeOptions(gender);
                   final selected = await _showBodyTypeDialog(
                     "Select Body Type",
@@ -789,13 +1027,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               "Style Preferences",
               Icons.style_outlined,
               [
-                _chipSection("Select Styles", [
-                  "Casual",
-                  "Formal",
-                  "Ethnic",
-                  "Party",
-                  "Sports",
-                ], selectedStyles),
+                _stylesSection(),
                 _chipSection("Select Occasions", [
                   "Daily",
                   "Vacation",
@@ -820,69 +1052,198 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               "Color Preferences",
               Icons.color_lens_outlined,
               [
-                SizedBox(height: dH * 0.01),
-                Text(
-                  "Select Color Palette",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-                SizedBox(height: dH * 0.015),
-                Container(
-                  height: 50,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: List.generate(colorPalette.length, (index) {
-                        final isSelected = selectedColors.contains(index);
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (isSelected) {
-                                  selectedColors.remove(index);
-                                } else {
-                                  selectedColors.add(index);
-                                }
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  width: isSelected ? 3 : 2,
-                                  color: isSelected
-                                      ? Color(0xFFB8956A)
-                                      : Colors.grey.shade300,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _sectionTitle("Color Palette"),
+                        if (mlColorTones.isNotEmpty) ...[
+                          SizedBox(width: 8),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFB8956A).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Color(0xFFB8956A).withOpacity(0.5)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.auto_awesome,
+                                  size: 12,
+                                  color: Color(0xFFB8956A),
                                 ),
-                                color: colorPalette[index],
-                                boxShadow: isSelected ? [
-                                  BoxShadow(
-                                    color: Color(0xFFB8956A).withOpacity(0.3),
-                                    blurRadius: 8,
-                                    offset: Offset(0, 4),
+                                SizedBox(width: 4),
+                                Text(
+                                  "ML Recommended",
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFFB8956A),
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                ] : [],
-                              ),
-                              width: 40,
-                              height: 40,
+                                ),
+                              ],
                             ),
                           ),
-                        );
-                      }),
+                        ],
+                      ],
                     ),
-                  ),
+                    if (mlColorTones.isNotEmpty) ...[
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.star,
+                            size: 12,
+                            color: Color(0xFFB8956A),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            "Colors recommended based on your skin tone analysis",
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade600,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    SizedBox(height: 8),
+                    Container(
+                      height: 80, // Increased height to accommodate hex codes
+                      child: mlColorTones.isEmpty 
+                        ? Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Center(
+                              child: Text(
+                                "Capture a photo to get personalized color recommendations",
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 13,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          )
+                        : SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: mlColorTones.map((hexCode) {
+                                Color color;
+                                try {
+                                  color = Color(int.parse(hexCode.replaceFirst('#', '0xFF')));
+                                } catch (e) {
+                                  color = Colors.grey; // Fallback color
+                                }
+                                
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 16),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min, // Added to prevent overflow
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            width: 3,
+                                            color: Color(0xFFB8956A),
+                                          ),
+                                          color: color,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Color(0xFFB8956A).withOpacity(0.3),
+                                              blurRadius: 8,
+                                              offset: Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        width: 45,
+                                        height: 45,
+                                        child: Center(
+                                          child: Tooltip(
+                                            message: hexCode,
+                                            child: Container(),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        _getColorName(hexCode),
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          color: Colors.grey.shade600,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: dH * 0.02),
-                _chipSection(
-                  "Select Undertone",
-                  ["Cold", "Neutral", "Warm"],
-                  {selectedUndertone},
-                  singleSelection: true,
-                  onSelect: (val) => setState(() => selectedUndertone = val),
+                // _sectionTitle("Undertone"),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFD2B193).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Color(0xFFD2B193).withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.palette,
+                        color: Color(0xFFB8956A),
+                        size: 20,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        "Detected Undertone:",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          selectedUndertone,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -890,16 +1251,11 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
             SizedBox(height: dH * 0.03),
             
             // Action Button
-            Container(
+            SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Getting curated results...'),
-                      backgroundColor: Color(0xFFB8956A),
-                    ),
-                  );
+                onPressed: () async {
+                  await _updateUserPreferences();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFFD2B193),
@@ -990,6 +1346,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   }
 
   Widget _infoTile(String title, String value, VoidCallback onTap) {
+    bool isPlaceholder = value.startsWith("Enter your");
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: GestureDetector(
@@ -1022,7 +1380,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFFB8956A),
+                      color: isPlaceholder ? Colors.grey.shade500 : Color(0xFFB8956A),
+                      fontStyle: isPlaceholder ? FontStyle.italic : FontStyle.normal,
                     ),
                   ),
                   SizedBox(width: 8),
@@ -1211,85 +1570,90 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         ),
         content: Container(
           width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: options.map((option) => 
-              Container(
-                margin: EdgeInsets.symmetric(vertical: 6),
-                child: InkWell(
-                  onTap: () => Navigator.pop(context, option),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFD2B193).withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Color(0xFFD2B193).withOpacity(0.2),
-                        width: 1,
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6, // Limit height to 60% of screen
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: options.map((option) => 
+                Container(
+                  margin: EdgeInsets.symmetric(vertical: 6),
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context, option),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFD2B193).withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Color(0xFFD2B193).withOpacity(0.2),
+                          width: 1,
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Color(0xFFD2B193).withOpacity(0.2),
-                                Color(0xFFB8956A).withOpacity(0.15),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Color(0xFFD2B193).withOpacity(0.2),
+                                  Color(0xFFB8956A).withOpacity(0.15),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Color(0xFFD2B193).withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Icon(
+                              getBodyTypeIcon(option, gender),
+                              color: Color(0xFFB8956A),
+                              size: 24,
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  formatBodyTypeName(option),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  _getBodyTypeDescription(option, gender),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                    height: 1.2,
+                                  ),
+                                ),
                               ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Color(0xFFD2B193).withOpacity(0.3),
-                              width: 1,
                             ),
                           ),
-                          child: Icon(
-                            getBodyTypeIcon(option, gender),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
                             color: Color(0xFFB8956A),
-                            size: 24,
                           ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                option,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                _getBodyTypeDescription(option, gender),
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade600,
-                                  height: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: Color(0xFFB8956A),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ).toList(),
+              ).toList(),
+            ),
           ),
         ),
         actions: [
@@ -1303,6 +1667,11 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         ],
       ),
     );
+  }
+
+  String formatBodyTypeName(String bodyType) {
+    // Since we now use properly formatted names, just return as is
+    return bodyType;
   }
 
   String _getBodyTypeDescription(String bodyType, String gender) {
@@ -1321,27 +1690,36 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       switch (bodyType) {
         case "Hourglass":
           return "Balanced bust and hips with defined waist";
-        case "Pear (Triangle)":
-          return "Hips wider than bust and shoulders";
-        case "Apple (Round)":
-          return "Fuller midsection with narrower hips";
-        case "Rectangle (Straight)":
-          return "Similar measurements throughout";
+        case "Triangle":
+          return "Hips wider than shoulders, smaller upper body";
+        case "Round":
+          return "Fuller upper body, carries weight in midsection";
+        case "Straight":
+          return "Similar bust, waist, and hip measurements";
         case "Inverted Triangle":
-          return "Shoulders wider than hips";
+          return "Broad shoulders, narrow hips";
         default:
           return "Select your body type";
       }
     } else {
+      // For "other" gender, provide descriptions for all types
       switch (bodyType) {
-        case "Slim":
-          return "Lean build with minimal curves";
-        case "Athletic":
-          return "Toned and muscular build";
-        case "Average":
-          return "Balanced proportions";
-        case "Heavy":
-          return "Fuller figure with curves";
+        case "Ectomorph":
+          return "Lean build with fast metabolism";
+        case "Mesomorph":
+          return "Naturally athletic build";
+        case "Endomorph":
+          return "Fuller build with slower metabolism";
+        case "Hourglass":
+          return "Balanced proportions with defined waist";
+        case "Triangle":
+          return "Lower body heavier than upper body";
+        case "Round":
+          return "Fuller midsection";
+        case "Straight":
+          return "Straight body line";
+        case "Inverted Triangle":
+          return "Broad shoulders, narrow hips";
         default:
           return "Select your body type";
       }
@@ -1406,6 +1784,68 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     );
   }
 
+  Future<String?> _showTextInputDialog(String title, String currentValue) {
+    final controller = TextEditingController(text: currentValue);
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        content: TextField(
+          controller: controller,
+          keyboardType: title.toLowerCase().contains('email') 
+              ? TextInputType.emailAddress 
+              : TextInputType.text,
+          decoration: InputDecoration(
+            hintText: title.toLowerCase().contains('email') 
+                ? "Enter email address" 
+                : "Enter $title",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Color(0xFFD2B193)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Color(0xFFB8956A), width: 2),
+            ),
+            filled: true,
+            fillColor: Color(0xFFD2B193).withOpacity(0.1),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFFD2B193),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              final value = controller.text.trim();
+              Navigator.pop(context, value.isNotEmpty ? value : null);
+            },
+            child: Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showPermissionsDialog() {
     showDialog(
       context: context,
@@ -1450,7 +1890,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                   ),
                 ],
               ),
-              content: Container(
+              content: SizedBox(
                 width: double.maxFinite,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
@@ -1597,6 +2037,150 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Custom styles section that shows ML-recommended or default styles
+  Widget _stylesSection() {
+    // Define all available style options
+    final allStyleOptions = ["Casual", "Formal", "Ethnic", "Party", "Sports"];
+    
+    // Combine ML-recommended styles with standard options, removing duplicates
+    final availableStyles = <String>[];
+    
+    // Add ML-recommended styles first (if any)
+    if (mlRecommendedStyles.isNotEmpty) {
+      availableStyles.addAll(mlRecommendedStyles);
+    }
+    
+    // Add any standard options that aren't already included
+    for (final style in allStyleOptions) {
+      if (!availableStyles.contains(style)) {
+        availableStyles.add(style);
+      }
+    }
+    
+    // If no ML styles, use standard options
+    if (availableStyles.isEmpty) {
+      availableStyles.addAll(allStyleOptions);
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _sectionTitle("Select Styles"),
+            if (mlRecommendedStyles.isNotEmpty) ...[
+              SizedBox(width: 8),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Color(0xFFB8956A).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Color(0xFFB8956A).withOpacity(0.5)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.auto_awesome,
+                      size: 12,
+                      color: Color(0xFFB8956A),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      "ML Recommended",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFFB8956A),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (mlRecommendedStyles.isNotEmpty) ...[
+          SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(
+                Icons.star,
+                size: 12,
+                color: Color(0xFFB8956A),
+              ),
+              SizedBox(width: 4),
+              Text(
+                "AI recommended styles (pre-selected)",
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ],
+        SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: availableStyles.map((option) {
+            final isSelected = selectedStyles.contains(option);
+            final isMLRecommended = mlRecommendedStyles.contains(option);
+            
+            return GestureDetector(
+              onTap: () {
+                toggleSelection(selectedStyles, option);
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? LinearGradient(
+                          colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
+                  color: isSelected ? null : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? Color(0xFFB8956A)
+                        : isMLRecommended
+                        ? Color(0xFFB8956A).withOpacity(0.5)
+                        : Colors.grey.shade300,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      option,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black87,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                    ),
+                    if (isMLRecommended && !isSelected) ...[
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.star,
+                        size: 12,
+                        color: Color(0xFFB8956A),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

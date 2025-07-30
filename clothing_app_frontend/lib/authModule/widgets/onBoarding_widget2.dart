@@ -1,11 +1,6 @@
 // ignore_for_file: must_be_immutable
 
 import 'package:flutter/material.dart';
-import 'package:clothing_app_frontend/colors.dart';
-import 'package:clothing_app_frontend/common_widgets/asset_svg_icon.dart';
-import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
-import 'package:clothing_app_frontend/navigation/navigators.dart';
-import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:provider/provider.dart';
 
 import '../../common_functions.dart';

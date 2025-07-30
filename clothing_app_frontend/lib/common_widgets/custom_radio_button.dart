@@ -5,8 +5,8 @@ class CustomRadioButton extends StatelessWidget {
   final bool isSelected;
   final ValueChanged<bool?>? onChanged;
   final Color activeColor;
-  CustomRadioButton(
-      {required this.label,
+  const CustomRadioButton(
+      {super.key, required this.label,
       required this.isSelected,
       required this.onChanged,
       required this.activeColor});

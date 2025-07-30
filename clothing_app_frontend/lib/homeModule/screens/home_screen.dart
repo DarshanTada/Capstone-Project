@@ -17,7 +17,7 @@ import '../../authModule/providers/auth_provider.dart';
 import '../../common_functions.dart';
 
 class HomeScreen extends StatefulWidget {
-  const HomeScreen({Key? key}) : super(key: key);
+  const HomeScreen({super.key});
   @override
   HomeScreenState createState() => HomeScreenState();
 }

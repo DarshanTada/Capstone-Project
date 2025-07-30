@@ -46,6 +46,16 @@ async def ask_question(request: AskRequest):
     return query_llava(prompt=request.question, system=request.system_prompt)
 
 
+@app.post("/analyze-preferences/")
+async def analyze_preferences(request: AskRequest):
+    """Dedicated endpoint for analyzing user preferences from images"""
+    if not request.image_base64:
+        return {"error": "image_base64 is required for preference analysis"}
+    
+    # Use the same LLaVA processing as the ask endpoint
+    return query_llava(prompt=request.question, system=request.system_prompt, image=request.image_base64)
+
+
 @app.get("/health")
 async def health_check():
     return {"status": "healthy", "message": "ML server is running"}
