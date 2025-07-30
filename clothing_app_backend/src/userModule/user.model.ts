@@ -4,11 +4,9 @@ const userSchema = new mongoose.Schema(
   {
     phone_number: {
       type: String,
-      unique: true,
-      sparse: true, // Allows multiple null values
     },
     email: {
-      type: String
+      type: String,
     },
     relation: {
       type: mongoose.Schema.Types.ObjectId,
