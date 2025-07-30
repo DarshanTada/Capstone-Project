@@ -4,7 +4,6 @@ import ProductVariant from '../productModule/productVariant.model';
 import ProductImage from '../productModule/productImage.model';
 import mongoose from 'mongoose';
 
-
 // Get Product Detail API
 export const getProductDetail = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -455,6 +454,313 @@ export const deleteProduct = async (req: Request, res: Response): Promise<void> 
     });
   } catch (error) {
     console.error("Error deleting product:", error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: (error as Error).message,
+    });
+  }
+};
+
+// Get Product Detail with similar, matching, and trending products
+export const getProductDetail = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { productId } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
+      res.status(400).json({ success: false, message: "Invalid product ID" });
+      return;
+    }
+
+    // Get main product with populated fields
+    const product = await Product.findById(productId)
+      // .populate('category_id')
+      // .populate('subcategory_id')
+      .populate('care_instruction_objectId')
+      .populate('season_objectId')
+      .populate('festival_objectId')
+      .lean();
+
+    if (!product) {
+      res.status(404).json({ success: false, message: "Product not found" });
+      return;
+    }
+
+    // Get variants and images for main product
+    const variants = await ProductVariant.find({ productObjectId: productId }).lean();
+    const images = await ProductImage.find({ productObjectId: productId }).lean();
+
+    const productDetail = {
+      ...product,
+      variants,
+      images
+    };
+
+    // Get similar products (same category and subcategory, excluding current product)
+    const similarProductsQuery = await Product.aggregate([
+      {
+        $match: {
+          _id: { $ne: new mongoose.Types.ObjectId(productId) },
+          category_id: product.category_id,
+          subcategory_id: product.subcategory_id
+        }
+      },
+      {
+        $lookup: {
+          from: 'subcategories',
+          localField: 'subcategory_id',
+          foreignField: '_id',
+          as: 'subcategory'
+        }
+      }
+    ]);
+
+    const similarProducts = await Product.populate(similarProductsQuery, [
+      // { path: 'category_id' },
+      // { path: 'subcategory_id' }
+    ]);
+
+    // Get variants and images for similar products
+    const similarProductIds = similarProducts.map(p => p._id);
+    const similarVariants = await ProductVariant.find({ productObjectId: { $in: similarProductIds } }).lean();
+    const similarImages = await ProductImage.find({ productObjectId: { $in: similarProductIds } }).lean();
+
+    const enrichedSimilarProducts = similarProducts.map(prod => {
+      const prodVariants = similarVariants.filter(v => String(v.productObjectId) === String(prod._id));
+      const prodImages = similarImages.filter(img => String(img.productObjectId) === String(prod._id));
+      return { ...prod, variants: prodVariants, images: prodImages };
+    });
+
+    // Get matching products (opposite productType with same bodyType and gender)
+    const oppositeProductType = product.productType === 'top' ? 'bottom' : 'top';
+    
+    const matchingProductsQuery = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'subcategories',
+          localField: 'subcategory_id',
+          foreignField: '_id',
+          as: 'subcategory'
+        }
+      },
+      {
+        $match: {
+          _id: { $ne: new mongoose.Types.ObjectId(productId) },
+          productType: oppositeProductType,
+          gender: product.gender,
+          bodyType: product.bodyType
+        }
+      }
+    ]);
+
+    const matchingProducts = await Product.populate(matchingProductsQuery, [
+      // { path: 'category_id' },
+      // { path: 'subcategory_id' }
+    ]);
+
+    // Get variants and images for matching products
+    const matchingProductIds = matchingProducts.map(p => p._id);
+    const matchingVariants = await ProductVariant.find({ productObjectId: { $in: matchingProductIds } }).lean();
+    const matchingImages = await ProductImage.find({ productObjectId: { $in: matchingProductIds } }).lean();
+
+    const enrichedMatchingProducts = matchingProducts.map(prod => {
+      const prodVariants = matchingVariants.filter(v => String(v.productObjectId) === String(prod._id));
+      const prodImages = matchingImages.filter(img => String(img.productObjectId) === String(prod._id));
+      return { ...prod, variants: prodVariants, images: prodImages };
+    });
+
+    // Get trending products (products with variants where is_on_trend is true, excluding current product)
+    const trendingProductsQuery = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'productvariants',
+          localField: '_id',
+          foreignField: 'productObjectId',
+          as: 'variants'
+        }
+      },
+      {
+        $match: {
+          _id: { $ne: new mongoose.Types.ObjectId(productId) },
+          'variants.is_on_trend': true
+        }
+      },
+      {
+        $lookup: {
+          from: 'subcategories',
+          localField: 'subcategory_id',
+          foreignField: '_id',
+          as: 'subcategory'
+        }
+      }
+    ]);
+
+    const trendingProducts = await Product.populate(trendingProductsQuery, [
+      // { path: 'category_id' },
+      // { path: 'subcategory_id' }
+    ]);
+
+    // Get variants and images for trending products
+    const trendingProductIds = trendingProducts.map(p => p._id);
+    const trendingVariants = await ProductVariant.find({ productObjectId: { $in: trendingProductIds } }).lean();
+    const trendingImages = await ProductImage.find({ productObjectId: { $in: trendingProductIds } }).lean();
+
+    const enrichedTrendingProducts = trendingProducts.map(prod => {
+      const prodVariants = trendingVariants.filter(v => String(v.productObjectId) === String(prod._id));
+      const prodImages = trendingImages.filter(img => String(img.productObjectId) === String(prod._id));
+      return { ...prod, variants: prodVariants, images: prodImages };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: {
+        productDetail: productDetail,
+        similarproduct: {
+          title: "Similar Products",
+          products: enrichedSimilarProducts
+        },
+        matchingproduct: {
+          title: "Matching Products",
+          products: enrichedMatchingProducts
+        },
+        trandingproducts: {
+          title: "Trending Products",
+          products: enrichedTrendingProducts
+        }
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching product detail:", error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: (error as Error).message,
+    });
+  }
+};
+
+// Get all trending products (products with variants where is_on_trend is true)
+export const getTrendingProducts = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const skip = (page - 1) * limit;
+
+    // Get products with trending variants using aggregation
+    const trendingProductsQuery = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'productvariants',
+          localField: '_id',
+          foreignField: 'productObjectId',
+          as: 'variants'
+        }
+      },
+      {
+        $match: {
+          'variants.is_on_trend': true
+        }
+      },
+      {
+        $lookup: {
+          from: 'categories',
+          localField: 'category_id',
+          foreignField: '_id',
+          as: 'category'
+        }
+      },
+      {
+        $lookup: {
+          from: 'subcategories',
+          localField: 'subcategory_id',
+          foreignField: '_id',
+          as: 'subcategory'
+        }
+      },
+      {
+        $lookup: {
+          from: 'careinstruction',
+          localField: 'care_instruction_objectId',
+          foreignField: '_id',
+          as: 'care_instruction_objectId'
+        }
+      },
+      {
+        $lookup: {
+          from: 'seasons',
+          localField: 'season_objectId',
+          foreignField: '_id',
+          as: 'season_objectId'
+        }
+      },
+      {
+        $lookup: {
+          from: 'festivals',
+          localField: 'festival_objectId',
+          foreignField: '_id',
+          as: 'festival_objectId'
+        }
+      },
+      { $skip: skip },
+      { $limit: limit }
+    ]);
+
+    // Get total count for pagination
+    const totalCountQuery = await Product.aggregate([
+      {
+        $lookup: {
+          from: 'productvariants',
+          localField: '_id',
+          foreignField: 'productObjectId',
+          as: 'variants'
+        }
+      },
+      {
+        $match: {
+          'variants.is_on_trend': true
+        }
+      },
+      { $count: "total" }
+    ]);
+
+    const total = totalCountQuery.length > 0 ? totalCountQuery[0].total : 0;
+
+    // Get product IDs for fetching variants and images
+    const productIds = trendingProductsQuery.map(p => p._id);
+
+    // Fetch all variants and images for trending products
+    const variants = await ProductVariant.find({ 
+      productObjectId: { $in: productIds },
+      is_on_trend: true 
+    }).lean();
+    
+    const images = await ProductImage.find({ productObjectId: { $in: productIds } }).lean();
+
+    // Attach variants and images to each product
+    const enrichedProducts = trendingProductsQuery.map(product => {
+      const productVariants = variants.filter(v => String(v.productObjectId) === String(product._id));
+      const productImages = images.filter(img => String(img.productObjectId) === String(product._id));
+
+      return {
+        ...product,
+        variants: productVariants,
+        images: productImages,
+      };
+    });
+
+    res.status(200).json({
+      success: true,
+      data: enrichedProducts,
+      pagination: {
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+        limit,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching trending products:", error);
     res.status(500).json({
       success: false,
       message: "Something went wrong",
