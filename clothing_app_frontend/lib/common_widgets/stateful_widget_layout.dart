@@ -7,7 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ScreenLayout extends StatefulWidget {
-  const ScreenLayout({Key? key}) : super(key: key);
+  const ScreenLayout({super.key});
   @override
   ScreenLayoutState createState() => ScreenLayoutState();
 }

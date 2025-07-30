@@ -16,7 +16,7 @@ class IntroScreen1 extends StatelessWidget {
             children: [
               // Images section takes all available space
               Expanded(
-                child: Container(
+                child: SizedBox(
                   width: double.infinity,
                   child: Stack(
                     children: [

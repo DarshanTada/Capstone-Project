@@ -6,7 +6,7 @@ import '../../authModule/providers/auth_provider.dart';
 import '../../common_functions.dart';
 
 class OrderHistoryScreen extends StatefulWidget {
-  const OrderHistoryScreen({Key? key}) : super(key: key);
+  const OrderHistoryScreen({super.key});
 
   @override
   State<OrderHistoryScreen> createState() => _OrderHistoryScreenState();
@@ -153,7 +153,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                         ),
                       ),
                       SizedBox(height: dH * 0.02),
-                      ...orders.map((order) => orderCard(order)).toList(),
+                      ...orders.map((order) => orderCard(order)),
                       SizedBox(height: dH * 0.1),
                     ],
                   ),

@@ -4,7 +4,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 class AvatarWebViewPage extends StatefulWidget {
   final String avatarUrl;
 
-  const AvatarWebViewPage({Key? key, required this.avatarUrl}) : super(key: key);
+  const AvatarWebViewPage({super.key, required this.avatarUrl});
 
   @override
   State<AvatarWebViewPage> createState() => _AvatarWebViewPageState();

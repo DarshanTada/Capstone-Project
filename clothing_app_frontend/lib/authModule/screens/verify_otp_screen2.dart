@@ -2,17 +2,10 @@ import 'package:clothing_app_frontend/authModule/providers/auth_service_firebase
 import 'package:clothing_app_frontend/colors.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
-import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
-import 'package:clothing_app_frontend/navigation/navigators.dart';
-import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart'
-    hide AuthProvider;
 import 'package:pin_code_fields/pin_code_fields.dart';
-import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
 
 class VerifyOtpScreen2 extends StatefulWidget {

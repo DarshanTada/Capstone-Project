@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SizeChartScreen extends StatefulWidget {
-  const SizeChartScreen({Key? key}) : super(key: key);
+  const SizeChartScreen({super.key});
 
   static void show(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -251,7 +251,7 @@ class _SizeChartScreenState extends State<SizeChartScreen> {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             children: [
               _buildDenimSizeRow(["Size", "Fit", "Waist (in)", "Waist (cm)", "Hip (in)", "Hip (cm)", "Inseam", "Rise"], isHeader: true),
-              ...sizes.map((row) => _buildDenimSizeRow(row)).toList(),
+              ...sizes.map((row) => _buildDenimSizeRow(row)),
             ],
           ),
         ),
@@ -286,7 +286,7 @@ class _SizeChartScreenState extends State<SizeChartScreen> {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             children: [
               _buildDenimSizeRow(["Size", "Fit", "Waist (in)", "Waist (cm)", "Hip (in)", "Hip (cm)", "Inseam", "Rise"], isHeader: true),
-              ...sizes.map((row) => _buildDenimSizeRow(row)).toList(),
+              ...sizes.map((row) => _buildDenimSizeRow(row)),
             ],
           ),
         ),
@@ -321,7 +321,7 @@ class _SizeChartScreenState extends State<SizeChartScreen> {
             padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
             children: [
               _buildDenimSizeRow(["Size", "Fit", "Waist (in)", "Waist (cm)", "Hip (in)", "Hip (cm)", "Inseam", "Rise"], isHeader: true),
-              ...sizes.map((row) => _buildDenimSizeRow(row)).toList(),
+              ...sizes.map((row) => _buildDenimSizeRow(row)),
             ],
           ),
         ),
