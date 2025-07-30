@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class ProductListScreen extends StatefulWidget {
-  const ProductListScreen({Key? key}) : super(key: key);
+  const ProductListScreen({super.key});
   @override
   ProductListScreenState createState() => ProductListScreenState();
 }
@@ -68,13 +68,13 @@ class ProductListScreenState extends State<ProductListScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
+                            SizedBox(
                               width: dW * 0.4,
                               child: Image.asset('assets/images/g1.png'),
                             ),
                             SizedBox(width: dW * 0.02),
 
-                            Container(
+                            SizedBox(
                               width: dW * 0.4,
                               child: Image.asset('assets/images/g2.png'),
                             ),
@@ -84,13 +84,13 @@ class ProductListScreenState extends State<ProductListScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
+                            SizedBox(
                               width: dW * 0.4,
                               child: Image.asset('assets/images/g3.png'),
                             ),
                             SizedBox(width: dW * 0.02),
 
-                            Container(
+                            SizedBox(
                               width: dW * 0.4,
                               child: Image.asset('assets/images/g4.png'),
                             ),
@@ -100,13 +100,13 @@ class ProductListScreenState extends State<ProductListScreen> {
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Container(
+                            SizedBox(
                               width: dW * 0.4,
                               child: Image.asset('assets/images/g5.png'),
                             ),
                             SizedBox(width: dW * 0.02),
 
-                            Container(
+                            SizedBox(
                               width: dW * 0.4,
                               child: Image.asset('assets/images/g6.png'),
                             ),

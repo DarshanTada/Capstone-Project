@@ -5,7 +5,7 @@ import '../../api.dart';
 
 class ProductImageProvider extends ChangeNotifier {
   List<ProductImage> _images = [];
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   List<ProductImage> get images => _images;
   bool get isLoading => _isLoading;

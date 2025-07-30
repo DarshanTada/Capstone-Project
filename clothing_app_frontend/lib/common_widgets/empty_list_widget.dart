@@ -9,12 +9,12 @@ class EmptyListWidget extends StatelessWidget {
   final String image;
 
   EmptyListWidget({
-    Key? key,
+    super.key,
     required this.text,
     this.subTitle = '',
     required this.topPadding,
     this.image = '',
-  }) : super(key: key);
+  });
 
   double dW = 0.0;
   double tS = 0.0;

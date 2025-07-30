@@ -13,8 +13,7 @@ enum ProductViewType { threeGrid, oneList, twoGrid }
 class CategoryRelationScreen extends StatefulWidget {
   final CategoryRelationScreenArguments args;
 
-  const CategoryRelationScreen({Key? key, required this.args})
-    : super(key: key);
+  const CategoryRelationScreen({super.key, required this.args});
   @override
   CategoryRelationScreenState createState() => CategoryRelationScreenState();
 }
@@ -367,8 +366,8 @@ class ProductCard extends StatefulWidget {
     this.isFull = false,
     this.isThreeGrid = false,
     this.onLikeToggle, // <-- Add this
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   State<ProductCard> createState() => _ProductCardState();

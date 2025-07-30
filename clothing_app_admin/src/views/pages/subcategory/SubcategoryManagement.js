@@ -42,6 +42,7 @@ const SubcategoryManagement = () => {
     const [subcategories, setSubcategories] = useState([]);
     const [selectedCategory, setSelectedCategory] = useState('');
     const [name, setName] = useState('');
+    const [image, setImage] = useState(null);
     const [gender, setGender] = useState('male');
     const [bodyType, setBodyType] = useState('Hourglass');
     const [error, setError] = useState('');
@@ -87,15 +88,19 @@ const SubcategoryManagement = () => {
             return;
         }
         try {
-            const res = await axios.post('http://localhost:3001/api/subcategory/createSubCategory', {
-                name,
-                category: selectedCategory,
-                gender,
-                body_type: bodyType,
+            const formData = new FormData();
+            formData.append('name', name);
+            formData.append('category', selectedCategory);
+            formData.append('gender', gender);
+            formData.append('body_type', bodyType);
+            if (image) formData.append('image', image);
+            const res = await axios.post('http://localhost:3001/api/subcategory/createSubCategory', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
             });
             if (res.data.success) {
                 setSuccess('Subcategory added successfully!');
                 setName('');
+                setImage(null);
                 setGender('male');
                 setBodyType('Hourglass');
                 fetchSubcategories(selectedCategory);
@@ -150,6 +155,12 @@ const SubcategoryManagement = () => {
                         onChange={e => setName(e.target.value)}
                         required
                         className="mb-2"
+                    />
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={e => setImage(e.target.files[0])}
+                        className="form-control mb-2"
                     />
                     <CFormSelect
                         label="Gender"

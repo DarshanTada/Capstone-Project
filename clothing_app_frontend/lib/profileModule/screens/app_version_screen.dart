@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class AppVersionScreen extends StatelessWidget {
-  const AppVersionScreen({Key? key}) : super(key: key);
+  const AppVersionScreen({super.key});
 
   final String version = '1.0.3';
   final String buildNumber = '103';
@@ -206,7 +206,7 @@ class AppVersionScreen extends StatelessWidget {
                         ],
                       ),
                     ),
-                  ).toList(),
+                  ),
                 ],
               ),
             ),

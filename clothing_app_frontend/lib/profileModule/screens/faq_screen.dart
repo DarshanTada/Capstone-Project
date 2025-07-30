@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/profileModule/screens/contact_us_screen.dart';
 
 class FAQScreen extends StatelessWidget {
-  const FAQScreen({Key? key}) : super(key: key);
+  const FAQScreen({super.key});
 
   final List<Map<String, String>> faqs = const [
     {

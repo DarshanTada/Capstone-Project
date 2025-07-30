@@ -13,7 +13,7 @@ class CachedImageWidget extends StatefulWidget {
   final double scale;
 
   const CachedImageWidget(
-    this.imageUrl, {
+    this.imageUrl, {super.key, 
     // required this.uniqueId,
     this.height,
     this.width,

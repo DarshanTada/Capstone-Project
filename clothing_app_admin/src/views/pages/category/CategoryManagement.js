@@ -5,6 +5,7 @@ import axios from 'axios';
 const CategoryManagement = () => {
     const [categories, setCategories] = useState([]);
     const [name, setName] = useState('');
+    const [image, setImage] = useState(null);
     const [error, setError] = useState('');
     const [success, setSuccess] = useState('');
 
@@ -30,10 +31,16 @@ const CategoryManagement = () => {
             return;
         }
         try {
-            const res = await axios.post('http://localhost:3001/api/category/createCategory', { name });
+            const formData = new FormData();
+            formData.append('name', name);
+            if (image) formData.append('image', image);
+            const res = await axios.post('http://localhost:3001/api/category/createCategory', formData, {
+                headers: { 'Content-Type': 'multipart/form-data' }
+            });
             if (res.data.success) {
                 setSuccess('Category added successfully!');
                 setName('');
+                setImage(null);
                 fetchCategories();
                 setTimeout(() => setSuccess(''), 2000); // Hide success after 2 seconds
             } else {
@@ -74,6 +81,12 @@ const CategoryManagement = () => {
                         onChange={e => setName(e.target.value)}
                         required
                         className="mb-2"
+                    />
+                    <input
+                        type="file"
+                        accept="image/*"
+                        onChange={e => setImage(e.target.files[0])}
+                        className="form-control mb-2"
                     />
                     <CButton color="primary" type="submit">Add Category</CButton>
                 </CForm>

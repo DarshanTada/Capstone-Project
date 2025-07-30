@@ -1251,7 +1251,7 @@ import 'dart:async';
 import 'dart:convert';
 
 class CaptureFaceScreen extends StatefulWidget {
-  const CaptureFaceScreen({Key? key}) : super(key: key);
+  const CaptureFaceScreen({super.key});
 
   @override
   State<CaptureFaceScreen> createState() => _CaptureFaceScreenState();
@@ -1680,10 +1680,10 @@ class CameraCaptureScreen extends StatefulWidget {
   final Function(String) onPhotoSaved;
 
   const CameraCaptureScreen({
-    Key? key,
+    super.key,
     required this.onBack,
     required this.onPhotoSaved,
-  }) : super(key: key);
+  });
 
   @override
   State<CameraCaptureScreen> createState() => _CameraCaptureScreenState();
@@ -2152,7 +2152,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
               child: Stack(
                 children: [
                   if (_isCameraInitialized && _cameraController != null)
-                    Container(
+                    SizedBox(
                       width: double.infinity,
                       child: CameraPreview(_cameraController!),
                     )
@@ -2274,10 +2274,10 @@ class GallerySelectionScreen extends StatefulWidget {
   final Function(String) onPhotoSaved;
 
   const GallerySelectionScreen({
-    Key? key,
+    super.key,
     required this.onBack,
     required this.onPhotoSaved,
-  }) : super(key: key);
+  });
 
   @override
   State<GallerySelectionScreen> createState() => _GallerySelectionScreenState();
@@ -2418,7 +2418,7 @@ class _GallerySelectionScreenState extends State<GallerySelectionScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
+            SizedBox(
               height: 300,
               width: double.infinity,
               child: Image.file(File(imageFile.path), fit: BoxFit.cover),

@@ -7,7 +7,6 @@ import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:clothing_app_frontend/authModule/model/user_model.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
 class AuthRepo {

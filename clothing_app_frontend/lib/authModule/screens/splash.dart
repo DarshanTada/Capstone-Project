@@ -35,7 +35,7 @@ class _SplashScreenState extends State<SplashScreenMain>
       ).setLanguageInStorage(language);
     }
 
-    final response = await Provider.of<AuthProvider>(context, listen: false);
+    final response = Provider.of<AuthProvider>(context, listen: false);
     // .getAppConfig(['user-$language', 'delete_feature']);
 
     return response;

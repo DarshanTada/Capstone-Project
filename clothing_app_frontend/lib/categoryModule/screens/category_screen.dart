@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class CategoryScreen extends StatefulWidget {
-  const CategoryScreen({Key? key}) : super(key: key);
+  const CategoryScreen({super.key});
   @override
   CategoryScreenState createState() => CategoryScreenState();
 }
@@ -399,7 +399,7 @@ class CategoryScreenState extends State<CategoryScreen> {
                               child: Row(
                                 mainAxisAlignment: MainAxisAlignment.start,
                                 children: [
-                                  Container(
+                                  SizedBox(
                                     height: dW * 0.675,
                                     child: Image.asset(
                                       "assets/images/b3.png",

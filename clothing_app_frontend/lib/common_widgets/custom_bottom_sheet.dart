@@ -14,11 +14,11 @@ class CustomBottomSheet extends StatefulWidget {
   List options;
   String title;
   CustomBottomSheet({
-    Key? key,
+    super.key,
     required this.selectedOption,
     required this.options,
     required this.title,
-  }) : super(key: key);
+  });
 
   @override
   State<CustomBottomSheet> createState() => _CustomBottomSheetState();
@@ -170,7 +170,7 @@ class _CustomBottomSheetState extends State<CustomBottomSheet> {
                           ),
                         ),
                       )
-                      .toList(),
+                      ,
                 ],
               ),
             ),

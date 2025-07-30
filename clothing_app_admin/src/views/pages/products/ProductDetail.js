@@ -44,22 +44,25 @@ const ProductDetail = () => {
     const fetchProduct = async () => {
       try {
         const res = await axios.get(`http://localhost:3001/api/product/getProductDetail/${id}`)
-        if (res.data.success && res.data.data && res.data.data.product) {
-          const product = res.data.data.product
+        if (res.data.success && res.data.data && res.data.data.productDetail) {
+          const product = res.data.data.productDetail
           setForm({
             ...product,
             subcategory_id: product.subcategory_id?._id || product.subcategory_id || '',
             style: Array.isArray(product.style) ? product.style.join(', ') : product.style || '',
-            season_objectId: product.season_objectId?.[0]?._id || '',
-            festival_objectId: product.festival_objectId?.[0]?._id || '',
-            care_instruction_objectId: product.care_instruction_objectId?.[0]?._id || '',
+            season_objectId: product.season_objectId || [],
+            festival_objectId: product.festival_objectId || [],
+            care_instruction_objectId: product.care_instruction_objectId || [],
           })
-          setVariants(res.data.data.variants || [])
-          setImages(res.data.data.images || [])
+          setVariants(product.variants || [])
+          setImages(product.images || [])
+          setError('')
         } else {
+          setForm(null)
           setError('Product not found')
         }
       } catch (err) {
+        setForm(null)
         setError('Failed to fetch product')
       }
     }
@@ -127,14 +130,20 @@ const ProductDetail = () => {
         description: form.description,
         fabric_type: form.fabric_type,
         category_id: form.category_id?._id || form.category_id,
-        subcategory_id: form.subcategory_id?._id || form.subcategory_id || '', // Always pass subcategory_id
+        subcategory_id: form.subcategory_id?._id || form.subcategory_id || '',
         gender: form.gender,
         bodyType: form.bodyType,
         productType: form.productType,
         style: form.style.split(',').map(s => s.trim()),
-        ...(form.season_objectId ? { season_objectId: [form.season_objectId] } : {}),
-        ...(form.festival_objectId ? { festival_objectId: [form.festival_objectId] } : {}),
-        ...(form.care_instruction_objectId ? { care_instruction_objectId: [form.care_instruction_objectId] } : {}),
+        season_objectId: Array.isArray(form.season_objectId)
+          ? form.season_objectId.map(obj => obj._id || obj)
+          : form.season_objectId ? [form.season_objectId._id || form.season_objectId] : [],
+        festival_objectId: Array.isArray(form.festival_objectId)
+          ? form.festival_objectId.map(obj => obj._id || obj)
+          : form.festival_objectId ? [form.festival_objectId._id || form.festival_objectId] : [],
+        care_instruction_objectId: Array.isArray(form.care_instruction_objectId)
+          ? form.care_instruction_objectId.map(obj => obj._id || obj)
+          : form.care_instruction_objectId ? [form.care_instruction_objectId._id || form.care_instruction_objectId] : [],
         variants: variants.map(v => ({
           ...v,
           stock_qty: parseInt(v.stock_qty),
@@ -151,7 +160,8 @@ const ProductDetail = () => {
   }
 
 
-  if (!form) return <div>Loading...</div>
+  if (error) return <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 200 }}><CAlert color="danger">{error}</CAlert></div>;
+  if (!form) return <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 200 }}><span className="spinner-border text-primary" role="status" aria-hidden="true"></span><span className="ms-2">Loading product details...</span></div>;
 
   return (
     <CRow className="justify-content-center mb-4">
@@ -166,7 +176,24 @@ const ProductDetail = () => {
               <CButton
                 color="primary"
                 className="float-end"
-                onClick={() => navigate('/products/add', { state: { product: form, subcategory: form.subcategory_id } })}
+                onClick={() => {
+                  // Always pass objects/arrays, never just IDs
+                  const categoryObj = categories.find(cat => cat._id === (form.category_id?._id || form.category_id)) || {};
+                  const subcategoryObj = (Array.isArray(subCategories) && subCategories.length > 0
+                    ? subCategories.find(sub => sub._id === (form.subcategory_id?._id || form.subcategory_id))
+                    : {});
+                  const careInstructionsArr = Array.isArray(careInstructions) ? careInstructions : [];
+                  const variantsArr = Array.isArray(variants) ? variants : [];
+                  navigate('/products/add', {
+                    state: {
+                      product: form,
+                      category: categoryObj,
+                      subcategory: subcategoryObj,
+                      careInstructions: careInstructionsArr,
+                      variants: variantsArr,
+                    }
+                  });
+                }}
               >
                 Edit
               </CButton>
@@ -263,14 +290,28 @@ const ProductDetail = () => {
                   <CFormLabel className="mt-2">Style</CFormLabel>
                   <CFormInput name="style" value={form.style} onChange={handleChange} disabled={!isEditing} />
                   <CFormLabel className="mt-2">Season</CFormLabel>
-                  <CFormSelect name="season_objectId" value={form.season_objectId} onChange={handleChange} disabled={!isEditing}>
+                  <CFormSelect
+                    name="season_objectId"
+                    value={Array.isArray(form.season_objectId) && form.season_objectId.length > 0
+                      ? (form.season_objectId[0]._id || form.season_objectId[0])
+                      : ''}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                  >
                     <option value="">Select Season</option>
                     {seasons.map(season => (
                       <option key={season._id} value={season._id}>{season.season_name}</option>
                     ))}
                   </CFormSelect>
                   <CFormLabel className="mt-2">Festival</CFormLabel>
-                  <CFormSelect name="festival_objectId" value={form.festival_objectId} onChange={handleChange} disabled={!isEditing}>
+                  <CFormSelect
+                    name="festival_objectId"
+                    value={Array.isArray(form.festival_objectId) && form.festival_objectId.length > 0
+                      ? (form.festival_objectId[0]._id || form.festival_objectId[0])
+                      : ''}
+                    onChange={handleChange}
+                    disabled={!isEditing}
+                  >
                     <option value="">Select Festival</option>
                     {festivals.map(festival => (
                       <option key={festival._id} value={festival._id}>{festival.festival_name}</option>
@@ -321,6 +362,20 @@ const ProductDetail = () => {
                           <option key={opt.value} value={opt.value}>{opt.label}</option>
                         ))}
                       </CFormSelect>
+                    </CCol>
+                  </CRow>
+                  <CRow className="mt-2">
+                    <CCol md={4}>
+                      <CFormLabel>Avatar URL</CFormLabel>
+                      <CFormInput
+                        name="avatarUrl"
+                        value={variant.avatarUrl || ''}
+                        onChange={e => handleVariantChange(idx, e)}
+                        disabled={!isEditing}
+                      />
+                      {variant.avatarUrl && (
+                        <img src={variant.avatarUrl} alt="Avatar" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6, marginTop: 8 }} />
+                      )}
                     </CCol>
                   </CRow>
                   <CRow className="mt-2">
@@ -384,7 +439,7 @@ const ProductDetail = () => {
                   </CRow>
                   <CRow className="mt-2">
                     <CCol md={12}>
-                      <CFormLabel>Images</CFormLabel>
+                      {/* <CFormLabel>Images</CFormLabel>
                       <div className="d-flex flex-wrap gap-2">
                         {images
                           .filter(img => img.productVariantObjectId === variant._id)
@@ -396,7 +451,7 @@ const ProductDetail = () => {
                               style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6 }}
                             />
                           ))}
-                      </div>
+                      </div> */}
                       {isEditing && (
                         <CFormInput
                           type="file"

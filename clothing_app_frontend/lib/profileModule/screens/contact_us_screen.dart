@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
 
 class ContactUsScreen extends StatefulWidget {
-  const ContactUsScreen({Key? key}) : super(key: key);
+  const ContactUsScreen({super.key});
 
   @override
   State<ContactUsScreen> createState() => _ContactUsScreenState();

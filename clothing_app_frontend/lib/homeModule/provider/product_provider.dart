@@ -5,7 +5,7 @@ import '../../api.dart';
 
 class ProductProvider extends ChangeNotifier {
   List<Product> _products = [];
-  bool _isLoading = false;
+  final bool _isLoading = false;
 
   List<Product> get products => _products;
   bool get isLoading => _isLoading;
