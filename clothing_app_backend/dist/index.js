@@ -17,34 +17,49 @@ const express_1 = __importDefault(require("express"));
 const cors_1 = __importDefault(require("cors"));
 const helmet_1 = __importDefault(require("helmet"));
 const error_middleware_1 = require("./utils/middleware/error.middleware");
-const typegoose_1 = require("@typegoose/typegoose");
-const eFileUpload = require('express-fileupload');
+const mongoose_1 = __importDefault(require("mongoose"));
+const mainRoutes_1 = __importDefault(require("./mainRoutes"));
 (() => __awaiter(void 0, void 0, void 0, function* () {
-    const mainRoutes = require('./mainRoutes');
-    const app = (0, express_1.default)();
-    app.use((0, cors_1.default)({ origin: '*' }));
-    app.use((0, helmet_1.default)());
-    app.use(express_1.default.json({ limit: '5000mb' }));
-    app.use(express_1.default.urlencoded({
-        limit: '5000mb',
-        extended: true,
-        parameterLimit: 50000000,
-    }));
-    typegoose_1.mongoose
-        .connect('')
-        .then(() => {
-        console.log('Connected to database!');
-    })
-        .catch((error) => {
-        console.log('Connection failed!', error);
-    });
-    typegoose_1.mongoose.set('debug', false);
-    app.use(eFileUpload());
-    app.use('/status', (req, res, next) => {
-        res.send({ message: 'Success' });
-    });
-    app.use('/api', mainRoutes);
-    app.use(error_middleware_1.errorHandler);
-    const port = process.env.PORT || 3001;
-    var server = app.listen(port, () => console.log(`API server started at http://localhost:${port}`));
+    try {
+        const app = (0, express_1.default)();
+        app.use((0, cors_1.default)({ origin: '*' }));
+        app.use((0, helmet_1.default)());
+        app.use(express_1.default.json({ limit: '5000mb' }));
+        app.use(express_1.default.urlencoded({
+            limit: '5000mb',
+            extended: true,
+            parameterLimit: 50000000,
+        }));
+        const MONGO_URI = process.env.MONGO_URI;
+        if (!MONGO_URI) {
+            console.error('MONGO_URI environment variable is not defined!');
+            console.log('Available environment variables:', Object.keys(process.env));
+            process.exit(1);
+        }
+        console.log('Attempting to connect to MongoDB...');
+        mongoose_1.default
+            .connect(MONGO_URI)
+            .then(() => {
+            console.log('Connected to database!');
+        })
+            .catch((error) => {
+            console.log('Connection failed!', error);
+            process.exit(1);
+        });
+        mongoose_1.default.set('debug', false);
+        app.use('/status', (req, res, next) => {
+            res.send({ message: 'Success' });
+        });
+        app.use('/api', mainRoutes_1.default);
+        app.get('/', (req, res) => {
+            res.send('API is running!');
+        });
+        app.use(error_middleware_1.errorHandler);
+        const port = process.env.PORT || 3001;
+        var server = app.listen(port, () => console.log(`API server started at http://localhost:${port}`));
+    }
+    catch (error) {
+        console.error('Server startup error:', error);
+        process.exit(1);
+    }
 }))();
