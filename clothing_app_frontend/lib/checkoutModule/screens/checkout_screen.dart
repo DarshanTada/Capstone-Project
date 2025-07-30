@@ -4,7 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../authModule/providers/auth_provider.dart';
 import '../../common_functions.dart';
-import '../../addressModule/screens/addresses_screen.dart';
+import '../../addressModule/widgets/address_selector.dart';
+import '../../addressModule/provider/address_provider.dart';
+import '../../addressModule/model/address_model.dart';
 import './order_placed_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
@@ -23,8 +25,23 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
   bool isLoading = false;
 
   String selectedPayment = 'Card';
+  Address? _selectedShippingAddress;
+  Address? _selectedBillingAddress;
 
-  fetchData() async {}
+  fetchData() async {
+    try {
+      final addressProvider = Provider.of<AddressProvider>(context, listen: false);
+      // TODO: Get actual user ID from authentication/storage
+      const String userId = "68659717fde8b5c9994263e3"; // Replace with actual user ID
+      
+      await addressProvider.getAddressesByUserId(
+        context: context,
+        userId: userId,
+      );
+    } catch (e) {
+      print("Error loading addresses: $e");
+    }
+  }
 
   @override
   void initState() {
@@ -216,59 +233,144 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                   ),
                   SizedBox(height: dW * 0.05),
                   
-                  TextWidget(title: 'Delivery Address', fontSize: 16, fontWeight: FontWeight.bold),
-                  SizedBox(height: dW * 0.015),
+                  // Shipping Address Section
                   Container(
-                    padding: EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       color: Colors.white,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: Color(0xFFD2B193).withOpacity(0.3)),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFB8956A).withOpacity(0.1),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: const Color(0xFFD2B193).withOpacity(0.2),
+                        width: 1,
+                      ),
                     ),
-                    child: Row(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: EdgeInsets.all(8),
-                          decoration: BoxDecoration(
-                            color: Color(0xFFD2B193).withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Icon(Icons.home, size: 20, color: Color(0xFFB8956A)),
-                        ),
-                        SizedBox(width: dW * 0.03),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Text("Home", style: TextStyle(fontWeight: FontWeight.w600)),
-                              Text("108, University Ave, Waterloo, Canada N2J 2W2",
-                                  style: TextStyle(color: Colors.black54)),
-                            ],
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const AddressesScreen(),
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFB8956A).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(10),
                               ),
-                            );
-                          },
-                          child: Container(
-                            padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Color(0xFFD2B193),
-                              borderRadius: BorderRadius.circular(8),
+                              child: const Icon(
+                                Icons.local_shipping_rounded,
+                                color: Color(0xFFB8956A),
+                                size: 24,
+                              ),
                             ),
-                            child: Text(
-                              "Change",
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Shipping Address',
                               style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 12,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF8D5524),
                               ),
                             ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD2B193).withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFFD2B193).withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: AddressSelector(
+                            selectedAddressId: _selectedShippingAddress?.id,
+                            onAddressSelected: (address) {
+                              setState(() {
+                                _selectedShippingAddress = address;
+                              });
+                            },
+                            title: 'Choose shipping address',
+                            isRequired: true,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Billing Address Section
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFB8956A).withOpacity(0.1),
+                          blurRadius: 12,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                      border: Border.all(
+                        color: const Color(0xFFD2B193).withOpacity(0.2),
+                        width: 1,
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFD2B193).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.receipt_long_rounded,
+                                color: Color(0xFFD2B193),
+                                size: 24,
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                            const Text(
+                              'Billing Address',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: Color(0xFF8D5524),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFD2B193).withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: const Color(0xFFD2B193).withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: AddressSelector(
+                            selectedAddressId: _selectedBillingAddress?.id,
+                            onAddressSelected: (address) {
+                              setState(() {
+                                _selectedBillingAddress = address;
+                              });
+                            },
+                            title: 'Choose billing address',
+                            isRequired: true,
                           ),
                         ),
                       ],

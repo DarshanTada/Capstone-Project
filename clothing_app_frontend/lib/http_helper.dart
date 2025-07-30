@@ -122,6 +122,9 @@ class RemoteServices {
       Map body = const {},
       String accessToken = ''}) async {
     try {
+      print('HTTP Request: $method $url');
+      print('Request Body: $body');
+      
       final client = HttpClient();
       late HttpClientRequest request;
       if (method == 'POST') {
@@ -147,8 +150,13 @@ class RemoteServices {
       final response = await request.close();
       final responseData = await response.transform(utf8.decoder).join();
 
-      return json.decode(responseData);
+      print('HTTP Response Status: ${response.statusCode}');
+      print('HTTP Response Data: $responseData');
+
+      final decodedResponse = json.decode(responseData);
+      return decodedResponse;
     } catch (e) {
+      print('HTTP Request Error: $e');
       rethrow;
     }
   }
