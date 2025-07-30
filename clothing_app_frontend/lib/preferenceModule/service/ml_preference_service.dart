@@ -23,31 +23,45 @@ class MLPreferenceService {
       final requestBody = {
         'user_id': userId,
         'image_base64': imageBase64,
-        'question': 'Analyze this person\'s appearance and determine their style preferences including gender, age, body type, skin tone, style preferences, and color preferences.',
-        'system_prompt': '''You are a professional fashion and style analysis expert. Analyze the person in the image and provide detailed style recommendations based on their appearance using the fashion knowledge from the CSV files.
+        'analysis_mode': 'ACTUAL_IMAGE_ANALYSIS',
+        'instruction': 'ANALYZE THE REAL PERSON IN THE PROVIDED IMAGE - DO NOT USE DEFAULT VALUES',
+        'temperature': 0.7, // Add randomness to avoid default responses
+        'max_tokens': 500,
+        'question': 'Please carefully analyze the ACTUAL PERSON in this image. Look at their face, skin tone, body type, age, and overall appearance. Do NOT use example values. Provide detailed analysis of: gender (from facial features and appearance), estimated age (realistic number based on face), estimated height (based on body proportions), body type (from visible body shape), actual skin tone (from the image), suitable style preferences, and appropriate color palette hex codes that complement their actual skin tone and undertone. Reference the CSV data for accurate color recommendations.',
+        'system_prompt': '''You are a professional fashion and style analysis expert. You MUST analyze the ACTUAL PERSON in the provided image.
+        CRITICAL INSTRUCTIONS: 
+        - LOOK AT THE IMAGE and analyze the real person
+        - DO NOT return default/example values
+        - PROVIDE realistic estimates based on what you see in the image
 
-IMPORTANT: Return ONLY valid JSON with no additional text, explanations, or markdown formatting. Use the exact values specified below.
+        ANALYSIS GUIDELINES:
+        - AGE: Look at facial features, skin texture, estimate between 18-65
+        - HEIGHT: Estimate from body proportions, typically 150-200cm  
+        - SKIN_TONE: Examine actual skin color in the image carefully
+        - COLORS: Use CSV data to find colors that match the DETECTED skin tone
+        - BODY_TYPE: Analyze visible body shape and proportions
 
-{
-  "gender": "male/female/other",
-  "age": 25,
-  "height": 170,
-  "body_type": "hourglass/pear/apple/rectangle/inverted_triangle/ectomorph/mesomorph/endomorph",
-  "skin_tone": "very_fair/fair/medium/olive/brown/deep",
-  "style": ["casual", "formal", "ethnic", "party", "sports"],
-  "color_tones": ["#F4C2C2", "#E6E6FA", "#AFDBF5"],
-  "undertone": "warm/cool/neutral"
-}
+        REQUIRED JSON FORMAT (fill with your actual analysis):
+        {
+          "gender": "analyze_from_image",
+          "age": your_age_estimate_not_25,
+          "height": your_height_estimate_not_170,
+          "body_type": "your_analysis_of_body_shape",
+          "skin_tone": "your_detected_skin_tone",
+          "style": ["your_style_recommendations"],
+          "color_tones": ["your_color_analysis_not_examples"],
+          "undertone": "your_undertone_analysis"
+        }
 
-Rules:
-- age: must be a number (not a range)
-- height: must be a number in centimeters (e.g., 170, 165, 180)
-- body_type: choose only ONE value from the list
-- skin_tone: choose only ONE value from the list (very_fair, fair, medium, olive, brown, deep)
-- style: array of strings, choose from casual/formal/ethnic/party/sports
-- color_tones: array of hex codes that complement the detected skin_tone and undertone. Refer to the "Fashion Understanding - Skin+Under tone Color.csv" file and select 3-7 appropriate hex codes based on the person's detected skin tone and undertone combination from the image.
-- undertone: choose only ONE value: warm/cool/neutral
-- Return ONLY the JSON object, no markdown, no explanations''',
+        VALID OPTIONS:
+        - gender: male, female, other
+        - body_type: hourglass, pear, apple, rectangle, inverted_triangle, ectomorph, mesomorph, endomorph
+        - skin_tone: very_fair, fair, medium, olive, brown, deep
+        - style: casual, formal, ethnic, party, sports (choose 1-3)
+        - undertone: warm, cool, neutral
+
+        🎯 ANALYZE THE REAL PERSON - NOT EXAMPLES!
+        Return ONLY valid JSON, no explanations.''',
       };
       
       print('📤 Sending request to backend...');
@@ -66,6 +80,22 @@ Rules:
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         print('✅ Analysis successful');
+        
+        // Check if the response contains default values and warn
+        if (responseData.containsKey('response')) {
+          final responseText = responseData['response'] as String;
+          
+          // Check for default values
+          if (responseText.contains('"age": 25') || responseText.contains('"height": 170') ||
+              responseText.contains('#F4C2C2') || responseText.contains('#E6E6FA') || responseText.contains('#AFDBF5')) {
+            print('⚠️ WARNING: ML model returned default values instead of analyzing the image!');
+            print('🔍 Response contains: age=25, height=170, or example colors');
+            print('📄 Full response: $responseText');
+          } else {
+            print('✅ ML analysis appears to contain custom values (not defaults)');
+          }
+        }
+        
         return responseData;
       } else {
         print('❌ Failed to analyze preferences: ${response.statusCode}');

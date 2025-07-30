@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../service/ml_preference_service.dart';
@@ -89,7 +91,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         }
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      print('❌ Error during data initialization: $e');
     }
   }
 
@@ -218,10 +220,20 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   /// Load preferences from local storage or server
   Future<void> _loadPreferences() async {
     try {
+      print('🔍 Loading preferences...');
+      
+      // Get user ID
+      final userId = await UserApiService.getUserId();
+      if (userId == null) {
+        print('❌ No user ID found for preferences');
+        return;
+      }
+      
       // First try to load from local storage
       final localPrefs = await PreferencePrefs.loadFromPrefs();
 
       if (localPrefs != null) {
+        print('✅ Found local preferences, populating...');
         _populatePreferencesFromModel(localPrefs);
         return;
       }
@@ -238,13 +250,27 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
           await serverPrefs.saveToPrefs();
         }
       }
+
+      // If no preferences found, try to load ML-analyzed preferences
+      final mlPrefs = await MLPreferenceService.getUserPreferences(userId);
+      if (mlPrefs != null) {
+        print('✅ Found ML preferences, populating...');
+        _populatePreferencesFromModel(mlPrefs);
+        // Save to local storage for future use
+        await mlPrefs.saveToPrefs();
+        return;
+      }
+      
+      print('ℹ️ No existing preferences found, using defaults');
     } catch (e) {
-      print('Error loading preferences: $e');
+      print('❌ Error loading preferences: $e');
     }
   }
 
   /// Populate UI fields from preference model
   void _populatePreferencesFromModel(Preference prefs) {
+    print('📋 Populating UI from preference model...');
+    
     setState(() {
       if (prefs.gender != null) gender = prefs.gender!;
       if (prefs.age != null) age = prefs.age!;
@@ -254,7 +280,35 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         // Map skin tone string to index
         selectedSkin = _mapSkinToneToIndex(prefs.skinTone!);
       }
-      if (prefs.style != null) {
+      
+      if (prefs.age != null && prefs.age! > 0) {
+        age = prefs.age!;
+        print('🎂 Age: $age');
+      }
+      
+      if (prefs.height != null && prefs.height! > 0) {
+        height = prefs.height!;
+        print('📏 Height: ${height}cm');
+      }
+      
+      if (prefs.bodyType != null && prefs.bodyType!.isNotEmpty) {
+        bodyType = _formatBodyTypeFromAPI(prefs.bodyType!);
+        print('🏋️ Body Type: $bodyType');
+      }
+      
+      // Skin tone and undertone
+      if (prefs.skinTone != null && prefs.skinTone!.isNotEmpty) {
+        selectedSkin = _mapSkinToneToIndex(prefs.skinTone!);
+        print('🎨 Skin Tone: ${prefs.skinTone} (index: $selectedSkin)');
+      }
+      
+      if (prefs.undertone != null && prefs.undertone!.isNotEmpty) {
+        selectedUndertone = _formatUndertoneFromAPI(prefs.undertone!);
+        print('🌈 Undertone: $selectedUndertone');
+      }
+      
+      // Style preferences
+      if (prefs.style != null && prefs.style!.isNotEmpty) {
         // Convert styles to title case for UI display
         final titleCaseStyles = prefs.style!
             .map(
@@ -267,6 +321,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         if (!_hasLoadedMLRecommendations && titleCaseStyles.isNotEmpty) {
           selectedStyles = titleCaseStyles.toSet();
           _hasLoadedMLRecommendations = true;
+          print('✨ Auto-selected ML recommended styles');
         }
 
         // Always update ML-recommended styles for display purposes
@@ -279,11 +334,21 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         selectedUndertone =
             prefs.undertone![0].toUpperCase() + prefs.undertone!.substring(1);
       }
-      if (prefs.colorTones != null) {
-        // Handle hex codes directly from ML model
+      
+      // Festivals
+      if (prefs.festivals != null && prefs.festivals!.isNotEmpty) {
+        selectedFestivals = prefs.festivals!.toSet();
+        print('🎊 Festivals: $selectedFestivals');
+      }
+      
+      // Color preferences
+      if (prefs.colorTones != null && prefs.colorTones!.isNotEmpty) {
         mlColorTones = prefs.colorTones!;
+        print('🎨 Color tones: ${mlColorTones.length} colors loaded');
       }
     });
+    
+    print('✅ UI population completed');
   }
 
   /// Map skin tone string to UI index
@@ -303,6 +368,216 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         return 5;
       default:
         return 2; // Default to medium
+    }
+  }
+
+  /// Fetch user data from API using getUserById endpoint
+  Future<Map<String, dynamic>?> _fetchUserDataFromAPI(String userId) async {
+    try {
+      final token = await UserApiService.getAuthToken();
+      if (token == null) {
+        print('❌ No auth token available for API call');
+        return null;
+      }
+
+      final url = Uri.parse('${webApi['domain']}${endPoint['getUserById']}/$userId');
+      print('🌐 Fetching user data from: $url');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('📊 User data response status: ${response.statusCode}');
+      print('📄 User data response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData['success'] == true && responseData['data'] != null) {
+          return responseData['data'];
+        }
+      } else if (response.statusCode == 401) {
+        print('🔄 Token expired, clearing and retrying...');
+        // Clear token and try once more
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('auth_token');
+        
+        final newToken = await UserApiService.getAuthToken();
+        if (newToken != null) {
+          final retryResponse = await http.get(
+            url,
+            headers: {
+              'Authorization': 'Bearer $newToken',
+              'Content-Type': 'application/json',
+            },
+          );
+          
+          if (retryResponse.statusCode == 200) {
+            final retryData = json.decode(retryResponse.body);
+            if (retryData['success'] == true && retryData['data'] != null) {
+              return retryData['data'];
+            }
+          }
+        }
+      }
+
+      return null;
+    } catch (e) {
+      print('❌ Error fetching user data: $e');
+      return null;
+    }
+  }
+
+  /// Format gender from API response to UI format
+  String _formatGenderFromAPI(String apiGender) {
+    switch (apiGender.toLowerCase()) {
+      case 'male':
+        return 'Male';
+      case 'female':
+        return 'Female';
+      case 'other':
+        return 'Other';
+      default:
+        return 'Male'; // Default
+    }
+  }
+
+  /// Format body type from API response to UI format
+  String _formatBodyTypeFromAPI(String apiBodyType) {
+    // API might use lowercase or different format, normalize to UI format
+    switch (apiBodyType.toLowerCase()) {
+      case 'hourglass':
+        return 'Hourglass';
+      case 'triangle':
+      case 'pear':
+        return 'Triangle';
+      case 'round':
+      case 'apple':
+        return 'Round';
+      case 'straight':
+      case 'rectangle':
+        return 'Straight';
+      case 'inverted triangle':
+      case 'inverted_triangle':
+        return 'Inverted Triangle';
+      case 'ectomorph':
+        return 'Ectomorph';
+      case 'mesomorph':
+        return 'Mesomorph';
+      case 'endomorph':
+        return 'Endomorph';
+      default:
+        return apiBodyType; // Return as-is if no mapping found
+    }
+  }
+
+  /// Format undertone from API response to UI format
+  String _formatUndertoneFromAPI(String apiUndertone) {
+    switch (apiUndertone.toLowerCase()) {
+      case 'warm':
+        return 'Warm';
+      case 'cool':
+        return 'Cool';
+      case 'neutral':
+        return 'Neutral';
+      default:
+        return 'Neutral'; // Default
+    }
+  }
+
+  /// Fetch preferences from API using getPrefByUserId endpoint
+  Future<Preference?> _fetchPreferencesFromAPI(String userId) async {
+    try {
+      final token = await UserApiService.getAuthToken();
+      if (token == null) {
+        print('❌ No auth token available for preferences API call');
+        return null;
+      }
+
+      final url = Uri.parse('${webApi['domain']}${endPoint['getPrefByUserId']}/$userId');
+      print('🌐 Fetching preferences from: $url');
+
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      print('📊 Preferences response status: ${response.statusCode}');
+      print('📄 Preferences response body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData['success'] == true && responseData['data'] != null) {
+          final prefData = responseData['data'];
+          
+          // Convert API response to Preference model
+          return Preference(
+            userObjectId: int.tryParse(userId) ?? 0,
+            gender: prefData['gender'],
+            age: prefData['age'] is int ? prefData['age'] : int.tryParse(prefData['age']?.toString() ?? '0'),
+            height: prefData['height'] is int ? prefData['height'] : int.tryParse(prefData['height']?.toString() ?? '0'),
+            bodyType: prefData['body_type'],
+            skinTone: prefData['skin_tone'],
+            style: prefData['style'] is List ? List<String>.from(prefData['style']) : [],
+            occasion: prefData['occasion'] is List ? List<String>.from(prefData['occasion']) : [],
+            festivals: prefData['festivals'] is List ? List<String>.from(prefData['festivals']) : [],
+            colorTones: prefData['color_tones'] is List ? List<String>.from(prefData['color_tones']) : [],
+            undertone: prefData['undertone'],
+            createdAt: prefData['createdAt'] != null ? DateTime.tryParse(prefData['createdAt']) : null,
+            updatedAt: prefData['updatedAt'] != null ? DateTime.tryParse(prefData['updatedAt']) : null,
+          );
+        }
+      } else if (response.statusCode == 401) {
+        print('🔄 Token expired for preferences, clearing and retrying...');
+        // Clear token and try once more
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.remove('auth_token');
+        
+        final newToken = await UserApiService.getAuthToken();
+        if (newToken != null) {
+          final retryResponse = await http.get(
+            url,
+            headers: {
+              'Authorization': 'Bearer $newToken',
+              'Content-Type': 'application/json',
+            },
+          );
+          
+          if (retryResponse.statusCode == 200) {
+            final retryData = json.decode(retryResponse.body);
+            if (retryData['success'] == true && retryData['data'] != null) {
+              final prefData = retryData['data'];
+              
+              return Preference(
+                userObjectId: int.tryParse(userId) ?? 0,
+                gender: prefData['gender'],
+                age: prefData['age'] is int ? prefData['age'] : int.tryParse(prefData['age']?.toString() ?? '0'),
+                height: prefData['height'] is int ? prefData['height'] : int.tryParse(prefData['height']?.toString() ?? '0'),
+                bodyType: prefData['body_type'],
+                skinTone: prefData['skin_tone'],
+                style: prefData['style'] is List ? List<String>.from(prefData['style']) : [],
+                occasion: prefData['occasion'] is List ? List<String>.from(prefData['occasion']) : [],
+                festivals: prefData['festivals'] is List ? List<String>.from(prefData['festivals']) : [],
+                colorTones: prefData['color_tones'] is List ? List<String>.from(prefData['color_tones']) : [],
+                undertone: prefData['undertone'],
+                createdAt: prefData['createdAt'] != null ? DateTime.tryParse(prefData['createdAt']) : null,
+                updatedAt: prefData['updatedAt'] != null ? DateTime.tryParse(prefData['updatedAt']) : null,
+              );
+            }
+          }
+        }
+      }
+
+      return null;
+    } catch (e) {
+      print('❌ Error fetching preferences: $e');
+      return null;
     }
   }
 
@@ -728,9 +1003,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         ),
       );
 
-      print('🚀 Starting profile update...');
+      print('🚀 Starting comprehensive profile update...');
 
-      // Call the API
+      // Step 1: Update user profile via UserApiService
       final result = await UserApiService.updateUserProfile(
         email: email.trim().toLowerCase(),
         username: name.trim(),
@@ -744,11 +1019,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         festivals: selectedFestivals.toList(),
         colorTones: mlColorTones.isNotEmpty ? mlColorTones : null,
         undertone: selectedUndertone,
-        size: 'L', // Default size - could be made configurable
+        size: 'M', // Default size - could be made configurable
       );
-
-      // Close loading dialog
-      Navigator.pop(context);
 
       if (result != null) {
         print('✅ Profile updated successfully');
@@ -772,8 +1044,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
           ),
         );
 
-        // TODO: Navigate to curated results screen or trigger recommendation API
-        // For now, just show another message about curated results
+        // Show follow-up message about recommendations
         Future.delayed(Duration(seconds: 1), () {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -782,16 +1053,19 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                   Icon(Icons.auto_awesome, color: Colors.white),
                   SizedBox(width: 8),
                   Expanded(
-                    child: Text('Your personalized recommendations are ready!'),
+                    child: Text('Your personalized recommendations are ready! You can now browse personalized products.'),
                   ),
                 ],
               ),
               backgroundColor: Color(0xFFD2B193),
-              duration: Duration(seconds: 2),
+              duration: Duration(seconds: 3),
             ),
           );
         });
       } else {
+        // Close loading dialog
+        Navigator.pop(context);
+        
         print('❌ Update failed - no result returned');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -860,6 +1134,14 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         ),
         actions: [
           IconButton(
+            icon: Icon(Icons.refresh, color: Colors.brown.shade300),
+            onPressed: () async {
+              // Refresh all data from APIs
+              await _refreshData();
+            },
+            tooltip: 'Refresh data from server',
+          ),
+          IconButton(
             icon: Icon(Icons.camera_alt, color: Colors.brown.shade300),
             onPressed: () async {
               // Navigate to camera capture for testing
@@ -891,6 +1173,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               // Save preferences functionality
               await _savePreferences();
             },
+            tooltip: 'Save preferences locally',
           ),
         ],
       ),
