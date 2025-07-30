@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../service/ml_preference_service.dart';
 import '../model/preference_model.dart';
+import '../services/user_api_service.dart';
 import '../../authModule/screens/capture_face_screen.dart';
 
 void main() => runApp(PreferenceScreenApp());
@@ -26,7 +27,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   String gender = 'Male';
   int age = 24;
   int height = 176;
-  String bodyType = 'ectomorph';
+  String bodyType = 'Ectomorph';
 
   int selectedSkin = 2;
   Set<String> selectedStyles = {};
@@ -381,64 +382,64 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
 
   List<String> getBodyTypeOptions(String gender) {
     if (gender == "Male") {
-      return ["ectomorph", "mesomorph", "endomorph"];
+      return ["Ectomorph", "Mesomorph", "Endomorph"];
     } else if (gender == "Female") {
       return [
-        "hourglass",
-        "pear",
-        "apple",
-        "rectangle",
-        "inverted_triangle",
+        "Hourglass",
+        "Triangle", // Changed from "pear"
+        "Round", // Changed from "apple"
+        "Straight", // Changed from "rectangle"
+        "Inverted Triangle", // Changed from "inverted_triangle"
       ];
     } else {
-      return ["ectomorph", "mesomorph", "endomorph", "hourglass", "pear", "apple", "rectangle", "inverted_triangle"];
+      return ["Ectomorph", "Mesomorph", "Endomorph", "Hourglass", "Triangle", "Round", "Straight", "Inverted Triangle"];
     }
   }
 
   IconData getBodyTypeIcon(String bodyType, String gender) {
     if (gender == "Male") {
       switch (bodyType) {
-        case "ectomorph":
+        case "Ectomorph":
           return Icons.accessibility_new; // Lean figure
-        case "mesomorph":
+        case "Mesomorph":
           return Icons.fitness_center; // Athletic figure
-        case "endomorph":
+        case "Endomorph":
           return Icons.sports_martial_arts; // Broader/fuller figure
         default:
           return Icons.person;
       }
     } else if (gender == "Female") {
       switch (bodyType) {
-        case "hourglass":
+        case "Hourglass":
           return Icons.hourglass_bottom; // Hourglass shape
-        case "pear":
+        case "Triangle":
           return Icons.change_history; // Triangle shape
-        case "apple":
+        case "Round":
           return Icons.circle; // Round shape
-        case "rectangle":
+        case "Straight":
           return Icons.crop_portrait; // Rectangle shape
-        case "inverted_triangle":
+        case "Inverted Triangle":
           return Icons.details; // Inverted triangle
         default:
           return Icons.person;
       }
     } else {
       switch (bodyType) {
-        case "ectomorph":
+        case "Ectomorph":
           return Icons.accessibility_new;
-        case "mesomorph":
+        case "Mesomorph":
           return Icons.fitness_center;
-        case "endomorph":
+        case "Endomorph":
           return Icons.sports_martial_arts;
-        case "hourglass":
+        case "Hourglass":
           return Icons.hourglass_bottom;
-        case "pear":
+        case "Triangle":
           return Icons.change_history;
-        case "apple":
+        case "Round":
           return Icons.circle;
-        case "rectangle":
+        case "Straight":
           return Icons.crop_portrait;
-        case "inverted_triangle":
+        case "Inverted Triangle":
           return Icons.details;
         default:
           return Icons.person;
@@ -450,6 +451,207 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     List<String> options = getBodyTypeOptions(newGender);
     if (!options.contains(bodyType)) {
       bodyType = options.first;
+    }
+  }
+
+  /// Validate all required fields before API call
+  String? _validateFields() {
+    // Name validation
+    if (name.isEmpty || name.trim().isEmpty) {
+      return 'Please enter your name';
+    }
+
+    // Email validation
+    if (email.isEmpty || email.trim().isEmpty) {
+      return 'Please enter your email address';
+    }
+    
+    if (!UserApiService.isValidEmail(email.trim())) {
+      return 'Please enter a valid email address';
+    }
+
+    // Basic info validation
+    if (age < 13 || age > 120) {
+      return 'Please enter a valid age between 13 and 120';
+    }
+
+    if (height < 100 || height > 250) {
+      return 'Please enter a valid height between 100 and 250 cm';
+    }
+
+    // Style preferences validation
+    if (selectedStyles.isEmpty) {
+      return 'Please select at least one style preference';
+    }
+
+    if (selectedOccasions.isEmpty) {
+      return 'Please select at least one occasion';
+    }
+
+    return null; // All validations passed
+  }
+
+  /// Update user profile and preferences via API
+  Future<void> _updateUserPreferences() async {
+    try {
+      // Validate fields first
+      final validationError = _validateFields();
+      if (validationError != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.warning, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(child: Text(validationError)),
+              ],
+            ),
+            backgroundColor: Colors.orange.shade700,
+            duration: Duration(seconds: 4),
+          ),
+        );
+        return;
+      }
+
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => AlertDialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFB8956A)),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'Updating your preferences...',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'This may take a few seconds',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.grey.shade600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+
+      print('🚀 Starting profile update...');
+
+      // Call the API
+      final result = await UserApiService.updateUserProfile(
+        email: email.trim().toLowerCase(),
+        username: name.trim(),
+        gender: gender,
+        age: age,
+        height: height,
+        bodyType: bodyType,
+        skinTone: _mapSkinIndexToTone(selectedSkin),
+        styles: selectedStyles.toList(),
+        occasions: selectedOccasions.toList(),
+        festivals: selectedFestivals.toList(),
+        colorTones: mlColorTones.isNotEmpty ? mlColorTones : null,
+        undertone: selectedUndertone,
+        size: 'L', // Default size - could be made configurable
+      );
+
+      // Close loading dialog
+      Navigator.pop(context);
+
+      if (result != null) {
+        print('✅ Profile updated successfully');
+        
+        // Show success message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Text('Profile updated successfully! Getting your curated results...'),
+                ),
+              ],
+            ),
+            backgroundColor: Color(0xFFB8956A),
+            duration: Duration(seconds: 3),
+          ),
+        );
+
+        // TODO: Navigate to curated results screen or trigger recommendation API
+        // For now, just show another message about curated results
+        Future.delayed(Duration(seconds: 1), () {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.auto_awesome, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(
+                    child: Text('Your personalized recommendations are ready!'),
+                  ),
+                ],
+              ),
+              backgroundColor: Color(0xFFD2B193),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        });
+
+      } else {
+        print('❌ Update failed - no result returned');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(child: Text('Failed to update profile. Please try again.')),
+              ],
+            ),
+            backgroundColor: Colors.red.shade700,
+          ),
+        );
+      }
+
+    } catch (e) {
+      // Close loading dialog if open
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+
+      print('💥 Error updating profile: $e');
+      
+      String errorMessage = 'Failed to update profile. Please try again.';
+      if (e.toString().contains('No authentication token')) {
+        errorMessage = 'Please log in again to continue.';
+      } else if (e.toString().contains('email')) {
+        errorMessage = 'Please check your email address and try again.';
+      }
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text(errorMessage)),
+            ],
+          ),
+          backgroundColor: Colors.red.shade700,
+          duration: Duration(seconds: 4),
+        ),
+      );
     }
   }
 
@@ -1017,13 +1219,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
             Container(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('Getting curated results...'),
-                      backgroundColor: Color(0xFFB8956A),
-                    ),
-                  );
+                onPressed: () async {
+                  await _updateUserPreferences();
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Color(0xFFD2B193),
@@ -1438,51 +1635,33 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   }
 
   String formatBodyTypeName(String bodyType) {
-    switch (bodyType) {
-      case "hourglass":
-        return "Hourglass";
-      case "pear":
-        return "Pear";
-      case "apple":
-        return "Apple";
-      case "rectangle":
-        return "Rectangle";
-      case "inverted_triangle":
-        return "Inverted Triangle";
-      case "ectomorph":
-        return "Ectomorph";
-      case "mesomorph":
-        return "Mesomorph";
-      case "endomorph":
-        return "Endomorph";
-      default:
-        return bodyType;
-    }
+    // Since we now use properly formatted names, just return as is
+    return bodyType;
   }
 
   String _getBodyTypeDescription(String bodyType, String gender) {
     if (gender == "Male") {
       switch (bodyType) {
-        case "ectomorph":
+        case "Ectomorph":
           return "Lean and tall with fast metabolism";
-        case "mesomorph":
+        case "Mesomorph":
           return "Naturally muscular with broad shoulders";
-        case "endomorph":
+        case "Endomorph":
           return "Larger bone structure with slower metabolism";
         default:
           return "Select your body type";
       }
     } else if (gender == "Female") {
       switch (bodyType) {
-        case "hourglass":
+        case "Hourglass":
           return "Balanced bust and hips with defined waist";
-        case "pear":
+        case "Triangle":
           return "Hips wider than shoulders, smaller upper body";
-        case "apple":
+        case "Round":
           return "Fuller upper body, carries weight in midsection";
-        case "rectangle":
+        case "Straight":
           return "Similar bust, waist, and hip measurements";
-        case "inverted_triangle":
+        case "Inverted Triangle":
           return "Broad shoulders, narrow hips";
         default:
           return "Select your body type";
@@ -1490,21 +1669,21 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     } else {
       // For "other" gender, provide descriptions for all types
       switch (bodyType) {
-        case "ectomorph":
+        case "Ectomorph":
           return "Lean build with fast metabolism";
-        case "mesomorph":
+        case "Mesomorph":
           return "Naturally athletic build";
-        case "endomorph":
+        case "Endomorph":
           return "Fuller build with slower metabolism";
-        case "hourglass":
+        case "Hourglass":
           return "Balanced proportions with defined waist";
-        case "pear":
+        case "Triangle":
           return "Lower body heavier than upper body";
-        case "apple":
+        case "Round":
           return "Fuller midsection";
-        case "rectangle":
+        case "Straight":
           return "Straight body line";
-        case "inverted_triangle":
+        case "Inverted Triangle":
           return "Broad shoulders, narrow hips";
         default:
           return "Select your body type";
