@@ -2,6 +2,8 @@ import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dar
 import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
 import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
+import 'package:clothing_app_frontend/navigation/navigators.dart';
+import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -94,9 +96,14 @@ class AuthRepo {
 
       if (data['status'] == true) {
         // Navigate to home screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        // Navigator.pushReplacement(
+        //   context,
+        //   MaterialPageRoute(builder: (context) => const HomeScreen()),
+
+        // );
+        pushAndRemoveUntil(
+          NamedRoute.bottomNavBarScreen,
+          arguments: BottomNavArgumnets(),
         );
       } else {
         // Show API error
