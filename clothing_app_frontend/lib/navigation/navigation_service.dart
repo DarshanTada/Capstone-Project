@@ -1,6 +1,9 @@
 import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
+import 'package:clothing_app_frontend/authModule/screens/intro_screen_1.dart';
+import 'package:clothing_app_frontend/authModule/screens/intro_screen_2.dart';
+import 'package:clothing_app_frontend/authModule/screens/intro_screen_3.dart';
 import 'package:clothing_app_frontend/categoryModule/screens/product_detail_screen.dart';
 import 'package:clothing_app_frontend/homeModule/screens/category_relation_screen.dart';
 import 'package:clothing_app_frontend/checkoutModule/screens/checkout_screen.dart';
@@ -16,6 +19,16 @@ import 'routes.dart';
 
 Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
+    // Intro/Onboarding Screens
+    case NamedRoute.onBoardingScreen1:
+      return _getPageRoute(const IntroScreen1());
+    
+    case NamedRoute.onBoardingScreen2:
+      return _getPageRoute(const IntroScreen2());
+    
+    case NamedRoute.onBoardingScreen3:
+      return _getPageRoute(const IntroScreen3());
+
     case NamedRoute.phoneNumberScreen:
       return _getPageRoute(const PhoneNumberScreen());
 

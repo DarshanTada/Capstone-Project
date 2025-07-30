@@ -63,21 +63,24 @@ class _SplashScreenState extends State<SplashScreenMain>
   }
 
   Future<void> _loadApp() async {
+    print("Starting app loading...");
     // Simulate loading (e.g., Firebase.init(), shared prefs, API calls, etc.)
     await Future.delayed(const Duration(seconds: 2));
 
-    if (!mounted) return;
-    // // pushAndRemoveUntil(NamedRoute.phoneNumberScreen);
-    // // Navigate to test screen instead of AddressDemoScreen for debugging
-    // Navigator.pushReplacement(
-    //   context,
-    //   MaterialPageRoute(builder: (context) => const TestScreen()),
-    // );
-    pushAndRemoveUntil(NamedRoute.checkoutScreen);
-    // pushAndRemoveUntil(
-    //   NamedRoute.bottomNavBarScreen,
-    //   arguments: BottomNavArgumnets(),
-    // );
+    if (!mounted) {
+      print("Widget is not mounted, returning");
+      return;
+    }
+    
+    try {
+      print("Attempting navigation to onBoardingScreen1");
+      pushAndRemoveUntil(NamedRoute.onBoardingScreen1);
+      print("Navigation initiated successfully");
+    } catch (e) {
+      print("Navigation error: $e");
+      // Fallback navigation
+      Navigator.pushReplacementNamed(context, NamedRoute.onBoardingScreen1);
+    }
   }
 
   @override

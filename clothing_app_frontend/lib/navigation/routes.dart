@@ -3,8 +3,9 @@ class NamedRoute {
   static const String loadingScreen = '/loadingScreen';
 
   // Auth Module
-  static const String onBoardingScreen = '/onboardScreen';
-  static const String onBoardingScreen1 = '/onboardScreen1';
+  static const String onBoardingScreen1 = '/IntroScreen1';
+  static const String onBoardingScreen2 = '/IntroScreen2';
+  static const String onBoardingScreen3 = '/IntroScreen3';
   static const String phoneNumberScreen = '/phoneNumberScreen';
   static const String locationScreen = '/locationScreen';
   static const String preferenceScreen= '/preferenceScreen';

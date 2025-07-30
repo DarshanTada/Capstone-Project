@@ -1,5 +1,5 @@
-import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:flutter/material.dart';
+import '../../navigation/routes.dart';
 
 class IntroScreen3 extends StatelessWidget {
   const IntroScreen3({super.key});
@@ -139,10 +139,7 @@ class IntroScreen3 extends StatelessWidget {
           Center(
             child: GestureDetector(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => PhoneNumberScreen()),
-                );
+                Navigator.pushNamed(context, NamedRoute.captureFaceScreen);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
