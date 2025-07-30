@@ -3,7 +3,7 @@ import axios from "axios";
 import fs from "fs";
 import FormData from "form-data";
 import mongoose from "mongoose";
-import Preference from "../preferenceModule/preference.model";
+import Preference from "../userModule/preference.model";
 import { MLAnalysis, MLSession, ML_REQUEST_TYPES } from "./ml.model";
 
 const baseURL = process.env.PYTHON_SERVER_URL || "http://localhost:8000"; // fallback
