@@ -37,8 +37,19 @@ class User {
   // Keep old phone property for backward compatibility
   String? get phone => phoneNumber;
 
-  static User jsonToUser(Map<String, dynamic> responseData, {String? token}) {
+  static User jsonToUser(Map<String, dynamic>? responseData, {String? token}) {
     try {
+      // Handle null or empty responseData
+      if (responseData == null) {
+        print('ResponseData is null, creating minimal user');
+        return User(
+          token: token,
+          isGuest: false,
+          isLocationAllowed: false,
+          isNotificationAllowed: false,
+        );
+      }
+
       final userData = responseData['user'];
       final preferenceData = responseData['preference'];
       final relationProfileData = responseData['relationProfile'];
@@ -49,7 +60,22 @@ class User {
       print('- relationProfileData: $relationProfileData');
 
       if (userData == null) {
-        throw Exception('User data is null in response');
+        print('User data is null, creating minimal user with available data');
+        return User(
+          token: token,
+          isGuest: false,
+          isLocationAllowed: false,
+          isNotificationAllowed: false,
+          preference: preferenceData != null
+              ? Preference.fromJson(preferenceData)
+              : null,
+          relationProfiles:
+              relationProfileData != null && relationProfileData is List
+              ? relationProfileData
+                    .map((profile) => RelationProfile.fromJson(profile))
+                    .toList()
+              : [],
+        );
       }
 
       return User(

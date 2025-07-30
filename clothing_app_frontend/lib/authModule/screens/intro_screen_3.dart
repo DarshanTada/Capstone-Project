@@ -105,8 +105,8 @@ class IntroScreen3 extends StatelessWidget {
           Center(
             child: GestureDetector(
               onTap: () {
-                Navigator.pushNamed(context, NamedRoute.captureFaceScreen);
-                // Navigator.pushNamed(context, NamedRoute.phoneNumberScreen);
+                // Navigator.pushNamed(context, NamedRoute.captureFaceScreen);
+                Navigator.pushNamed(context, NamedRoute.phoneNumberScreen);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(
