@@ -1,4 +1,5 @@
 // var webApi = {'domain': 'https://api.iteeha.co'}; //PROD
+
 var webApi = {'domain': 'http://10.0.0.213:3001/'}; //DEV PROD
 var mlApi = {'domain': 'https://naturally-giving-chow.ngrok-free.app/'}; //ML NGROK
 
@@ -8,6 +9,7 @@ var endPoint = {
 
   // Home
   'getCategory': 'api/category/getCategory',
+  'getProductsByCategory': 'api/category/getProductsByCategory',
   // Product
   'getProducts': 'api/product/getProduct',
   // SubCategory
