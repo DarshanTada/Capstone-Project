@@ -16,8 +16,8 @@ var endPoint = {
   'getSubCategories': 'api/subCategory/getAll',
 
   //Preference
-  'getAllPreferences': 'api/preferences/getAllPreferences',
-  'getPrefByUserId': 'api/preferences/getPrefByUserId',
+  'getAllPreferences': 'api/preferences/getPreferences',
+  'getPrefByUserId': 'api/preferences/user',
   'updatePreference': 'api/preferences/updatePreference',
   'deletePreference': 'api/preferences/deletePreference',
 

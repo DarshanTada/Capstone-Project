@@ -21,16 +21,20 @@ class PreferenceScreen extends StatefulWidget {
 }
 
 class _PreferenceScreenState extends State<PreferenceScreen> {
+  String name = '';
+  String email = '';
   String gender = 'Male';
   int age = 24;
   int height = 176;
-  String bodyType = 'Ectomorph';
+  String bodyType = 'ectomorph';
 
-  int selectedSkin = 3;
+  int selectedSkin = 2;
   Set<String> selectedStyles = {};
   Set<String> selectedOccasions = {};
   Set<String> selectedFestivals = {};
-  Set<int> selectedColors = {};
+  List<String> mlColorTones = []; // Store hex codes from ML model
+  List<String> mlRecommendedStyles = []; // Store ML-recommended styles
+  bool _hasLoadedMLRecommendations = false; // Track if ML recommendations have been loaded
   String selectedUndertone = 'Neutral';
 
   // App permissions state
@@ -83,12 +87,30 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         // Map skin tone string to index
         selectedSkin = _mapSkinToneToIndex(prefs.skinTone!);
       }
-      if (prefs.style != null) selectedStyles = prefs.style!.toSet();
+      if (prefs.style != null) {
+        // Convert styles to title case for UI display
+        final titleCaseStyles = prefs.style!.map((style) => 
+          style[0].toUpperCase() + style.substring(1).toLowerCase()
+        ).toList();
+        
+        // If this is the first time loading ML recommendations, auto-select them
+        if (!_hasLoadedMLRecommendations && titleCaseStyles.isNotEmpty) {
+          selectedStyles = titleCaseStyles.toSet();
+          _hasLoadedMLRecommendations = true;
+        }
+        
+        // Always update ML-recommended styles for display purposes
+        mlRecommendedStyles = titleCaseStyles;
+      }
       if (prefs.occasion != null) selectedOccasions = prefs.occasion!.toSet();
       if (prefs.festivals != null) selectedFestivals = prefs.festivals!.toSet();
-      if (prefs.undertone != null) selectedUndertone = prefs.undertone!;
+      if (prefs.undertone != null) {
+        // Capitalize first letter to match UI display
+        selectedUndertone = prefs.undertone![0].toUpperCase() + prefs.undertone!.substring(1);
+      }
       if (prefs.colorTones != null) {
-        selectedColors = _mapColorTonesToIndices(prefs.colorTones!);
+        // Handle hex codes directly from ML model
+        mlColorTones = prefs.colorTones!;
       }
     });
   }
@@ -100,60 +122,17 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         return 0;
       case 'fair':
         return 1;
-      case 'light':
-        return 2;
       case 'medium':
+        return 2;
+      case 'olive':
         return 3;
-      case 'tan':
+      case 'brown':
         return 4;
-      case 'dark':
-      case 'very_dark':
+      case 'deep':
         return 5;
       default:
-        return 3; // Default to medium
+        return 2; // Default to medium
     }
-  }
-
-  /// Map color tones to UI color indices
-  Set<int> _mapColorTonesToIndices(List<String> colorTones) {
-    Set<int> indices = {};
-    for (String tone in colorTones) {
-      switch (tone.toLowerCase()) {
-        case 'red':
-          indices.add(0);
-          indices.add(8); // red appears twice
-          break;
-        case 'white':
-          indices.add(1);
-          indices.add(9); // white appears twice
-          break;
-        case 'purple':
-          indices.add(2);
-          indices.add(10); // purple appears twice
-          break;
-        case 'orange':
-          indices.add(3);
-          indices.add(11); // orange appears twice
-          break;
-        case 'blue':
-          indices.add(4);
-          indices.add(12); // blue appears twice
-          break;
-        case 'black':
-          indices.add(5);
-          indices.add(13); // black appears twice
-          break;
-        case 'yellow':
-          indices.add(6);
-          indices.add(14); // yellow appears twice
-          break;
-        case 'green':
-          indices.add(7);
-          indices.add(15); // green appears twice
-          break;
-      }
-    }
-    return indices;
   }
 
   /// Save current preferences to local storage and server
@@ -178,11 +157,11 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         height: height,
         bodyType: bodyType,
         skinTone: _mapSkinIndexToTone(selectedSkin),
-        style: selectedStyles.toList(),
+        style: selectedStyles.map((style) => style.toLowerCase()).toList(),
         occasion: selectedOccasions.toList(),
         festivals: selectedFestivals.toList(),
-        colorTones: _mapColorIndicesToTones(selectedColors),
-        undertone: selectedUndertone,
+        colorTones: mlColorTones, // Use hex codes directly
+        undertone: selectedUndertone.toLowerCase(), // Convert to lowercase for ML model
       );
 
       // Save to local storage
@@ -228,32 +207,16 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       case 1:
         return 'fair';
       case 2:
-        return 'light';
-      case 3:
         return 'medium';
+      case 3:
+        return 'olive';
       case 4:
-        return 'tan';
+        return 'brown';
       case 5:
-        return 'dark';
+        return 'deep';
       default:
         return 'medium';
     }
-  }
-
-  /// Map color indices to tone strings
-  List<String> _mapColorIndicesToTones(Set<int> indices) {
-    Set<String> tones = {};
-    List<String> colorNames = [
-      'red', 'white', 'purple', 'orange', 'blue', 'black', 'yellow', 'green',
-      'red', 'white', 'purple', 'orange', 'blue', 'black', 'yellow', 'green'
-    ];
-    
-    for (int index in indices) {
-      if (index >= 0 && index < colorNames.length) {
-        tones.add(colorNames[index]);
-      }
-    }
-    return tones.toList();
   }
 
   /// Re-analyze preferences from saved selfie
@@ -360,6 +323,43 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     }
   }
 
+  /// Convert hex code to readable color name
+  String _getColorName(String hexCode) {
+    try {
+      // Remove # if present
+      String cleanHex = hexCode.replaceFirst('#', '');
+      
+      // Parse RGB values
+      int colorValue = int.parse(cleanHex, radix: 16);
+      int r = (colorValue >> 16) & 0xFF;
+      int g = (colorValue >> 8) & 0xFF;
+      int b = colorValue & 0xFF;
+      
+      // Determine dominant color channel
+      if (r > g && r > b) {
+        return 'Red';
+      } else if (g > r && g > b) {
+        return 'Green';
+      } else if (b > r && b > g) {
+        return 'Blue';
+      } else if (r == g && r > b) {
+        return 'Yellow';
+      } else if (r == b && r > g) {
+        return 'Magenta';
+      } else if (g == b && g > r) {
+        return 'Cyan';
+      } else {
+        // Similar RGB values - neutral color
+        int avg = (r + g + b) ~/ 3;
+        if (avg < 85) return 'Dark';
+        if (avg > 170) return 'Light';
+        return 'Gray';
+      }
+    } catch (e) {
+      return hexCode; // Return original hex if parsing fails
+    }
+  }
+
   List<Color> skinTones = [
     Color(0xFFFFE0BD),
     Color(0xFFFFCD94),
@@ -367,25 +367,6 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     Color(0xFFC68642),
     Color(0xFF8D5524),
     Color(0xFF5C4033),
-  ];
-
-  List<Color> colorPalette = [
-    Colors.red,
-    Colors.white,
-    Colors.purple,
-    Colors.orange,
-    Colors.blue,
-    Colors.black,
-    Colors.yellow,
-    Colors.green,
-    Colors.red,
-    Colors.white,
-    Colors.purple,
-    Colors.orange,
-    Colors.blue,
-    Colors.black,
-    Colors.yellow,
-    Colors.green,
   ];
 
   void toggleSelection(Set<String> list, String value) {
@@ -400,57 +381,65 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
 
   List<String> getBodyTypeOptions(String gender) {
     if (gender == "Male") {
-      return ["Ectomorph", "Mesomorph", "Endomorph"];
+      return ["ectomorph", "mesomorph", "endomorph"];
     } else if (gender == "Female") {
       return [
-        "Hourglass",
-        "Pear (Triangle)",
-        "Apple (Round)",
-        "Rectangle (Straight)",
-        "Inverted Triangle",
+        "hourglass",
+        "pear",
+        "apple",
+        "rectangle",
+        "inverted_triangle",
       ];
     } else {
-      return ["Slim", "Athletic", "Average", "Heavy"];
+      return ["ectomorph", "mesomorph", "endomorph", "hourglass", "pear", "apple", "rectangle", "inverted_triangle"];
     }
   }
 
   IconData getBodyTypeIcon(String bodyType, String gender) {
     if (gender == "Male") {
       switch (bodyType) {
-        case "Ectomorph":
+        case "ectomorph":
           return Icons.accessibility_new; // Lean figure
-        case "Mesomorph":
+        case "mesomorph":
           return Icons.fitness_center; // Athletic figure
-        case "Endomorph":
+        case "endomorph":
           return Icons.sports_martial_arts; // Broader/fuller figure
         default:
           return Icons.person;
       }
     } else if (gender == "Female") {
       switch (bodyType) {
-        case "Hourglass":
+        case "hourglass":
           return Icons.hourglass_bottom; // Hourglass shape
-        case "Pear (Triangle)":
+        case "pear":
           return Icons.change_history; // Triangle shape
-        case "Apple (Round)":
+        case "apple":
           return Icons.circle; // Round shape
-        case "Rectangle (Straight)":
+        case "rectangle":
           return Icons.crop_portrait; // Rectangle shape
-        case "Inverted Triangle":
+        case "inverted_triangle":
           return Icons.details; // Inverted triangle
         default:
           return Icons.person;
       }
     } else {
       switch (bodyType) {
-        case "Slim":
+        case "ectomorph":
           return Icons.accessibility_new;
-        case "Athletic":
+        case "mesomorph":
           return Icons.fitness_center;
-        case "Average":
-          return Icons.person;
-        case "Heavy":
-          return Icons.sports_martial_arts; // Better representation for fuller figure
+        case "endomorph":
+          return Icons.sports_martial_arts;
+        case "hourglass":
+          return Icons.hourglass_bottom;
+        case "pear":
+          return Icons.change_history;
+        case "apple":
+          return Icons.circle;
+        case "rectangle":
+          return Icons.crop_portrait;
+        case "inverted_triangle":
+          return Icons.details;
         default:
           return Icons.person;
       }
@@ -602,7 +591,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              "Jerry Wilson",
+                              name.isEmpty ? 'Your Name' : name,
                               style: TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.bold,
@@ -708,6 +697,18 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               "Basic Information",
               Icons.person_outline,
               [
+                _infoTile("Name", name.isEmpty ? "Enter your name" : name, () async {
+                  final selected = await _showTextInputDialog("Enter Name", name);
+                  if (selected != null && selected.isNotEmpty) {
+                    setState(() => name = selected);
+                  }
+                }),
+                _infoTile("Email", email.isEmpty ? "Enter your email" : email, () async {
+                  final selected = await _showTextInputDialog("Enter Email", email);
+                  if (selected != null && selected.isNotEmpty) {
+                    setState(() => email = selected);
+                  }
+                }),
                 _infoTile("Gender", gender, () async {
                   final selected = await _showOptionsDialog("Select Gender", [
                     "Male",
@@ -732,7 +733,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                   );
                   if (selected != null) setState(() => height = selected);
                 }),
-                _infoTile("Body Type", bodyType, () async {
+                _infoTile("Body Type", formatBodyTypeName(bodyType), () async {
                   final options = getBodyTypeOptions(gender);
                   final selected = await _showBodyTypeDialog(
                     "Select Body Type",
@@ -789,13 +790,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               "Style Preferences",
               Icons.style_outlined,
               [
-                _chipSection("Select Styles", [
-                  "Casual",
-                  "Formal",
-                  "Ethnic",
-                  "Party",
-                  "Sports",
-                ], selectedStyles),
+                _stylesSection(),
                 _chipSection("Select Occasions", [
                   "Daily",
                   "Vacation",
@@ -820,69 +815,198 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               "Color Preferences",
               Icons.color_lens_outlined,
               [
-                SizedBox(height: dH * 0.01),
-                Text(
-                  "Select Color Palette",
-                  style: TextStyle(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 16,
-                    color: Colors.black87,
-                  ),
-                ),
-                SizedBox(height: dH * 0.015),
-                Container(
-                  height: 50,
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: List.generate(colorPalette.length, (index) {
-                        final isSelected = selectedColors.contains(index);
-                        return Padding(
-                          padding: const EdgeInsets.only(right: 12),
-                          child: GestureDetector(
-                            onTap: () {
-                              setState(() {
-                                if (isSelected) {
-                                  selectedColors.remove(index);
-                                } else {
-                                  selectedColors.add(index);
-                                }
-                              });
-                            },
-                            child: Container(
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  width: isSelected ? 3 : 2,
-                                  color: isSelected
-                                      ? Color(0xFFB8956A)
-                                      : Colors.grey.shade300,
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        _sectionTitle("Color Palette"),
+                        if (mlColorTones.isNotEmpty) ...[
+                          SizedBox(width: 8),
+                          Container(
+                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: Color(0xFFB8956A).withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Color(0xFFB8956A).withOpacity(0.5)),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.auto_awesome,
+                                  size: 12,
+                                  color: Color(0xFFB8956A),
                                 ),
-                                color: colorPalette[index],
-                                boxShadow: isSelected ? [
-                                  BoxShadow(
-                                    color: Color(0xFFB8956A).withOpacity(0.3),
-                                    blurRadius: 8,
-                                    offset: Offset(0, 4),
+                                SizedBox(width: 4),
+                                Text(
+                                  "ML Recommended",
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFFB8956A),
+                                    fontWeight: FontWeight.w600,
                                   ),
-                                ] : [],
-                              ),
-                              width: 40,
-                              height: 40,
+                                ),
+                              ],
                             ),
                           ),
-                        );
-                      }),
+                        ],
+                      ],
                     ),
-                  ),
+                    if (mlColorTones.isNotEmpty) ...[
+                      SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.star,
+                            size: 12,
+                            color: Color(0xFFB8956A),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            "Colors recommended based on your skin tone analysis",
+                            style: TextStyle(
+                              fontSize: 11,
+                              color: Colors.grey.shade600,
+                              fontStyle: FontStyle.italic,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                    SizedBox(height: 8),
+                    Container(
+                      height: 80, // Increased height to accommodate hex codes
+                      child: mlColorTones.isEmpty 
+                        ? Container(
+                            width: double.infinity,
+                            padding: EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade50,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.grey.shade300),
+                            ),
+                            child: Center(
+                              child: Text(
+                                "Capture a photo to get personalized color recommendations",
+                                style: TextStyle(
+                                  color: Colors.grey.shade500,
+                                  fontStyle: FontStyle.italic,
+                                  fontSize: 13,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                          )
+                        : SingleChildScrollView(
+                            scrollDirection: Axis.horizontal,
+                            child: Row(
+                              children: mlColorTones.map((hexCode) {
+                                Color color;
+                                try {
+                                  color = Color(int.parse(hexCode.replaceFirst('#', '0xFF')));
+                                } catch (e) {
+                                  color = Colors.grey; // Fallback color
+                                }
+                                
+                                return Padding(
+                                  padding: const EdgeInsets.only(right: 16),
+                                  child: Column(
+                                    mainAxisSize: MainAxisSize.min, // Added to prevent overflow
+                                    children: [
+                                      Container(
+                                        decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          border: Border.all(
+                                            width: 3,
+                                            color: Color(0xFFB8956A),
+                                          ),
+                                          color: color,
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Color(0xFFB8956A).withOpacity(0.3),
+                                              blurRadius: 8,
+                                              offset: Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
+                                        width: 45,
+                                        height: 45,
+                                        child: Center(
+                                          child: Tooltip(
+                                            message: hexCode,
+                                            child: Container(),
+                                          ),
+                                        ),
+                                      ),
+                                      SizedBox(height: 4),
+                                      Text(
+                                        _getColorName(hexCode),
+                                        style: TextStyle(
+                                          fontSize: 9,
+                                          color: Colors.grey.shade600,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                    ),
+                  ],
                 ),
                 SizedBox(height: dH * 0.02),
-                _chipSection(
-                  "Select Undertone",
-                  ["Cold", "Neutral", "Warm"],
-                  {selectedUndertone},
-                  singleSelection: true,
-                  onSelect: (val) => setState(() => selectedUndertone = val),
+                // _sectionTitle("Undertone"),
+                Container(
+                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Color(0xFFD2B193).withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(
+                      color: Color(0xFFD2B193).withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.palette,
+                        color: Color(0xFFB8956A),
+                        size: 20,
+                      ),
+                      SizedBox(width: 12),
+                      Text(
+                        "Detected Undertone:",
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.black87,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Container(
+                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          selectedUndertone,
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -990,6 +1114,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   }
 
   Widget _infoTile(String title, String value, VoidCallback onTap) {
+    bool isPlaceholder = value.startsWith("Enter your");
+    
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: GestureDetector(
@@ -1022,7 +1148,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: Color(0xFFB8956A),
+                      color: isPlaceholder ? Colors.grey.shade500 : Color(0xFFB8956A),
+                      fontStyle: isPlaceholder ? FontStyle.italic : FontStyle.normal,
                     ),
                   ),
                   SizedBox(width: 8),
@@ -1211,85 +1338,90 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         ),
         content: Container(
           width: double.maxFinite,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: options.map((option) => 
-              Container(
-                margin: EdgeInsets.symmetric(vertical: 6),
-                child: InkWell(
-                  onTap: () => Navigator.pop(context, option),
-                  borderRadius: BorderRadius.circular(16),
-                  child: Container(
-                    padding: EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: Color(0xFFD2B193).withOpacity(0.05),
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: Color(0xFFD2B193).withOpacity(0.2),
-                        width: 1,
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.6, // Limit height to 60% of screen
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: options.map((option) => 
+                Container(
+                  margin: EdgeInsets.symmetric(vertical: 6),
+                  child: InkWell(
+                    onTap: () => Navigator.pop(context, option),
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      padding: EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: Color(0xFFD2B193).withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Color(0xFFD2B193).withOpacity(0.2),
+                          width: 1,
+                        ),
                       ),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          padding: EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            gradient: LinearGradient(
-                              colors: [
-                                Color(0xFFD2B193).withOpacity(0.2),
-                                Color(0xFFB8956A).withOpacity(0.15),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(12),
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  Color(0xFFD2B193).withOpacity(0.2),
+                                  Color(0xFFB8956A).withOpacity(0.15),
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: Color(0xFFD2B193).withOpacity(0.3),
+                                width: 1,
+                              ),
+                            ),
+                            child: Icon(
+                              getBodyTypeIcon(option, gender),
+                              color: Color(0xFFB8956A),
+                              size: 24,
+                            ),
+                          ),
+                          SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  formatBodyTypeName(option),
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 16,
+                                    color: Colors.black87,
+                                  ),
+                                ),
+                                SizedBox(height: 4),
+                                Text(
+                                  _getBodyTypeDescription(option, gender),
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey.shade600,
+                                    height: 1.2,
+                                  ),
+                                ),
                               ],
-                              begin: Alignment.topLeft,
-                              end: Alignment.bottomRight,
-                            ),
-                            borderRadius: BorderRadius.circular(12),
-                            border: Border.all(
-                              color: Color(0xFFD2B193).withOpacity(0.3),
-                              width: 1,
                             ),
                           ),
-                          child: Icon(
-                            getBodyTypeIcon(option, gender),
+                          Icon(
+                            Icons.arrow_forward_ios,
+                            size: 16,
                             color: Color(0xFFB8956A),
-                            size: 24,
                           ),
-                        ),
-                        SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                option,
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontSize: 16,
-                                  color: Colors.black87,
-                                ),
-                              ),
-                              SizedBox(height: 4),
-                              Text(
-                                _getBodyTypeDescription(option, gender),
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: Colors.grey.shade600,
-                                  height: 1.2,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        Icon(
-                          Icons.arrow_forward_ios,
-                          size: 16,
-                          color: Color(0xFFB8956A),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ).toList(),
+              ).toList(),
+            ),
           ),
         ),
         actions: [
@@ -1305,43 +1437,75 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     );
   }
 
+  String formatBodyTypeName(String bodyType) {
+    switch (bodyType) {
+      case "hourglass":
+        return "Hourglass";
+      case "pear":
+        return "Pear";
+      case "apple":
+        return "Apple";
+      case "rectangle":
+        return "Rectangle";
+      case "inverted_triangle":
+        return "Inverted Triangle";
+      case "ectomorph":
+        return "Ectomorph";
+      case "mesomorph":
+        return "Mesomorph";
+      case "endomorph":
+        return "Endomorph";
+      default:
+        return bodyType;
+    }
+  }
+
   String _getBodyTypeDescription(String bodyType, String gender) {
     if (gender == "Male") {
       switch (bodyType) {
-        case "Ectomorph":
+        case "ectomorph":
           return "Lean and tall with fast metabolism";
-        case "Mesomorph":
+        case "mesomorph":
           return "Naturally muscular with broad shoulders";
-        case "Endomorph":
+        case "endomorph":
           return "Larger bone structure with slower metabolism";
         default:
           return "Select your body type";
       }
     } else if (gender == "Female") {
       switch (bodyType) {
-        case "Hourglass":
+        case "hourglass":
           return "Balanced bust and hips with defined waist";
-        case "Pear (Triangle)":
-          return "Hips wider than bust and shoulders";
-        case "Apple (Round)":
-          return "Fuller midsection with narrower hips";
-        case "Rectangle (Straight)":
-          return "Similar measurements throughout";
-        case "Inverted Triangle":
-          return "Shoulders wider than hips";
+        case "pear":
+          return "Hips wider than shoulders, smaller upper body";
+        case "apple":
+          return "Fuller upper body, carries weight in midsection";
+        case "rectangle":
+          return "Similar bust, waist, and hip measurements";
+        case "inverted_triangle":
+          return "Broad shoulders, narrow hips";
         default:
           return "Select your body type";
       }
     } else {
+      // For "other" gender, provide descriptions for all types
       switch (bodyType) {
-        case "Slim":
-          return "Lean build with minimal curves";
-        case "Athletic":
-          return "Toned and muscular build";
-        case "Average":
-          return "Balanced proportions";
-        case "Heavy":
-          return "Fuller figure with curves";
+        case "ectomorph":
+          return "Lean build with fast metabolism";
+        case "mesomorph":
+          return "Naturally athletic build";
+        case "endomorph":
+          return "Fuller build with slower metabolism";
+        case "hourglass":
+          return "Balanced proportions with defined waist";
+        case "pear":
+          return "Lower body heavier than upper body";
+        case "apple":
+          return "Fuller midsection";
+        case "rectangle":
+          return "Straight body line";
+        case "inverted_triangle":
+          return "Broad shoulders, narrow hips";
         default:
           return "Select your body type";
       }
@@ -1398,6 +1562,68 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
             onPressed: () {
               final value = int.tryParse(controller.text);
               Navigator.pop(context, value);
+            },
+            child: Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<String?> _showTextInputDialog(String title, String currentValue) {
+    final controller = TextEditingController(text: currentValue);
+
+    return showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          title,
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: Colors.black87,
+          ),
+        ),
+        content: TextField(
+          controller: controller,
+          keyboardType: title.toLowerCase().contains('email') 
+              ? TextInputType.emailAddress 
+              : TextInputType.text,
+          decoration: InputDecoration(
+            hintText: title.toLowerCase().contains('email') 
+                ? "Enter email address" 
+                : "Enter $title",
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Color(0xFFD2B193)),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide(color: Color(0xFFB8956A), width: 2),
+            ),
+            filled: true,
+            fillColor: Color(0xFFD2B193).withOpacity(0.1),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Cancel",
+              style: TextStyle(color: Colors.grey.shade600),
+            ),
+          ),
+          ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFFD2B193),
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            onPressed: () {
+              final value = controller.text.trim();
+              Navigator.pop(context, value.isNotEmpty ? value : null);
             },
             child: Text("OK"),
           ),
@@ -1597,6 +1823,150 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  /// Custom styles section that shows ML-recommended or default styles
+  Widget _stylesSection() {
+    // Define all available style options
+    final allStyleOptions = ["Casual", "Formal", "Ethnic", "Party", "Sports"];
+    
+    // Combine ML-recommended styles with standard options, removing duplicates
+    final availableStyles = <String>[];
+    
+    // Add ML-recommended styles first (if any)
+    if (mlRecommendedStyles.isNotEmpty) {
+      availableStyles.addAll(mlRecommendedStyles);
+    }
+    
+    // Add any standard options that aren't already included
+    for (final style in allStyleOptions) {
+      if (!availableStyles.contains(style)) {
+        availableStyles.add(style);
+      }
+    }
+    
+    // If no ML styles, use standard options
+    if (availableStyles.isEmpty) {
+      availableStyles.addAll(allStyleOptions);
+    }
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            _sectionTitle("Select Styles"),
+            if (mlRecommendedStyles.isNotEmpty) ...[
+              SizedBox(width: 8),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Color(0xFFB8956A).withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Color(0xFFB8956A).withOpacity(0.5)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.auto_awesome,
+                      size: 12,
+                      color: Color(0xFFB8956A),
+                    ),
+                    SizedBox(width: 4),
+                    Text(
+                      "ML Recommended",
+                      style: TextStyle(
+                        fontSize: 10,
+                        color: Color(0xFFB8956A),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ],
+        ),
+        if (mlRecommendedStyles.isNotEmpty) ...[
+          SizedBox(height: 4),
+          Row(
+            children: [
+              Icon(
+                Icons.star,
+                size: 12,
+                color: Color(0xFFB8956A),
+              ),
+              SizedBox(width: 4),
+              Text(
+                "AI recommended styles (pre-selected)",
+                style: TextStyle(
+                  fontSize: 11,
+                  color: Colors.grey.shade600,
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+          ),
+        ],
+        SizedBox(height: 8),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: availableStyles.map((option) {
+            final isSelected = selectedStyles.contains(option);
+            final isMLRecommended = mlRecommendedStyles.contains(option);
+            
+            return GestureDetector(
+              onTap: () {
+                toggleSelection(selectedStyles, option);
+              },
+              child: Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  gradient: isSelected
+                      ? LinearGradient(
+                          colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : null,
+                  color: isSelected ? null : Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: isSelected
+                        ? Color(0xFFB8956A)
+                        : isMLRecommended
+                        ? Color(0xFFB8956A).withOpacity(0.5)
+                        : Colors.grey.shade300,
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      option,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.black87,
+                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                      ),
+                    ),
+                    if (isMLRecommended && !isSelected) ...[
+                      SizedBox(width: 4),
+                      Icon(
+                        Icons.star,
+                        size: 12,
+                        color: Color(0xFFB8956A),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+      ],
     );
   }
 }

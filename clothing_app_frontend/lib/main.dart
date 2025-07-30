@@ -148,7 +148,6 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           routes: {
             '/': (BuildContext context) => const TestScreen(),
             // '/': (BuildContext context) => const SplashScreenMain(),
-            
             // LoginScreen(),
             // PreferenceScreen(),
 

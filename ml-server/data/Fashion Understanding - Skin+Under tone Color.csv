@@ -1,19 +1,51 @@
-Skintone,Undertone,Color
-Very Fair,Cool,"Soft pastel, icy blue, lavender, emerald, rose pink, cool gray"
-,Warm,"Peach, light coral, warm beige, soft gold"
-,Netural,"Blush pink, soft navy, mint, soft mauve"
-Fair,Cool,"Jewel tones(ruby), ice levender, cool blue, raspberry"
-,Warm,"Warm reds, honey yellow, camel coral"
-,Netural," Light teal, dusty rose, sand, netrual brown"
-Medium,Cool,"Cobalyt blue, plam, forest green, deep pink"
-,Warm,"olive, mustard, coral"
-,Netural,"Turquoise, rust, jade green, mauve"
-Olive,Cool,"Burgundy, deep purple, charcoal, cool teal"
-,Warm,"Bronze, burnt orange, olive green, warm white"
-,Netural,"Earthy tone, clay brown, moss green, mute pink"
-Brown,Cool,"Royal blue, magenta, ice pink, deep green"
-,Warm,"Mustard, maroon, sienna, gold, cinnamon"
-,Netural,"Tan, mocha, beige, copper, warm grey"
-Deep/Dark,Cool," Bright white, electric blue, ruby, icy purple"
-,Warm,"Sunflower yellow, orange, warm red, bronze, rich earth tone"
-,Netural,"Almost all bold  colors, plum, navy, jade, wine and vibrant"
+Skintone,Undertone,Color,,,,,,,,,,
+Very Fair,Cool,"Soft pastel, icy blue, lavender, emerald, rose pink, cool gray",,,,,,,,,,
+,Warm,"Peach, light coral, warm beige, soft gold",,,,,,,,,,
+,Netural,"Blush pink, soft navy, mint, soft mauve",,,,,,,,,,
+Fair,Cool,"Jewel tones(ruby), ice levender, cool blue, raspberry",,,,,,,,,,
+,Warm,"Warm reds, honey yellow, camel coral",,,,,,,,,,
+,Netural," Light teal, dusty rose, sand, netrual brown",,,,,,,,,,
+Medium,Cool,"Cobalyt blue, plam, forest green, deep pink",,,,,,,,,,
+,Warm,"olive, mustard, coral",,,,,,,,,,
+,Netural,"Turquoise, rust, jade green, mauve",,,,,,,,,,
+Olive,Cool,"Burgundy, deep purple, charcoal, cool teal",,,,,,,,,,
+,Warm,"Bronze, burnt orange, olive green, warm white",,,,,,,,,,
+,Netural,"Earthy tone, clay brown, moss green, mute pink",,,,,,,,,,
+Brown,Cool,"Royal blue, magenta, ice pink, deep green",,,,,,,,,,
+,Warm,"Mustard, maroon, sienna, gold, cinnamon",,,,,,,,,,
+,Netural,"Tan, mocha, beige, copper, warm grey",,,,,,,,,,
+Deep/Dark,Cool," Bright white, electric blue, ruby, icy purple",,,,,,,,,,
+,Warm,"Sunflower yellow, orange, warm red, bronze, rich earth tone",,,,,,,,,,
+,Netural,"Almost all bold  colors, plum, navy, jade, wine and vibrant",,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,,,,,,,,,,,,
+,Hexcode,Very Fair,Hexcode,Fair,Hexcode,Medium,Hexcode,Olive,Hexcode,Brown,Hexcode,Deep/Dark
+Cool,#F4C2C2,Soft Pastel Pink,#9B111E,Ruby Red,#0047AB,Cobalt Blue,#800020,Burgundy,#4169E1,Royal Blue,#FFFFFF,Bright White
+,#E6E6FA,Lavender,#E3E4FA,Ice Lavender,#8E4585,Plum,#301934,Deep Purple,#FF00FF,Magenta,#7DF9FF,Electric Blue
+,#AFDBF5,Icy Blue,#6CA0DC,Cool Blue,#228B22,Forest Green,#36454F,Charcoal,#FFDDFF,Ice Pink,#E0115F,Ruby
+,#FF66CC,Rose Pink,#E30B5D,Raspberry,#FF1493,Deep Pink,#008080,Cool Teal,#006400,Deep Green,#B497BD,Icy Purple
+,#50C878,Emerald,#EEDCFA,Frosty Lilac,#730039,Merlot,#191970,Midnight Blue,#873260,Boysenberry,#CC00CC,Deep Magenta
+,#C8A2C8,Lilac,#FFFDD0,Cream,#014D4E,Deep Teal,#5D3A58,Smoky Grape,#8F00FF,Violet,#DA70D6,Orchid
+,#CCCCFF,Periwinkle,,,,,,,,,,
+,#FADADD,Baby Pink,,,,,,,,,,
+,#8C92AC,Cool Gray,,,,,,,,,,
+,#C0C0C0,Silver,,,,,,,,,,
+,,,,,,,,,,,,
+Warm,#FFDAB9,Peach,#C41E3A,Warm Red,#808000,Olive,#CD7F32,Bronze,#FFDB58,Mustard,#FFDA03,Sunflower Yellow
+,#F08080,Light Coral,#FFC30B,Honey Yellow,#FFDB58,Mustard,#CC5500,Burnt Orange,#800000,Maroon,#FFA500,Orange
+,#F5F5DC,Warm Beige,#C19A6B,Camel,#FFBF00,Amber,#556B2F,Olive Green,#A0522D,Sienna,#FF4500,Warm Red
+,#ECD9B0,Soft Gold,#FA8072,Salmon,#8E2800,Paprika,#FDF5E6,Warm White,#FFD700,Gold,#CD7F32,Bronze
+,#FBCEB1,Apricot,#E2725B,Terracotta,#B87333,Copper,#8B5E3C,Spice Brown,#7B3F00,Cinnamon,#704214,Rich Earth Tone
+,#FFF1B5,Butter Yellow,#FFDDA0,Butterscotch,#E1AD01,Turmeric Yellow,#DAA520,Goldenrod,#FF7F50,Spiced Coral,#CB4154,Brick
+,#E07A5F,Light Terracotta,,,,,,,,,,
+,#FFFDD0,Cream,,,,,,,,,,
+,,,,,,,,,,,,
+Netural,#DE5D83,Blush Pink,#90E4C1,Light Teal,#B7410E,Rust,#836953,Earthy Tone,#D2B48C,Tan,#CB4154,Brick
+,#4A536E,Soft Navy,#DCAE96,Dusty Rose,#00A86B,Jade Green,#B66E41,Clay Brown,#3B2F2F,Mocha,#8E4585,Plum
+,#98FF98,Mint,#C2B280,Sand,#E0B0FF,Mauve,#8A9A5B,Moss Green,#F5F5DC,Beige,#000080,Navy
+,#E0B0FF,Soft Mauve,#837060,Mocha,#A9746E,Cocoa,#D98695,Muted Pink,#B87333,Copper,#00A86B,Jade
+,#B38B6D,Taupe,#D3D3D3,Fog Gray,#D2B1A3,Warm Taupe,#A3A847,Dusty Olive,#A9A9A9,Warm Gray,#722F37,Wine
+,#EAC8A4,Dusty Peach,#93E9BE,Seafoam Green,#B66E41,Clay Rose,#837060,Warm Mocha,#FFDDA0,Caramel,#00B3B3,Vibrant Teal
+,#928E85,Stone Gray,,,,,,,,,#950714,Cranberry
+,#A1C6EA,Dusty Blue,,,,,,,,,,
