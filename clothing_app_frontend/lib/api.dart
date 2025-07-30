@@ -1,6 +1,7 @@
 // var webApi = {'domain': 'https://api.iteeha.co'}; //PROD
 // var webApi = {'domain': 'http://10.0.0.213:3001/'}; //Darshan Home wifi 
 var webApi = {'domain': 'http://10.144.120.64:3001/'}; //Darshan College wifi
+// var mlApi = {'domain': 'https://naturally-giving-chow.ngrok-free.app/'}; //ML NGROK
 
 var endPoint = {
   // Authentication
