@@ -1,4 +1,3 @@
-
 import 'dart:convert';
 import '../../http_helper.dart';
 import '../model/user_model.dart';
@@ -250,11 +249,29 @@ class AuthProvider with ChangeNotifier {
         print('- token: ${responseData['token']}');
 
         try {
-          // Use the new structured response
-          final userData = User.jsonToUser(
-            responseData['data'],
-            token: responseData['token'],
-          );
+          User userData;
+
+          // Check if response has the expected 'data' structure
+          if (responseData['data'] != null) {
+            // Use the new structured response
+            userData = User.jsonToUser(
+              responseData['data'],
+              token: responseData['token'],
+            );
+          } else if (responseData['userId'] != null) {
+            // Handle legacy response format with just userId
+            print('Using legacy response format with userId');
+            userData = User(
+              id: responseData['userId'],
+              token: responseData['token'],
+              phoneNumber: null, // Will be populated later if needed
+              email: null,
+              role: 'user',
+              isGuest: false,
+            );
+          } else {
+            throw Exception('No user data or userId found in response');
+          }
 
           await userData.saveToPrefs();
 
