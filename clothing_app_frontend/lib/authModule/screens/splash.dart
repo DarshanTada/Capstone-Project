@@ -68,11 +68,11 @@ class _SplashScreenState extends State<SplashScreenMain>
     await Future.delayed(const Duration(seconds: 2));
 
     if (!mounted) return;
-    // pushAndRemoveUntil(NamedRoute.phoneNumberScreen);
-    pushAndRemoveUntil(
-      NamedRoute.bottomNavBarScreen,
-      arguments: BottomNavArgumnets(),
-    );
+    pushAndRemoveUntil(NamedRoute.phoneNumberScreen);
+    // pushAndRemoveUntil(
+    //   NamedRoute.bottomNavBarScreen,
+    //   arguments: BottomNavArgumnets(),
+    // );
   }
 
   @override
