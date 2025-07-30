@@ -247,7 +247,7 @@ Your Shopping Team`
       // Don't fail the order creation if email fails
     }
 
-    res.status(201).json({
+    res.status(200).json({
       success: true,
       message: "Order created successfully",
       data: populatedOrder
