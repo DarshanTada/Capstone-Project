@@ -21,6 +21,11 @@ const productItemSchema = new mongoose.Schema({
     ref: "Product",
     required: true,
   },
+  variantId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "ProductVariant",
+    required: true,
+  },
   quantity: {
     type: Number,
     required: true,

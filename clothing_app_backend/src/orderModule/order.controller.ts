@@ -3,23 +3,22 @@ import Order, { STATUS, PAYMENTMETHOD } from './order.model';
 import User from '../userModule/user.model';
 import Product from '../productModule/product.model';
 import ProductVariant from '../productModule/productVariant.model';
+import ProductImage from '../productModule/productImage.model';
 import Address from '../addressModule/address.model';
+import Preference from '../userModule/preference.model';
 import mongoose from 'mongoose';
 import { sendMail } from '../utils/sendMail';
 
 export const createOrder = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Debug: Log the received request body
-    console.log("Received request body:", req.body);
-    console.log("Products type:", typeof req.body.products);
-    console.log("Products value:", req.body.products);
-
+   
     let {
       products,
       user,
       address,
       paymentMethod
     } = req.body;
+
 
     // Parse products if it's a JSON string (for form-data)
     if (typeof products === 'string') {
@@ -64,9 +63,18 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
     }
 
     // Check if user exists
-    const userExists = await User.findById(user);
+    const userExists = await User.findById(user).select('-password -token');
     if (!userExists) {
       res.status(404).json({ success: false, message: "User not found" });
+      return;
+    }
+
+    // Check if user has email for order notifications
+    if (!userExists.email) {
+      res.status(400).json({ 
+        success: false, 
+        message: "User must have an email address to place orders" 
+      });
       return;
     }
 
@@ -87,21 +95,21 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
     let totalAmount = 0;
 
     for (const productItem of products) {
-      const { product, quantity, size } = productItem;
+      const { variantId, quantity } = productItem;
       const parsedQuantity = parseInt(quantity);
 
       // Validate product item fields
-      if (!product || !parsedQuantity || !size) {
+      if (!variantId || !parsedQuantity) {
         res.status(400).json({
           success: false,
-          message: "Each product must have: product ID, quantity, and size"
+          message: "Each product must have: variantId and quantity"
         });
         return;
       }
 
-      // Validate product ObjectId
-      if (!mongoose.Types.ObjectId.isValid(product)) {
-        res.status(400).json({ success: false, message: `Invalid product ID: ${product}` });
+      // Validate variantId ObjectId
+      if (!mongoose.Types.ObjectId.isValid(variantId)) {
+        res.status(400).json({ success: false, message: `Invalid variant ID: ${variantId}` });
         return;
       }
 
@@ -111,40 +119,40 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
         return;
       }
 
-      // Check if product exists
-      const productExists = await Product.findById(product);
-      if (!productExists) {
-        res.status(404).json({ success: false, message: `Product not found: ${product}` });
-        return;
-      }
-
-      // Debug: Log product details
-      console.log("Product details:", {
-        id: product,
-        name: (productExists as any).name,
-        price: (productExists as any).price,
-        priceType: typeof (productExists as any).price
-      });
-
-      // Check if product variant with specified size exists and has enough stock
-      const variant = await ProductVariant.findOne({ 
-        productObjectId: product, 
-        size: size.toLowerCase(),
-        available_status: 'in_stock' 
-      });
-
+      // Get variant details first
+      const variant = await ProductVariant.findById(variantId).populate('productObjectId');
+      
       if (!variant) {
-        res.status(400).json({ 
+        res.status(404).json({ 
           success: false, 
-          message: `Product variant with size ${size} is not available or out of stock for ${productExists.name}` 
+          message: `Product variant not found: ${variantId}` 
         });
         return;
       }
 
+      const product = variant.productObjectId;
+      if (!product) {
+        res.status(404).json({ 
+          success: false, 
+          message: `Product not found for variant: ${variantId}` 
+        });
+        return;
+      }
+
+      // Check availability status
+      if (variant.available_status !== 'in_stock') {
+        res.status(400).json({ 
+          success: false, 
+          message: `Product variant is not available or out of stock for ${(product as any).name} (Size: ${variant.size})` 
+        });
+        return;
+      }
+
+      // Check stock quantity
       if (variant.stock_qty && variant.stock_qty < parsedQuantity) {
         res.status(400).json({ 
           success: false, 
-          message: `Insufficient stock for ${productExists.name}. Available: ${variant.stock_qty}, Requested: ${parsedQuantity}` 
+          message: `Insufficient stock for ${(product as any).name}. Available: ${variant.stock_qty}, Requested: ${parsedQuantity}` 
         });
         return;
       }
@@ -152,18 +160,20 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       // Debug: Log variant details
       console.log("Variant details:", {
         variantId: variant._id,
+        productId: (product as any)._id,
+        productName: (product as any).name,
         price: variant.price,
         priceType: typeof variant.price,
         size: variant.size,
         stock: variant.stock_qty
       });
 
-      // Validate variant price (price comes from variant, not product)
+      // Validate variant price
       const variantPrice = parseFloat(variant.price?.toString() || '0');
       if (isNaN(variantPrice) || variantPrice <= 0) {
         res.status(400).json({ 
           success: false, 
-          message: `Invalid variant price for ${(productExists as any).name} (Size: ${size}). Price: ${variant.price}` 
+          message: `Invalid variant price for ${(product as any).name} (Size: ${variant.size}). Price: ${variant.price}` 
         });
         return;
       }
@@ -180,9 +190,10 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
       });
 
       processedProducts.push({
-        product,
+        product: (product as any)._id,
+        variantId: variant._id,
         quantity: parsedQuantity,
-        size: size.toLowerCase(),
+        size: variant.size,
         status: STATUS.PENDING,
         price: itemPrice
       });
@@ -209,20 +220,47 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
     // Populate order details for response
     const populatedOrder = await Order.findById(newOrder._id)
       .populate('products.product', 'name price images')
-      .populate('user', 'name email phone_number')
+      .populate('user', 'email phone_number')
       .populate('address');
+
+    // Get product images for each order item (similar to cart API)
+    const orderWithImages = await Promise.all(
+      (populatedOrder as any).products.map(async (item: any) => {
+        // Get images for this variant using variantId
+        const images = await ProductImage.find({
+          variantObjectid: item.variantId
+        }).sort({ sort_order: 1 });
+
+        // Get the primary image or first image
+        const primaryImage = images.find(img => img.is_primary) || images[0];
+
+        return {
+          ...item.toObject(),
+          image: primaryImage ? {
+            _id: primaryImage._id,
+            image: primaryImage.image,
+            is_primary: primaryImage.is_primary,
+            sort_order: primaryImage.sort_order
+          } : null
+        };
+      })
+    );
 
     // Send order confirmation email
     try {
+      // Get user's name from preference
+      const userPreference = await Preference.findOne({ user: userExists._id });
+      const userName = userPreference?.username || userExists.email?.split('@')[0] || 'Customer';
+
       const productList = processedProducts.map((item: any, index) => {
         const product = (populatedOrder as any).products[index].product;
         return `- ${product.name} (Size: ${item.size}, Quantity: ${item.quantity}) - $${item.price.toFixed(2)}`;
       }).join('\n');
 
       await sendMail({
-        to: userExists.email,
+        to: userExists.email!,
         subject: `Order Confirmation - Order #${newOrder._id}`,
-        text: `Dear ${userExists.name || 'Customer'},
+        text: `Dear ${userName},
 
 Your order has been successfully placed!
 
@@ -250,7 +288,10 @@ Your Shopping Team`
     res.status(200).json({
       success: true,
       message: "Order created successfully",
-      data: populatedOrder
+      data: {
+        ...populatedOrder?.toObject(),
+        products: orderWithImages
+      }
     });
 
   } catch (error) {
@@ -266,12 +307,12 @@ Your Shopping Team`
 // Update Individual Product Status in Order
 export const updateProductStatus = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { orderId, productId, status, reason } = req.body;
+    const { orderId, productId, variantId, status, reason } = req.body;
 
-    if (!orderId || !productId || !status) {
+    if (!orderId || !variantId || !status) {
       res.status(400).json({
         success: false,
-        message: "Order ID, Product ID, and status are required"
+        message: "Order ID, Variant ID, and status are required"
       });
       return;
     }
@@ -282,8 +323,8 @@ export const updateProductStatus = async (req: Request, res: Response): Promise<
       return;
     }
 
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      res.status(400).json({ success: false, message: "Invalid product ID" });
+    if (!mongoose.Types.ObjectId.isValid(variantId)) {
+      res.status(400).json({ success: false, message: "Invalid variant ID" });
       return;
     }
 
@@ -297,7 +338,7 @@ export const updateProductStatus = async (req: Request, res: Response): Promise<
     }
 
     const order = await Order.findById(orderId)
-      .populate("user", "name email phone_number")
+      .populate("user", "email phone_number")
       .populate("products.product", "name");
 
     if (!order) {
@@ -305,15 +346,15 @@ export const updateProductStatus = async (req: Request, res: Response): Promise<
       return;
     }
 
-    // Find the specific product in the order
+    // Find the specific product in the order using variantId
     const productIndex = (order as any).products.findIndex(
-      (item: any) => item.product._id.toString() === productId
+      (item: any) => item.variantId && item.variantId.toString() === variantId
     );
 
     if (productIndex === -1) {
       res.status(404).json({
         success: false,
-        message: "Product not found in this order"
+        message: "Product variant not found in this order"
       });
       return;
     }
@@ -325,27 +366,69 @@ export const updateProductStatus = async (req: Request, res: Response): Promise<
 
     await order.save();
 
+    // Get order with images for response
+    const orderWithImages = await Order.findById(orderId)
+      .populate('products.product', 'name images price')
+      .populate('user', 'email phone_number')
+      .populate('address');
+
+    // Add images to order's products (similar to cart API)
+    const productsWithImages = await Promise.all(
+      (orderWithImages as any).products.map(async (item: any) => {
+        // Get images for this variant using variantId
+        const images = await ProductImage.find({
+          variantObjectid: item.variantId
+        }).sort({ sort_order: 1 });
+
+        // Get the primary image or first image
+        const primaryImage = images.find(img => img.is_primary) || images[0];
+
+        return {
+          ...item.toObject(),
+          image: primaryImage ? {
+            _id: primaryImage._id,
+            image: primaryImage.image,
+            is_primary: primaryImage.is_primary,
+            sort_order: primaryImage.sort_order
+          } : null
+        };
+      })
+    );
+
+    const orderResponse = {
+      ...(orderWithImages as any).toObject(),
+      products: productsWithImages
+    };
+
     // Send status update email
     try {
       const user = (order as any).user;
       const product = (order as any).products[productIndex].product;
+      const productItem = (order as any).products[productIndex];
       
-      await sendMail({
-        to: user.email,
-        subject: `Order Status Update - Order #${(order as any)._id}`,
-        text: `Dear ${user.name || 'Customer'},
+      // Only send email if user has email address
+      if (user.email) {
+        // Get user's name from preference
+        const userPreference = await Preference.findOne({ user: user._id });
+        const userName = userPreference?.username || user.email?.split('@')[0] || 'Customer';
+        
+        await sendMail({
+          to: user.email,
+          subject: `Order Status Update - Order #${(order as any)._id}`,
+          text: `Dear ${userName},
 
 Your order status has been updated!
 
 Order ID: ${(order as any)._id}
-Product: ${product.name}
+Product: ${product.name} (Size: ${productItem.size})
 Previous Status: ${oldStatus}
 New Status: ${status}
 ${reason ? `Reason: ${reason}` : ''}
 
 Best regards,
 Your Shopping Team`
-      });
+        });
+      }
     } catch (emailError) {
       console.error('Failed to send status update email:', emailError);
     }
@@ -353,7 +436,7 @@ Your Shopping Team`
     res.status(200).json({
       success: true,
       message: `Product status updated from ${oldStatus} to ${status}`,
-      data: order
+      data: orderResponse
     });
 
   } catch (error) {
@@ -369,12 +452,12 @@ Your Shopping Team`
 // Cancel Individual Product in Order
 export const cancelProduct = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { orderId, productId, cancelReason } = req.body;
+    const { orderId, variantId, cancelReason } = req.body;
 
-    if (!orderId || !productId) {
+    if (!orderId || !variantId) {
       res.status(400).json({
         success: false,
-        message: "Order ID and Product ID are required"
+        message: "Order ID and Variant ID are required"
       });
       return;
     }
@@ -385,13 +468,13 @@ export const cancelProduct = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      res.status(400).json({ success: false, message: "Invalid product ID" });
+    if (!mongoose.Types.ObjectId.isValid(variantId)) {
+      res.status(400).json({ success: false, message: "Invalid variant ID" });
       return;
     }
 
     const order = await Order.findById(orderId)
-      .populate("user", "name email phone_number")
+      .populate("user", "email phone_number")
       .populate("products.product", "name");
 
     if (!order) {
@@ -399,15 +482,15 @@ export const cancelProduct = async (req: Request, res: Response): Promise<void> 
       return;
     }
 
-    // Find the specific product in the order
+    // Find the specific product in the order using variantId
     const productIndex = (order as any).products.findIndex(
-      (item: any) => item.product._id.toString() === productId
+      (item: any) => item.variantId && item.variantId.toString() === variantId
     );
 
     if (productIndex === -1) {
       res.status(404).json({
         success: false,
-        message: "Product not found in this order"
+        message: "Product variant not found in this order"
       });
       return;
     }
@@ -436,11 +519,12 @@ export const cancelProduct = async (req: Request, res: Response): Promise<void> 
     productItem.isCancelled = true;
     productItem.cancelReason = cancelReason || "Cancelled by user";
 
-    // Restore stock
-    const variant = await ProductVariant.findOne({
-      productObjectId: productId,
-      size: productItem.size,
-    });
+    // Restore stock using variantId
+    let variant = null;
+    
+    if (productItem.variantId) {
+      variant = await ProductVariant.findById(productItem.variantId);
+    }
 
     if (variant) {
       if (variant.stock_qty !== undefined) {
@@ -461,20 +545,60 @@ export const cancelProduct = async (req: Request, res: Response): Promise<void> 
 
     await order.save();
 
+    // Get order with images for response
+    const orderWithImages = await Order.findById(orderId)
+      .populate('products.product', 'name images price')
+      .populate('user', 'email phone_number')
+      .populate('address');
+
+    // Add images to order's products (similar to cart API)
+    const productsWithImages = await Promise.all(
+      (orderWithImages as any).products.map(async (item: any) => {
+        // Get images for this variant using variantId
+        const images = await ProductImage.find({
+          variantObjectid: item.variantId
+        }).sort({ sort_order: 1 });
+
+        // Get the primary image or first image
+        const primaryImage = images.find(img => img.is_primary) || images[0];
+
+        return {
+          ...item.toObject(),
+          image: primaryImage ? {
+            _id: primaryImage._id,
+            image: primaryImage.image,
+            is_primary: primaryImage.is_primary,
+            sort_order: primaryImage.sort_order
+          } : null
+        };
+      })
+    );
+
+    const orderResponse = {
+      ...(orderWithImages as any).toObject(),
+      products: productsWithImages
+    };
+
     // Send cancellation email
     try {
       const user = (order as any).user;
       const product = productItem.product;
       
-      await sendMail({
-        to: user.email,
-        subject: `Product Cancelled - Order #${(order as any)._id}`,
-        text: `Dear ${user.name || 'Customer'},
+      // Only send email if user has email address
+      if (user.email) {
+        // Get user's name from preference
+        const userPreference = await Preference.findOne({ user: user._id });
+        const userName = userPreference?.username || user.email?.split('@')[0] || 'Customer';
+        
+        await sendMail({
+          to: user.email,
+          subject: `Product Cancelled - Order #${(order as any)._id}`,
+          text: `Dear ${userName},
 
 A product in your order has been cancelled.
 
 Order ID: ${(order as any)._id}
-Cancelled Product: ${product.name}
+Cancelled Product: ${product.name} (Size: ${productItem.size})
 Reason: ${cancelReason || "No reason provided"}
 
 Refund Amount: $${productItem.price.toFixed(2)}
@@ -484,7 +608,8 @@ If you didn't request this cancellation, please contact our support team.
 
 Best regards,
 Your Shopping Team`
-      });
+        });
+      }
     } catch (emailError) {
       console.error('Failed to send cancellation email:', emailError);
     }
@@ -492,7 +617,7 @@ Your Shopping Team`
     res.status(200).json({
       success: true,
       message: "Product cancelled successfully",
-      data: order
+      data: orderResponse
     });
 
   } catch (error) {
@@ -531,15 +656,47 @@ export const getAllOrders = async (req: Request, res: Response): Promise<void> =
     // Get orders with pagination
     const orders = await Order.find(filterCondition)
       .populate('products.product', 'name images price')
-      .populate('user', 'name email phone_number')
+      .populate('user', 'email phone_number')
       .populate('address')
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(parsedLimit);
 
+    // Add images to each order's products (similar to cart API)
+    const ordersWithImages = await Promise.all(
+      orders.map(async (order: any) => {
+        const productsWithImages = await Promise.all(
+          order.products.map(async (item: any) => {
+            // Get images for this variant using variantId
+            const images = await ProductImage.find({
+              variantObjectid: item.variantId
+            }).sort({ sort_order: 1 });
+
+            // Get the primary image or first image
+            const primaryImage = images.find(img => img.is_primary) || images[0];
+
+            return {
+              ...item.toObject(),
+              image: primaryImage ? {
+                _id: primaryImage._id,
+                image: primaryImage.image,
+                is_primary: primaryImage.is_primary,
+                sort_order: primaryImage.sort_order
+              } : null
+            };
+          })
+        );
+
+        return {
+          ...order.toObject(),
+          products: productsWithImages
+        };
+      })
+    );
+
     res.status(200).json({
       success: true,
-      data: orders,
+      data: ordersWithImages,
       pagination: {
         total,
         currentPage: parsedPage,
@@ -594,9 +751,41 @@ export const getOrdersByUserId = async (req: Request, res: Response): Promise<vo
       .skip(skip)
       .limit(parsedLimit);
 
+    // Add images to each order's products (similar to cart API)
+    const ordersWithImages = await Promise.all(
+      orders.map(async (order: any) => {
+        const productsWithImages = await Promise.all(
+          order.products.map(async (item: any) => {
+            // Get images for this variant using variantId
+            const images = await ProductImage.find({
+              variantObjectid: item.variantId
+            }).sort({ sort_order: 1 });
+
+            // Get the primary image or first image
+            const primaryImage = images.find(img => img.is_primary) || images[0];
+
+            return {
+              ...item.toObject(),
+              image: primaryImage ? {
+                _id: primaryImage._id,
+                image: primaryImage.image,
+                is_primary: primaryImage.is_primary,
+                sort_order: primaryImage.sort_order
+              } : null
+            };
+          })
+        );
+
+        return {
+          ...order.toObject(),
+          products: productsWithImages
+        };
+      })
+    );
+
     res.status(200).json({
       success: true,
-      data: orders,
+      data: ordersWithImages,
       pagination: {
         total,
         currentPage: parsedPage,
@@ -632,7 +821,7 @@ export const getOrderById = async (req: Request, res: Response): Promise<void> =
     // Get order with full details
     const order = await Order.findById(orderId)
       .populate('products.product', 'name price images description')
-      .populate('user', 'name email phone_number gender age')
+      .populate('user', 'email phone_number')
       .populate('address');
 
     if (!order) {
@@ -640,9 +829,37 @@ export const getOrderById = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
+    // Add images to order's products (similar to cart API)
+    const productsWithImages = await Promise.all(
+      (order as any).products.map(async (item: any) => {
+        // Get images for this variant using variantId
+        const images = await ProductImage.find({
+          variantObjectid: item.variantId
+        }).sort({ sort_order: 1 });
+
+        // Get the primary image or first image
+        const primaryImage = images.find(img => img.is_primary) || images[0];
+
+        return {
+          ...item.toObject(),
+          image: primaryImage ? {
+            _id: primaryImage._id,
+            image: primaryImage.image,
+            is_primary: primaryImage.is_primary,
+            sort_order: primaryImage.sort_order
+          } : null
+        };
+      })
+    );
+
+    const orderWithImages = {
+      ...(order as any).toObject(),
+      products: productsWithImages
+    };
+
     res.status(200).json({
       success: true,
-      data: order
+      data: orderWithImages
     });
 
   } catch (error) {

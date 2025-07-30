@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const SIZE = {
+export const SIZE = {
   ES: "ex",
   S: "s",
   M: "m",
