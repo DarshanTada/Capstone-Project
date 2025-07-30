@@ -6,7 +6,7 @@ import '../../common_widgets/circular_loader.dart';
 import '../../common_functions.dart';
 
 class AddAddressScreen extends StatefulWidget {
-  const AddAddressScreen({Key? key}) : super(key: key);
+  const AddAddressScreen({super.key});
 
   @override
   State<AddAddressScreen> createState() => _AddAddressScreenState();

@@ -11,14 +11,14 @@ class CustomDialog extends StatelessWidget {
   final Function noFunction;
 
   const CustomDialog({
-    Key? key,
+    super.key,
     required this.subTitle,
     required this.noText,
     required this.yesText,
     required this.noFunction,
     required this.yesFunction,
     required this.title,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

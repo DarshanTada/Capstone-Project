@@ -20,7 +20,7 @@ import { cilLockLocked, cilUser } from '@coreui/icons'
 import { useDispatch } from 'react-redux'
 
 const Login = () => {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [isProcessing, setIsProcessing] = useState(false)
@@ -33,13 +33,13 @@ const Login = () => {
     setError('')
 
     // Validate input fields
-    if (username.trim() === '') {
-      setError('Username is required')
+    if (email.trim() === '') {
+      setError('Email is required')
       return
     }
 
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
-    if (!emailPattern.test(username)) {
+    if (!emailPattern.test(email)) {
       setError('Please enter a valid email address')
       return
     }
@@ -60,23 +60,23 @@ const Login = () => {
       const response = await fetch('/api/user/loginAdmin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: username, password }),
+        body: JSON.stringify({ email, password }),
       })
 
       const data = await response.json()
 
       if (response.ok) {
-        localStorage.setItem('token', data.accessToken)
+        localStorage.setItem('token', data.token || data.accessToken)
         localStorage.setItem('user', JSON.stringify(data.user))
         localStorage.setItem('role', data.user.role)
 
         dispatch({ type: 'LOGIN_SUCCESS', payload: data.user }) // optional
-        navigate('/dashboard') 
+        navigate('/dashboard')
       } else {
         if (data.message && data.message.toLowerCase().includes('not found')) {
           setError('User is not registered. Please sign up first.')
         } else {
-          setError(data.message || 'Invalid username or password')
+          setError(data.message || 'Invalid email or password')
         }
       }
     } catch (error) {
@@ -104,10 +104,11 @@ const Login = () => {
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
                       <CFormInput
+                        type="email"
                         placeholder="Email"
-                        autoComplete="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                       />
                     </CInputGroup>
                     <CInputGroup className="mb-4">

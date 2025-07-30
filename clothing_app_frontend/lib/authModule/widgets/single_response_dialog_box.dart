@@ -15,12 +15,12 @@ class SingleResponseDialogBox extends StatefulWidget {
   final String btnText;
 
   SingleResponseDialogBox({
-    Key? key,
+    super.key,
     required this.title,
     required this.description,
     required this.onPressed,
     required this.btnText,
-  }) : super(key: key);
+  });
 
   @override
   State<SingleResponseDialogBox> createState() =>

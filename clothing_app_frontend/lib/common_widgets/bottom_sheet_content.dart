@@ -15,8 +15,8 @@ class BottomSheetContent extends StatelessWidget {
     required this.title,
     required this.title2,
     required this.func,
-    Key? key,
-  }) : super(key: key);
+    super.key,
+  });
 
   @override
   Widget build(BuildContext context) {

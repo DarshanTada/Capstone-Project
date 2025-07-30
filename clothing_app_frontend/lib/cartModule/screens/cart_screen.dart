@@ -7,7 +7,7 @@ import '../../common_functions.dart';
 import '../../checkoutModule/screens/checkout_screen.dart';
 
 class MyCartScreen extends StatefulWidget {
-  const MyCartScreen({Key? key}) : super(key: key);
+  const MyCartScreen({super.key});
 
   @override
   State<MyCartScreen> createState() => _MyCartScreenState();
@@ -93,7 +93,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
               child: Column(
                 children: [
                   SizedBox(height: dW * 0.05),
-                  ...cartItems.map((item) => cartItemCard(item)).toList(),
+                  ...cartItems.map((item) => cartItemCard(item)),
                   SizedBox(height: dW * 0.05),
                   discountBox(),
                   SizedBox(height: dW * 0.04),

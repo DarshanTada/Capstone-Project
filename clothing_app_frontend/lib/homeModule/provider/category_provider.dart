@@ -40,7 +40,7 @@ class CategoryProvider with ChangeNotifier {
       }
 
       return response;
-    } catch (error, stackTrace) {
+    } catch (error) {
       return {'success': false, 'message': 'failedGetCategories'};
     }
   }

@@ -6,6 +6,8 @@ import '../../authModule/screens/capture_face_screen.dart';
 void main() => runApp(PreferenceScreenApp());
 
 class PreferenceScreenApp extends StatelessWidget {
+  const PreferenceScreenApp({super.key});
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
@@ -16,6 +18,8 @@ class PreferenceScreenApp extends StatelessWidget {
 }
 
 class PreferenceScreen extends StatefulWidget {
+  const PreferenceScreen({super.key});
+
   @override
   State<PreferenceScreen> createState() => _PreferenceScreenState();
 }
@@ -1014,7 +1018,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
             SizedBox(height: dH * 0.03),
             
             // Action Button
-            Container(
+            SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
                 onPressed: () {
@@ -1336,7 +1340,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
             ),
           ],
         ),
-        content: Container(
+        content: SizedBox(
           width: double.maxFinite,
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.6, // Limit height to 60% of screen
@@ -1676,7 +1680,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                   ),
                 ],
               ),
-              content: Container(
+              content: SizedBox(
                 width: double.maxFinite,
                 child: Column(
                   mainAxisSize: MainAxisSize.min,

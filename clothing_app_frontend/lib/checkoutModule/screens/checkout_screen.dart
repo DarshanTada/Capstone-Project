@@ -10,7 +10,7 @@ import '../../addressModule/model/address_model.dart';
 import './order_placed_screen.dart';
 
 class CheckoutScreen extends StatefulWidget {
-  const CheckoutScreen({Key? key}) : super(key: key);
+  const CheckoutScreen({super.key});
 
   @override
   State<CheckoutScreen> createState() => _CheckoutScreenState();

@@ -7,11 +7,11 @@ class SimilarProductCard extends StatefulWidget {
   final VoidCallback? onTap;
 
   const SimilarProductCard({
-    Key? key,
+    super.key,
     required this.imagePath,
     required this.productName,
     this.onTap,
-  }) : super(key: key);
+  });
 
   @override
   State<SimilarProductCard> createState() => _SimilarProductCardState();

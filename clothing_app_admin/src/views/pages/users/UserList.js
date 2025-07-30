@@ -5,6 +5,7 @@ import { CRow, CCol, CCard, CCardHeader, CCardBody, CProgress, CTable, CTableHea
 import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import BulkPromotionalEmailForm from './BulkPromotionalEmailForm'
 
 import avatar1 from 'src/assets/images/avatars/1.jpg'
 import avatar2 from 'src/assets/images/avatars/2.jpg'
@@ -16,7 +17,10 @@ import avatar6 from 'src/assets/images/avatars/6.jpg'
 const avatars = [avatar1, avatar2, avatar3, avatar4, avatar5, avatar6]
 
 const UserList = () => {
+  // ...existing code...
   const [users, setUsers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [apiError, setApiError] = useState('')
   const [usersPerPage, setUsersPerPage] = useState(5)
   const [currentPage, setCurrentPage] = useState(1)
   const [search, setSearch] = useState('')
@@ -25,22 +29,43 @@ const UserList = () => {
   useEffect(() => {
     axios.post('http://localhost:3001/api/user/users')
       .then(res => {
-        if (res.data.success) {
-          setUsers(res.data.data)
+        console.log('UserList API response:', res.data);
+        if (res.data.success && Array.isArray(res.data.data)) {
+          // If each item is an object with 'user' and 'preference', flatten for table
+          const formattedUsers = res.data.data.map(item => ({
+            ...item.user,
+            preference: item.preference || {},
+            relationProfile: item.relationProfile || [],
+          }));
+          console.log('Formatted users:', formattedUsers);
+          setUsers(formattedUsers);
+          setApiError('')
+        } else {
+          setApiError(res.data.message || 'Failed to fetch users')
+          setUsers([])
         }
       })
       .catch(err => {
-        console.error('Failed to fetch users:', err)
+        console.error('UserList API error:', err);
+        setApiError('Failed to fetch users: ' + (err?.message || err))
+        setUsers([])
       })
+      .finally(() => setLoading(false))
   }, [])
 
   // Search filter
   const filteredUsers = users.filter(
-    (user) =>
-      (user.name && user.name.toLowerCase().includes(search.toLowerCase())) ||
-      (user.phone_number && user.phone_number.toLowerCase().includes(search.toLowerCase())) ||
-      (user.email && user.email.toLowerCase().includes(search.toLowerCase()))
-  )
+    (user) => {
+      const name = user.username || user.name || '';
+      const phone = user.phone_number || '';
+      const email = user.email || '';
+      return (
+        name.toLowerCase().includes(search.toLowerCase()) ||
+        phone.toLowerCase().includes(search.toLowerCase()) ||
+        email.toLowerCase().includes(search.toLowerCase())
+      );
+    }
+  );
 
   const totalPages = Math.ceil(filteredUsers.length / usersPerPage)
 
@@ -76,8 +101,10 @@ const UserList = () => {
   const pageOptions = [2, 3, 5, 10, 15, 20, 25, 50].filter(num => num < users.length)
   if (users.length > 0) pageOptions.push(users.length)
 
+
   return (
     <div>
+      {/* ...existing user table and pagination code... */}
       <CRow>
         <CCol xs>
           <CCard className="mb-4">
@@ -118,44 +145,72 @@ const UserList = () => {
                     <CTableHeaderCell className="bg-body-tertiary">Name</CTableHeaderCell>
                     <CTableHeaderCell className="bg-body-tertiary">Phone Number</CTableHeaderCell>
                     <CTableHeaderCell className="bg-body-tertiary">Email</CTableHeaderCell>
+                    <CTableHeaderCell className="bg-body-tertiary">Role</CTableHeaderCell>
+                    <CTableHeaderCell className="bg-body-tertiary">Relation</CTableHeaderCell>
                     <CTableHeaderCell className="bg-body-tertiary text-center">
                       Actions
                     </CTableHeaderCell>
                   </CTableRow>
                 </CTableHead>
                 <CTableBody>
-                  {paginatedUsers.map((user, index) => (
-                    <CTableRow
-                      key={user._id || index}
-                      style={{ cursor: 'pointer' }}
-                      onClick={(e) => {
-                        if (e.target.closest('.delete-icon')) return
-                        navigate(`/users/${user._id}`)
-                      }}
-                    >
-                      <CTableDataCell className="text-center">
-                        <CAvatar size="md" src={avatars[index % avatars.length]} />
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div>{user.name || 'N/A'}</div>
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div>{user.phone_number || 'N/A'}</div>
-                      </CTableDataCell>
-                      <CTableDataCell>
-                        <div>{user.email || 'N/A'}</div>
-                      </CTableDataCell>
-                      <CTableDataCell className="text-center">
-                        <CIcon
-                          icon={cilTrash}
-                          className="text-danger delete-icon"
-                          style={{ cursor: 'pointer' }}
-                          title="Delete"
-                          onClick={() => handleDelete(index)}
-                        />
+                  {loading ? (
+                    <CTableRow>
+                      <CTableDataCell colSpan={7} className="text-center">
+                        Loading users...
                       </CTableDataCell>
                     </CTableRow>
-                  ))}
+                  ) : apiError ? (
+                    <CTableRow>
+                      <CTableDataCell colSpan={7} className="text-danger text-center">
+                        {apiError}
+                      </CTableDataCell>
+                    </CTableRow>
+                  ) : paginatedUsers.length === 0 ? (
+                    <CTableRow>
+                      <CTableDataCell colSpan={7} className="text-center">
+                        No users found.
+                      </CTableDataCell>
+                    </CTableRow>
+                  ) : (
+                    paginatedUsers.map((user, index) => (
+                      <CTableRow
+                        key={user._id || index}
+                        style={{ cursor: 'pointer' }}
+                        onClick={(e) => {
+                          if (e.target.closest('.delete-icon')) return
+                          navigate(`/users/${user._id}`)
+                        }}
+                      >
+                        <CTableDataCell className="text-center">
+                          <CAvatar size="md" src={avatars[index % avatars.length]} />
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <div>{user.username || user.name || user.preference?.username || 'N/A'}</div>
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <div>{user.phone_number || 'N/A'}</div>
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <div>{user.email || 'N/A'}</div>
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <div>{user.role || 'user'}</div>
+                        </CTableDataCell>
+                        <CTableDataCell>
+                          <div>{user.preference?.body_type || '-'}</div>
+                        </CTableDataCell>
+                        <CTableDataCell className="text-center">
+                          <CIcon
+                            icon={cilTrash}
+                            className="text-danger delete-icon"
+                            style={{ cursor: 'pointer' }}
+                            title="Delete"
+                            onClick={() => handleDelete(index)}
+                          />
+                        </CTableDataCell>
+                      </CTableRow>
+                    ))
+                  )}
                 </CTableBody>
               </CTable>
               <CPagination className="justify-content-center my-3" aria-label="Page navigation example">

@@ -442,7 +442,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
             SizedBox(height: dH * 0.025),
             // Horizontal Profile Tiles
-            Container(
+            SizedBox(
               height: dH * 0.12,
               child: ListView(
                 scrollDirection: Axis.horizontal,

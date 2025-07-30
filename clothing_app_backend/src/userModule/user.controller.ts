@@ -1,4 +1,81 @@
+// Send individual promotional email to a user
+import nodemailer from 'nodemailer';
 import { Request, Response } from 'express';
+
+export const sendPromotionalEmailToUser = async (req: Request, res: Response): Promise<void> => {
+  const { to, subject, message } = req.body;
+  if (!to || !subject || !message) {
+    res.status(400).json({ success: false, message: 'Missing required fields.' });
+    return;
+  }
+  try {
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+    await transporter.sendMail({
+      from: process.env.EMAIL_USER,
+      to,
+      subject,
+      html: message,
+    });
+    res.json({ success: true, message: 'Email sent successfully!' });
+  } catch (err) {
+    res.status(500).json({ success: false, message: 'Failed to send email.', error: err });
+  }
+};
+
+export const sendBulkEmailToUsers = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { emails, subject, message } = req.body;
+    if (!Array.isArray(emails) || emails.length === 0) {
+      res.status(400).json({ success: false, message: 'Emails array is required.' });
+      return;
+    }
+    if (!subject || !message) {
+      res.status(400).json({ success: false, message: 'Subject and message are required.' });
+      return;
+    }
+
+    // Get all users with email address in the provided list
+    const users = await User.find({ email: { $in: emails } }).select('email').lean();
+    const validEmails = users.map(u => u.email).filter(Boolean);
+    if (validEmails.length === 0) {
+      res.status(404).json({ success: false, message: 'No valid users found for provided emails.' });
+      return;
+    }
+
+    // Setup nodemailer transporter (use your SMTP config)
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS,
+      },
+    });
+
+    // Send email to each user
+    const sendPromises = validEmails
+      .filter((email): email is string => typeof email === 'string' && !!email)
+      .map(email =>
+        transporter.sendMail({
+          from: process.env.EMAIL_USER,
+          to: email,
+          subject,
+          text: message,
+        })
+      );
+    await Promise.all(sendPromises);
+
+    res.status(200).json({ success: true, message: `Email sent to ${validEmails.length} users.` });
+  } catch (error: any) {
+    console.error('Bulk Email Error:', error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
 import User from './user.model';
 import Preference from './preference.model';
 import RelationProfile from './relationProfile.model';
@@ -247,9 +324,9 @@ export const registerAdmin = [
       // ✅ Check if email already exists (manual validation)
       const existingUser = await User.findOne({ email: normalizedEmail });
       if (existingUser) {
-        res.status(409).json({ 
-          success: false, 
-          message: `Email '${normalizedEmail}' is already registered. Please use a different email.` 
+        res.status(409).json({
+          success: false,
+          message: `Email '${normalizedEmail}' is already registered. Please use a different email.`
         });
         return;
       }
@@ -309,26 +386,26 @@ export const loginAdmin = [
   async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password } = req.body
-      
+
       if (!email || !password) {
         res.status(400).json({ message: 'Email and password are required.' });
         return;
       }
-      
+
       // Normalize email for lookup
       const normalizedEmail = email.trim().toLowerCase();
-      
+
       const user = await User.findOne({ email: normalizedEmail })
       if (!user) {
         res.status(401).json({ message: 'User not found. Please register first.' });
         return;
       }
-      
+
       if (!user.password) {
         res.status(401).json({ message: 'No password set for this user.' });
         return;
       }
-      
+
       const isMatch = await bcrypt.compare(password, user.password)
       if (!isMatch) {
         res.status(401).json({ message: 'Invalid password.' });
