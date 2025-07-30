@@ -83,15 +83,24 @@ export const createProduct = async (req: Request, res: Response) => {
         const file = files?.[key]?.[0];
         if (!file) break;
 
+        // Get image metadata from form data
+        const isPrimaryKey = `variant_${i}_image_${imageIndex}_is_primary`;
+        const sortOrderKey = `variant_${i}_image_${imageIndex}_sort_order`;
+        
+        const isPrimary = req.body[isPrimaryKey] === 'true' || req.body[isPrimaryKey] === true;
+        const sortOrder = parseInt(req.body[sortOrderKey]) || imageIndex + 1;
+
         // Convert buffer to base64 string
         const base64String = file.buffer.toString("base64");
         await ProductImage.create({
           productObjectId: newProduct._id,
-          productVariantObjectId: savedVariant._id,
+          variantObjectid: savedVariant._id,
           image: {
             base64: base64String,
             contentType: file.mimetype,
           },
+          is_primary: isPrimary,
+          sort_order: sortOrder
         });
 
         imageIndex++;
@@ -266,11 +275,11 @@ export const getAllProducts = async (req: Request, res: Response): Promise<void>
 
     const total = await Product.countDocuments();
     const products = await Product.find()
-      .populate('category_id')
-      .populate('subcategory_id')
-      .populate('care_instruction_objectId')
-      .populate('season_objectId')
-      .populate('festival_objectId')
+      // .populate('category_id')
+      // .populate('subcategory_id')
+      // .populate('care_instruction_objectId')
+      // .populate('season_objectId')
+      // .populate('festival_objectId')
       .skip(skip)
       .limit(limit)
       .lean();

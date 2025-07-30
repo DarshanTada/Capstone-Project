@@ -17,6 +17,7 @@ import { ContactUsRouter } from './contactUs/contactUs.routes';
 import { HomeRouter } from './homeModule/home.routes';
 import { SizeChartRouter } from './sizeChart/sizechart.routes';
 import { OrderRouter } from './orderModule/order.routes';
+import { CartRouter } from './cartModel/cart.routes';
 
 const app = express();
 
@@ -36,6 +37,7 @@ app.use('/contactUs', ContactUsRouter);
 app.use('/home', HomeRouter);
 app.use('/sizechart', SizeChartRouter);
 app.use('/order', OrderRouter);
+app.use('/cart', CartRouter);
 
 
 export default app;
