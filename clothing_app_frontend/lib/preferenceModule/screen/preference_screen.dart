@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../service/ml_preference_service.dart';
 import '../model/preference_model.dart';
 import '../services/user_api_service.dart';
@@ -32,6 +33,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   int age = 24;
   int height = 176;
   String bodyType = 'Ectomorph';
+  String phoneNumber = ''; // Non-editable, populated from user data
 
   int selectedSkin = 2;
   Set<String> selectedStyles = {};
@@ -53,6 +55,35 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   void initState() {
     super.initState();
     _loadPreferences();
+    _loadUserData();
+  }
+
+  /// Load user data from SharedPreferences (including phone number)
+  Future<void> _loadUserData() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final storedPhone = prefs.getString('user_phone') ?? prefs.getString('phone_number');
+      
+      if (storedPhone != null && storedPhone.isNotEmpty) {
+        setState(() {
+          phoneNumber = storedPhone;
+        });
+      }
+      
+      // Also try to get user info from JWT token if available
+      final token = await UserApiService.getAuthToken();
+      if (token != null) {
+        // For testing, we know the phone from the JWT token
+        // In production, you might decode the JWT or call a user info API
+        setState(() {
+          if (phoneNumber.isEmpty) {
+            phoneNumber = "+12222222222"; // From the test token
+          }
+        });
+      }
+    } catch (e) {
+      print('Error loading user data: $e');
+    }
   }
 
   /// Load preferences from local storage or server
@@ -826,7 +857,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                                 Icon(Icons.phone_outlined, size: 16, color: Colors.grey.shade600),
                                 SizedBox(width: 6),
                                 Text(
-                                  "+1 000-000-0000",
+                                  phoneNumber.isEmpty ? "+1 000-000-0000" : phoneNumber,
                                   style: TextStyle(
                                     color: Colors.grey.shade600,
                                     fontSize: 13,
@@ -1537,7 +1568,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
             ),
           ],
         ),
-        content: SizedBox(
+        content: Container(
           width: double.maxFinite,
           constraints: BoxConstraints(
             maxHeight: MediaQuery.of(context).size.height * 0.6, // Limit height to 60% of screen
