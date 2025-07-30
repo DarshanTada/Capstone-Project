@@ -1,98 +1,110 @@
-import React, { useEffect, useState } from 'react'
-import { CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CPagination, CPaginationItem, CButton, CFormInput } from '@coreui/react'
-import { useNavigate } from 'react-router-dom'
-import axios from 'axios'
+import React, { useEffect, useState } from 'react';
+import { CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CPagination, CPaginationItem, CButton, CFormInput } from '@coreui/react';
+import { useNavigate } from 'react-router-dom';
 
 const OrderList = () => {
+  // ...existing state and logic...
+  const [orders, setOrders] = useState([]);
+  const [search, setSearch] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [ordersPerPage, setOrdersPerPage] = useState(10);
   const [apiError, setApiError] = useState('');
-  // Update order status handler
-  // Update product item status handler
-  const handleProductStatusChange = async (orderId, variantId, newStatus) => {
-    try {
-      const res = await axios.put('http://localhost:3001/api/order/updateProductStatus', {
-        orderId,
-        variantId,
-        status: newStatus
-      });
-      if (res.data.success) {
-        setOrders(prevOrders => prevOrders.map(order => {
-          if (order._id !== orderId) return order;
-          return {
-            ...order,
-            products: order.products.map(product =>
-              product.variantId === variantId ? { ...product, status: newStatus } : product
-            )
-          };
-        }));
-      } else {
-        alert(res.data.message || 'Failed to update product status');
-      }
-    } catch (err) {
-      alert('Failed to update product status');
-    }
-  }
-  const [orders, setOrders] = useState([])
-  const [search, setSearch] = useState('')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [ordersPerPage, setOrdersPerPage] = useState(10)
-  const navigate = useNavigate()
-  // Example: get user role from localStorage, context, or props
   const userRole = localStorage.getItem('userRole') || 'user';
+  const loggedInUserId = localStorage.getItem('userId');
 
   useEffect(() => {
-    axios.post('http://localhost:3001/api/order/getAllOrders', { page: 1, limit: 100 })
-      .then(res => {
-        if (res.data.success) {
-          setOrders(res.data.data || [])
-          setApiError('');
-        } else {
-          setApiError(res.data.message || 'Failed to fetch orders');
-        }
-      })
-      .catch(err => {
-        setApiError('Failed to fetch orders: ' + (err?.message || err));
-        setOrders([]);
-      })
-  }, [])
+    // Fetch orders from backend
+    fetchOrders();
+  }, []);
 
-  const handleDelete = async (orderId) => {
-    if (window.confirm('Are you sure you want to delete this order?')) {
-      try {
-        await axios.delete(`http://localhost:3001/api/order/${orderId}`)
-        setOrders(orders.filter(order => order._id !== orderId))
-      } catch (err) {
-        alert('Failed to delete order.')
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch('http://localhost:3001/api/order/getAllOrders', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ page: 1, limit: 100 }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setOrders(data.data || []);
+        setApiError('');
+      } else {
+        setApiError(data.message || 'Failed to fetch orders');
       }
+    } catch (err) {
+      setApiError('Failed to fetch orders: ' + (err?.message || err));
+      setOrders([]);
     }
-  }
+  };
 
   const filteredOrders = orders.filter(order =>
     (order.customerName && order.customerName.toLowerCase().includes(search.toLowerCase())) ||
     (order._id && order._id.toLowerCase().includes(search.toLowerCase()))
-  )
+  );
 
-  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage)
+  const totalPages = Math.ceil(filteredOrders.length / ordersPerPage);
   const paginatedOrders = filteredOrders.slice(
     (currentPage - 1) * ordersPerPage,
     currentPage * ordersPerPage
-  )
+  );
 
   const handlePageChange = (page) => {
-    if (page >= 1 && page <= totalPages) setCurrentPage(page)
-  }
+    if (page >= 1 && page <= totalPages) setCurrentPage(page);
+  };
 
   const handleSearchChange = (e) => {
-    setSearch(e.target.value)
-    setCurrentPage(1)
-  }
+    setSearch(e.target.value);
+    setCurrentPage(1);
+  };
 
   const handleOrdersPerPageChange = (e) => {
-    setOrdersPerPage(Number(e.target.value))
-    setCurrentPage(1)
-  }
+    setOrdersPerPage(Number(e.target.value));
+    setCurrentPage(1);
+  };
 
-  const pageOptions = [2, 3, 5, 10, 15, 20, 25, 50].filter(num => num < filteredOrders.length)
-  if (filteredOrders.length > 0) pageOptions.push(filteredOrders.length)
+  const pageOptions = [2, 3, 5, 10, 15, 20, 25, 50].filter(num => num < filteredOrders.length);
+  if (filteredOrders.length > 0) pageOptions.push(filteredOrders.length);
+
+  // Update product status for a product in an order
+  const handleProductStatusChange = async (orderId, variantId, newStatus) => {
+    try {
+      // Set reason based on status
+      let reason = '';
+      if (newStatus === 'Shipped') reason = 'Package dispatched via FedEx';
+      else if (newStatus === 'Delivered') reason = 'Order delivered to customer';
+      else if (newStatus === 'Processing') reason = 'Order is being processed';
+      else if (newStatus === 'Pending') reason = 'Order is pending';
+      else if (newStatus === 'Cancelled') reason = 'Order cancelled by user';
+
+      console.log({ orderId, variantId, status: newStatus, reason }); // Debug: show payload
+      const res = await fetch('http://localhost:3001/api/order/updateProductStatus', {
+        method: 'POST', // Use POST to match backend
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ orderId, variantId, status: newStatus, reason }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchOrders(); // Refresh orders
+      } else {
+        alert(data.message || 'Failed to update product status');
+      }
+    } catch (err) {
+      alert('Failed to update product status: ' + (err?.message || err));
+    }
+  };
+
+  // Product status options from backend enum
+  const productStatusOptions = [
+    { value: 'Pending', label: 'Pending' },
+    { value: 'Processing', label: 'Processing' },
+    { value: 'Shipped', label: 'Shipped' },
+    { value: 'Delivered', label: 'Delivered' },
+    { value: 'Cancelled', label: 'Cancelled' },
+  ];
 
   return (
     <CCard className="mb-4">
@@ -132,7 +144,7 @@ const OrderList = () => {
               <CTableHeaderCell>Status</CTableHeaderCell>
               <CTableHeaderCell>Total</CTableHeaderCell>
               <CTableHeaderCell>Date</CTableHeaderCell>
-              <CTableHeaderCell>Actions</CTableHeaderCell>
+              {/* Removed Actions column */}
             </CTableRow>
           </CTableHead>
           <CTableBody>
@@ -140,13 +152,6 @@ const OrderList = () => {
               <CTableRow>
                 <CTableDataCell colSpan={6} className="text-danger text-center">
                   {apiError}
-                </CTableDataCell>
-              </CTableRow>
-            )}
-            {!apiError && paginatedOrders.length === 0 && (
-              <CTableRow>
-                <CTableDataCell colSpan={6} className="text-center">
-                  No orders found.
                 </CTableDataCell>
               </CTableRow>
             )}
@@ -166,25 +171,29 @@ const OrderList = () => {
                       </thead>
                       <tbody>
                         {(order.products || []).map((product, pidx) => (
-                          <tr key={product.variantId || pidx}>
+                          <tr key={product.variantId}>
                             <td>{product.product?.name || '-'}</td>
                             <td>{product.size || '-'}</td>
                             <td>
-                              {['super_admin', 'admin', 'product_manager'].includes(userRole) ? (
-                                <select
-                                  value={product.status || 'Pending'}
-                                  onChange={e => handleProductStatusChange(order._id, product.variantId, e.target.value)}
-                                  className="form-select form-select-sm"
-                                >
-                                  <option value="Pending">Pending</option>
-                                  <option value="Processing">Processing</option>
-                                  <option value="Shipped">Shipped</option>
-                                  <option value="Delivered">Delivered</option>
-                                  <option value="Cancelled">Cancelled</option>
-                                </select>
-                              ) : (
-                                <span className="badge bg-secondary">{product.status}</span>
-                              )}
+                              {(() => {
+                                const isOwnOrder = loggedInUserId && order.user && (String(order.user._id) === String(loggedInUserId) || String(order.user) === String(loggedInUserId));
+                                return (
+                                  <select
+                                    value={product.status || "Pending"}
+                                    onChange={e => handleProductStatusChange(
+                                      order._id,
+                                      product.variantId,
+                                      e.target.value
+
+                                    )}
+                                    className="form-select form-select-sm"
+                                  >
+                                    {productStatusOptions.map(opt => (
+                                      <option key={opt.value} value={opt.value}>{opt.label}</option>
+                                    ))}
+                                  </select>
+                                );
+                              })()}
                             </td>
                           </tr>
                         ))}
@@ -194,7 +203,7 @@ const OrderList = () => {
                 </CTableDataCell>
                 <CTableDataCell>{order.totalAmount}</CTableDataCell>
                 <CTableDataCell>{order.createdAt && new Date(order.createdAt).toLocaleString()}</CTableDataCell>
-                {/* View button removed as requested */}
+                {/* Removed Actions column */}
               </CTableRow>
             ))}
           </CTableBody>
@@ -218,7 +227,7 @@ const OrderList = () => {
         </CPagination>
       </CCardBody>
     </CCard>
-  )
-}
+  );
+};
 
-export default OrderList
+export default OrderList;
