@@ -15,7 +15,7 @@ class MLPreferenceService {
       print('🔄 Starting ML analysis for user: $userId');
       print('📱 Image size: ${imageBase64.length} characters');
       
-      final url = Uri.parse('${webApi['domain']}${endPoint['mlAnalyzePreferences']}');
+      final url = Uri.parse('${mlApi['domain']}${endPoint['mlAnalyzePreferences']}');
       print('🌐 Request URL: $url');
       
       final requestBody = {
@@ -28,6 +28,7 @@ class MLPreferenceService {
         url,
         headers: {
           'Content-Type': 'application/json',
+          'ngrok-skip-browser-warning': 'true',
         },
         body: jsonEncode(requestBody),
       );

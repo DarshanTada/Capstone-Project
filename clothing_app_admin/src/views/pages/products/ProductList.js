@@ -10,6 +10,7 @@ import axios from 'axios'
 
 const ProductList = () => {
   const [products, setProducts] = useState([])
+  const [loading, setLoading] = useState(false)
   const [categories, setCategories] = useState([])
   const [search, setSearch] = useState('')
   const [productsPerPage, setProductsPerPage] = useState(5)
@@ -23,6 +24,7 @@ const ProductList = () => {
   // Fetch products from backend
   useEffect(() => {
     const fetchProducts = async () => {
+      setLoading(true)
       try {
         const res = await axios.get('http://localhost:3001/api/product/getProduct', {
           params: {
@@ -37,6 +39,7 @@ const ProductList = () => {
       } catch (err) {
         console.error('Failed to fetch products:', err)
       }
+      setLoading(false)
     }
     fetchProducts()
   }, [currentPage, productsPerPage])
@@ -96,7 +99,6 @@ const ProductList = () => {
             {pageOptions.map((num) => (
               <option key={num} value={num}>
                 {num === products.length ? 'All' : num}
-                {num === products.length ? 'All' : num}
               </option>
             ))}
           </select>
@@ -108,94 +110,103 @@ const ProductList = () => {
         </div>
       </CCardHeader>
       <CCardBody>
-        <div className="mb-3 d-flex justify-content-end">
-          <CFormInput
-            type="text"
-            placeholder="Search by name or category"
-            value={search}
-            onChange={handleSearchChange}
-            style={{ maxWidth: 300 }}
-          />
-        </div>
-        <CTable align="middle" hover responsive>
-          <CTableHead>
-            <CTableRow>
-              <CTableHeaderCell>Product ID</CTableHeaderCell>
-              <CTableHeaderCell>Name</CTableHeaderCell>
-              <CTableHeaderCell>Category</CTableHeaderCell>
-              <CTableHeaderCell>Price</CTableHeaderCell>
-              <CTableHeaderCell>Stock</CTableHeaderCell>
-              {hasPermission(role, 'manage_products') && <CTableHeaderCell>Actions</CTableHeaderCell>}
-            </CTableRow>
-          </CTableHead>
-          <CTableBody>
-            {paginatedProducts.length === 0 ? (
-              <CTableRow>
-                <CTableDataCell colSpan={hasPermission(role, 'manage_products') ? 6 : 5} className="text-center">
-                  No products found.
-                </CTableDataCell>
-              </CTableRow>
-            ) : (
-              paginatedProducts.map((product) => (
-                <CTableRow key={product._id}>
-                  <CTableDataCell>{product._id}</CTableDataCell>
-                  <CTableDataCell>{product.name}</CTableDataCell>
-                  <CTableDataCell>
-                    {product.category_id && product.category_id.name ? product.category_id.name : '-'}
-                  </CTableDataCell>
-                  <CTableDataCell>
-                    {product.variants && product.variants.length > 0
-                      ? `₹${product.variants[0].price}`
-                      : '-'}
-                  </CTableDataCell>
-                  <CTableDataCell>
-                    {product.variants && product.variants.length > 0
-                      ? product.variants[0].stock_qty
-                      : '-'}
-                  </CTableDataCell>
-                  {hasPermission(role, 'manage_products') && (
-                    <CTableDataCell>
-                      <CButton
-                        color="info"
-                        size="sm"
-                        className="me-2"
-                        onClick={() => navigate(`/products/${product._id}`)}
-                      >
-                        View Product
-                      </CButton>
-                      <CButton color="danger" size="sm" onClick={() => handleDelete(product._id)}>
-                        Delete
-                      </CButton>
-                    </CTableDataCell>
-                  )}
+        {loading ? (
+          <div className="d-flex justify-content-center align-items-center" style={{ minHeight: 200 }}>
+            <span className="spinner-border text-primary" role="status" aria-hidden="true"></span>
+            <span className="ms-2">Loading products...</span>
+          </div>
+        ) : (
+          <>
+            <div className="mb-3 d-flex justify-content-end">
+              <CFormInput
+                type="text"
+                placeholder="Search by name or category"
+                value={search}
+                onChange={handleSearchChange}
+                style={{ maxWidth: 300 }}
+              />
+            </div>
+            <CTable align="middle" hover responsive>
+              <CTableHead>
+                <CTableRow>
+                  <CTableHeaderCell>Product ID</CTableHeaderCell>
+                  <CTableHeaderCell>Name</CTableHeaderCell>
+                  <CTableHeaderCell>Category</CTableHeaderCell>
+                  <CTableHeaderCell>Price</CTableHeaderCell>
+                  <CTableHeaderCell>Stock</CTableHeaderCell>
+                  {hasPermission(role, 'manage_products') && <CTableHeaderCell>Actions</CTableHeaderCell>}
                 </CTableRow>
-              ))
-            )}
-          </CTableBody>
-        </CTable>
-        <CPagination className="justify-content-center my-3">
-          <CPaginationItem
-            disabled={currentPage === 1}
-            onClick={() => handlePageChange(currentPage - 1)}
-          >
-            Previous
-          </CPaginationItem>
-          {[...Array(totalPages)].map((_, idx) => (
-            <CPaginationItem
-              key={idx + 1}
-              active={currentPage === idx + 1}
-              onClick={() => handlePageChange(idx + 1)}
-            >
-              {idx + 1}
-            </CPaginationItem>
-          ))}
-          <CPaginationItem
-            disabled={currentPage === totalPages || totalPages === 0}
-            onClick={() => handlePageChange(currentPage + 1)}
-          >
-            Next
-          </CPaginationItem>
-        </CPagination>
+              </CTableHead>
+              <CTableBody>
+                {paginatedProducts.length === 0 ? (
+                  <CTableRow>
+                    <CTableDataCell colSpan={hasPermission(role, 'manage_products') ? 6 : 5} className="text-center">
+                      No products found.
+                    </CTableDataCell>
+                  </CTableRow>
+                ) : (
+                  paginatedProducts.map((product) => (
+                    <CTableRow key={product._id}>
+                      <CTableDataCell>{product._id}</CTableDataCell>
+                      <CTableDataCell>{product.name}</CTableDataCell>
+                      <CTableDataCell>
+                        {product.category_id && product.category_id.name ? product.category_id.name : '-'}
+                      </CTableDataCell>
+                      <CTableDataCell>
+                        {product.variants && product.variants.length > 0
+                          ? `$${product.variants[0].price}`
+                          : '-'}
+                      </CTableDataCell>
+                      <CTableDataCell>
+                        {product.variants && product.variants.length > 0
+                          ? product.variants[0].stock_qty
+                          : '-'}
+                      </CTableDataCell>
+                      {hasPermission(role, 'manage_products') && (
+                        <CTableDataCell>
+                          <CButton
+                            color="info"
+                            size="sm"
+                            className="me-2"
+                            onClick={() => navigate(`/products/${product._id}`)}
+                          >
+                            View Product
+                          </CButton>
+                          <CButton color="danger" size="sm" onClick={() => handleDelete(product._id)}>
+                            Delete
+                          </CButton>
+                        </CTableDataCell>
+                      )}
+                    </CTableRow>
+                  ))
+                )}
+              </CTableBody>
+            </CTable>
+            <CPagination className="justify-content-center my-3">
+              <CPaginationItem
+                disabled={currentPage === 1}
+                onClick={() => handlePageChange(currentPage - 1)}
+              >
+                Previous
+              </CPaginationItem>
+              {[...Array(totalPages)].map((_, idx) => (
+                <CPaginationItem
+                  key={idx + 1}
+                  active={currentPage === idx + 1}
+                  onClick={() => handlePageChange(idx + 1)}
+                >
+                  {idx + 1}
+                </CPaginationItem>
+              ))}
+              <CPaginationItem
+                disabled={currentPage === totalPages || totalPages === 0}
+                onClick={() => handlePageChange(currentPage + 1)}
+              >
+                Next
+              </CPaginationItem>
+            </CPagination>
+          </>
+        )}
       </CCardBody>
     </CCard>
   )
