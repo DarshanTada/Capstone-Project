@@ -19,6 +19,8 @@ const AVAILABILITY_OPTIONS = [
 ]
 const ProductAdd = () => {
   const location = useLocation();
+  // Ensure product ID is set for update
+  const id = location.state && location.state.product ? location.state.product._id : undefined;
   // Check if editing: product data passed via location.state
   const isEditMode = location.state && location.state.product;
   // Initial form state: use product if editing, else defaults
@@ -30,7 +32,7 @@ const ProductAdd = () => {
         subcategory_id:
           product.subcategory_id?._id ||
           product.subcategory_id ||
-          (location.state.subcategory || ''),
+          (location.state.subcategory?._id || location.state.subcategory || ''),
       };
     } else {
       return {
@@ -49,7 +51,8 @@ const ProductAdd = () => {
       };
     }
   });
-  const [variants, setVariants] = useState([])
+  // Populate variants, careInstructions, subCategories from location.state if editing
+  const [variants, setVariants] = useState(() => (isEditMode && location.state.variants ? location.state.variants : []));
   const [showVariantForm, setShowVariantForm] = useState(false)
   const [variant, setVariant] = useState({
     size: '',
@@ -86,8 +89,8 @@ const ProductAdd = () => {
   })
   const [variantImages, setVariantImages] = useState([])
   const [categories, setCategories] = useState([])
-  const [subCategories, setSubCategories] = useState([])
-  const [careInstructions, setCareInstructions] = useState([])
+  const [subCategories, setSubCategories] = useState(() => (isEditMode && location.state.subcategory ? [location.state.subcategory] : []));
+  const [careInstructions, setCareInstructions] = useState(() => (isEditMode && location.state.careInstructions ? location.state.careInstructions : []));
   const [seasons, setSeasons] = useState([])
   const [festivals, setFestivals] = useState([])
   const [error, setError] = useState('')
@@ -148,23 +151,33 @@ const ProductAdd = () => {
     if (form.category_id) {
       axios.get(`http://localhost:3001/api/subcategory/getByCategory/${form.category_id}`)
         .then(res => {
-          if (res.data.success) {
-            setSubCategories(res.data.data)
-            setForm(prev => ({ ...prev, subcategory_id: '' })) // reset subcategory when category changes
-          } else {
-            setSubCategories([])
-            setForm(prev => ({ ...prev, subcategory_id: '' }))
+          let fetchedSubs = res.data.success ? res.data.data : [];
+          // If editing and location.state.subcategory is not in fetchedSubs, add it
+          if (isEditMode && location.state.subcategory) {
+            const subcatId = location.state.subcategory._id || location.state.subcategory;
+            if (!fetchedSubs.some(sub => sub._id === subcatId)) {
+              fetchedSubs = [location.state.subcategory, ...fetchedSubs];
+            }
+          }
+          setSubCategories(fetchedSubs);
+          // Only reset subcategory if not editing
+          if (!isEditMode) {
+            setForm(prev => ({ ...prev, subcategory_id: '' }));
           }
         })
         .catch(() => {
-          setSubCategories([])
-          setForm(prev => ({ ...prev, subcategory_id: '' }))
-        })
+          setSubCategories(isEditMode && location.state.subcategory ? [location.state.subcategory] : []);
+          if (!isEditMode) {
+            setForm(prev => ({ ...prev, subcategory_id: '' }));
+          }
+        });
     } else {
-      setSubCategories([])
-      setForm(prev => ({ ...prev, subcategory_id: '' }))
+      setSubCategories(isEditMode && location.state.subcategory ? [location.state.subcategory] : []);
+      if (!isEditMode) {
+        setForm(prev => ({ ...prev, subcategory_id: '' }));
+      }
     }
-  }, [form.category_id])
+  }, [form.category_id, isEditMode, location.state?.subcategory]);
 
   const handleChange = async (e) => {
     const { name, value } = e.target
