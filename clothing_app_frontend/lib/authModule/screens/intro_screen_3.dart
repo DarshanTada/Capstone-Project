@@ -1,5 +1,5 @@
-import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:flutter/material.dart';
+import '../../navigation/routes.dart';
 
 class IntroScreen3 extends StatelessWidget {
   const IntroScreen3({super.key});
@@ -35,40 +35,6 @@ class IntroScreen3 extends StatelessWidget {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Expanded(
-          //   child: Padding(
-          //     padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
-          //     child: GridView.count(
-          //       crossAxisCount: 3,
-          //       mainAxisSpacing: 12,
-          //       crossAxisSpacing: 12,
-          //       childAspectRatio: 0.66,
-          //       physics: const NeverScrollableScrollPhysics(),
-          //       children: [
-          //         'assets/images/intro_2_1.jpg',
-          //         'assets/images/intro_2_2.jpg',
-          //         'assets/images/intro_2_3.jpg',
-          //         'assets/images/intro_2_4.jpg',
-          //         'assets/images/intro_2_5.jpg',
-          //         'assets/images/intro_1_3.jpg',
-          //       ].map((imagePath) {
-          //         return ClipRRect(
-          //           borderRadius: BorderRadius.circular(20),
-          //           child: Container(
-          //             decoration: const BoxDecoration(
-          //               color: Colors.blueGrey,
-          //             ),
-          //             child: Image.asset(
-          //               imagePath,
-          //               fit: BoxFit.cover,
-          //               alignment: const Alignment(0, -0.2),
-          //             ),
-          //           ),
-          //         );
-          //       }).toList(),
-          //     ),
-          //   ),
-          // ),
           Expanded(
             child: Center(
               child: OverflowBox(
@@ -139,10 +105,7 @@ class IntroScreen3 extends StatelessWidget {
           Center(
             child: GestureDetector(
               onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (context) => PhoneNumberScreen()),
-                );
+                Navigator.pushNamed(context, NamedRoute.phoneNumberScreen);
               },
               child: Container(
                 padding: const EdgeInsets.symmetric(

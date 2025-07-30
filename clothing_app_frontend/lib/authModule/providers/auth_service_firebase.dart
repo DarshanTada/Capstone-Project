@@ -8,7 +8,7 @@ import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
-
+import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
 class AuthRepo {
   static String verId = "";
   static final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -100,9 +100,12 @@ class AuthRepo {
         //   MaterialPageRoute(builder: (context) => const HomeScreen()),
 
         // );
+        // pushAndRemoveUntil(
+        //   NamedRoute.bottomNavBarScreen,
+        //   arguments: BottomNavArgumnets(),
+        // );
         pushAndRemoveUntil(
-          NamedRoute.bottomNavBarScreen,
-          arguments: BottomNavArgumnets(),
+          NamedRoute.captureFaceScreen,
         );
       } else {
         // Show API error
