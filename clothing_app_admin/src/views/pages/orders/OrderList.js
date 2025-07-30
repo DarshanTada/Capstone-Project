@@ -6,16 +6,29 @@ import axios from 'axios'
 const OrderList = () => {
   const [apiError, setApiError] = useState('');
   // Update order status handler
-  const handleStatusChange = async (orderId, newStatus) => {
+  // Update product item status handler
+  const handleProductStatusChange = async (orderId, variantId, newStatus) => {
     try {
-      const res = await axios.put(`http://localhost:3001/api/order/${orderId}/status`, { status: newStatus });
+      const res = await axios.put('http://localhost:3001/api/order/updateProductStatus', {
+        orderId,
+        variantId,
+        status: newStatus
+      });
       if (res.data.success) {
-        setOrders(prevOrders => prevOrders.map(order => order._id === orderId ? { ...order, status: newStatus } : order));
+        setOrders(prevOrders => prevOrders.map(order => {
+          if (order._id !== orderId) return order;
+          return {
+            ...order,
+            products: order.products.map(product =>
+              product.variantId === variantId ? { ...product, status: newStatus } : product
+            )
+          };
+        }));
       } else {
-        alert(res.data.message || 'Failed to update order status');
+        alert(res.data.message || 'Failed to update product status');
       }
     } catch (err) {
-      alert('Failed to update order status');
+      alert('Failed to update product status');
     }
   }
   const [orders, setOrders] = useState([])
@@ -30,7 +43,7 @@ const OrderList = () => {
     axios.post('http://localhost:3001/api/order/getAllOrders', { page: 1, limit: 100 })
       .then(res => {
         if (res.data.success) {
-          setOrders(res.data.orders || res.data.data || [])
+          setOrders(res.data.data || [])
           setApiError('');
         } else {
           setApiError(res.data.message || 'Failed to fetch orders');
@@ -140,31 +153,48 @@ const OrderList = () => {
             {!apiError && paginatedOrders.map((order, idx) => (
               <CTableRow key={order._id || idx}>
                 <CTableDataCell>{order._id}</CTableDataCell>
-                <CTableDataCell>{order.customerName}</CTableDataCell>
+                <CTableDataCell>{order.user?.email || order.customerName || '-'}</CTableDataCell>
                 <CTableDataCell>
-                  {['super_admin', 'admin', 'product_manager'].includes(userRole) ? (
-                    <select
-                      value={order.status}
-                      onChange={e => handleStatusChange(order._id, e.target.value)}
-                      className="form-select form-select-sm"
-                    >
-                      <option value="Pending">Pending</option>
-                      <option value="Processing">Processing</option>
-                      <option value="Shipped">Shipped</option>
-                      <option value="Delivered">Delivered</option>
-                      <option value="Cancelled">Cancelled</option>
-                    </select>
-                  ) : (
-                    order.status
-                  )}
+                  <div>
+                    <table className="table table-sm mb-0">
+                      <thead>
+                        <tr>
+                          <th>Product</th>
+                          <th>Size</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(order.products || []).map((product, pidx) => (
+                          <tr key={product.variantId || pidx}>
+                            <td>{product.product?.name || '-'}</td>
+                            <td>{product.size || '-'}</td>
+                            <td>
+                              {['super_admin', 'admin', 'product_manager'].includes(userRole) ? (
+                                <select
+                                  value={product.status || 'Pending'}
+                                  onChange={e => handleProductStatusChange(order._id, product.variantId, e.target.value)}
+                                  className="form-select form-select-sm"
+                                >
+                                  <option value="Pending">Pending</option>
+                                  <option value="Processing">Processing</option>
+                                  <option value="Shipped">Shipped</option>
+                                  <option value="Delivered">Delivered</option>
+                                  <option value="Cancelled">Cancelled</option>
+                                </select>
+                              ) : (
+                                <span className="badge bg-secondary">{product.status}</span>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 </CTableDataCell>
                 <CTableDataCell>{order.totalAmount}</CTableDataCell>
                 <CTableDataCell>{order.createdAt && new Date(order.createdAt).toLocaleString()}</CTableDataCell>
-                <CTableDataCell>
-                  <CButton color="info" size="sm" className="me-2" onClick={() => navigate(`/orders/${order._id}`)}>
-                    View
-                  </CButton>
-                </CTableDataCell>
+                {/* View button removed as requested */}
               </CTableRow>
             ))}
           </CTableBody>
