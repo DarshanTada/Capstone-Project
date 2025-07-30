@@ -24,14 +24,17 @@ export const loginOrRegisterUser = [
         return;
       }
 
+      // Normalize phone number
+      const normalizedPhoneNumber = phone_number.trim();
+
       // Try to find the user
-      let user = await User.findOne({ phone_number });
+      let user = await User.findOne({ phone_number: normalizedPhoneNumber });
 
       let isNewUser = false;
 
       // If user doesn't exist, register them
       if (!user) {
-        user = new User({ phone_number });
+        user = new User({ phone_number: normalizedPhoneNumber });
         await user.save();
         isNewUser = true;
 
@@ -130,10 +133,20 @@ export const updateUser = [
         avartarURL,
       } = req.body;
 
+      // Get current user to check if they're updating to the same values
+      const currentUser = await User.findById(userId);
+      if (!currentUser) {
+        res.status(404).json({ success: false, message: "User not found" });
+        return;
+      }
+
+      // ✅ Allow any phone number or email update without validation
+      // Users can update their details freely
+
       // Update User data (removed name field)
       const userUpdateFields: any = {
-        ...(phone_number && { phone_number }),
-        ...(email && { email }),
+        ...(phone_number && { phone_number: phone_number.trim() }),
+        ...(email && { email: email.trim().toLowerCase() }),
         ...(role && { role })
       };
 
@@ -228,16 +241,22 @@ export const registerAdmin = [
         return;
       }
 
-      // Check if user already exists
-      const existingUser = await User.findOne({ email });
+      // Normalize email
+      const normalizedEmail = email.trim().toLowerCase();
+
+      // ✅ Check if email already exists (manual validation)
+      const existingUser = await User.findOne({ email: normalizedEmail });
       if (existingUser) {
-        res.status(409).json({ success: false, message: "User already exists." });
+        res.status(409).json({ 
+          success: false, 
+          message: `Email '${normalizedEmail}' is already registered. Please use a different email.` 
+        });
         return;
       }
 
       // Create new admin user
       const newUser = new User({
-        email,
+        email: normalizedEmail,
         password: await bcrypt.hash(password, 10), // Hash password
         role: "admin" // Set role as Admin by default
       });
@@ -254,13 +273,13 @@ export const registerAdmin = [
 
       // Generate JWT token
       const token = jwt.sign(
-        { userId: newUser._id, email: newUser.email, role: newUser.role },
+        { userId: newUser._id, email: (newUser as any).email, role: (newUser as any).role },
         JWT_SECRET,
         { expiresIn: "7d" }
       );
 
       // Save token in user
-      newUser.token = token;
+      (newUser as any).token = token;
       await newUser.save();
 
       // Get user data without sensitive fields
@@ -296,7 +315,10 @@ export const loginAdmin = [
         return;
       }
       
-      const user = await User.findOne({ email })
+      // Normalize email for lookup
+      const normalizedEmail = email.trim().toLowerCase();
+      
+      const user = await User.findOne({ email: normalizedEmail })
       if (!user) {
         res.status(401).json({ message: 'User not found. Please register first.' });
         return;
