@@ -54,19 +54,10 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
-   fetchProductsByCategory({String? bodyType}) async {
-    final response = await Provider.of<CategoryProvider>(context, listen: false)
-        .getProductsByCategory(
-          bodyType: '',
-        );
-    if (!response['success']) {
-      showSnackbar(response['message']);
-    }
-  }
+  
 
   fetchData() async {
     await fetchCategories();
-    await fetchProductsByCategory();
   }
 
   @override

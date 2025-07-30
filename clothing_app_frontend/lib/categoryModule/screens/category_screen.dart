@@ -35,8 +35,19 @@ class CategoryScreenState extends State<CategoryScreen> {
     }
   }
 
+   fetchProductsByCategory({String? bodyType}) async {
+    final response = await Provider.of<CategoryProvider>(context, listen: false)
+        .getProductsByCategory(
+          bodyType: '',
+        );
+    if (!response['success']) {
+      showSnackbar(response['message']);
+    }
+  }
+
   fetchData() async {
     await fetchCategories();
+    await fetchProductsByCategory();
   }
 
   @override
@@ -52,6 +63,8 @@ class CategoryScreenState extends State<CategoryScreen> {
     tS = MediaQuery.of(context).textScaleFactor;
     language = Provider.of<AuthProvider>(context).selectedLanguage;
     final categories = Provider.of<CategoryProvider>(context).categories;
+    final getProductsByCategory =
+        Provider.of<CategoryProvider>(context).categoryProducts;
 
     customTextTheme = Theme.of(context).textTheme;
     return Scaffold(
