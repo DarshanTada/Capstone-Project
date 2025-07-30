@@ -75,8 +75,8 @@ class _AddressSelectorState extends State<AddressSelector> {
               borderRadius: BorderRadius.circular(12),
               border: Border.all(
                 color: _selectedAddress != null
-                    ? Colors.brown.shade300
-                    : Colors.grey.shade300,
+                    ? const Color(0xFFB8956A)
+                    : const Color(0xFFD2B193).withOpacity(0.5),
                 width: _selectedAddress != null ? 2 : 1,
               ),
               boxShadow: [
@@ -228,32 +228,33 @@ class _AddressSelectorState extends State<AddressSelector> {
   }
 
   Color _getTypeColor(String type) {
+    // Using warm brown/beige theme to match preference screen
     switch (type.toLowerCase()) {
       case 'home':
-        return Colors.green;
+        return const Color(0xFFB8956A); // Warm brown
       case 'work':
-        return Colors.blue;
+        return const Color(0xFFD2B193); // Light beige
       case 'friend':
-        return Colors.orange;
+        return const Color(0xFFC68642); // Medium brown
       case 'other':
-        return Colors.purple;
+        return const Color(0xFF8D5524); // Darker brown
       default:
-        return Colors.grey;
+        return const Color(0xFFB8956A); // Default warm brown
     }
   }
 
   IconData _getTypeIcon(String type) {
     switch (type.toLowerCase()) {
       case 'home':
-        return Icons.home_outlined;
+        return Icons.home_rounded;
       case 'work':
-        return Icons.work_outline;
+        return Icons.business_rounded;
       case 'friend':
-        return Icons.people_outline;
+        return Icons.people_rounded;
       case 'other':
-        return Icons.location_on_outlined;
+        return Icons.place_rounded;
       default:
-        return Icons.location_on_outlined;
+        return Icons.location_on_rounded;
     }
   }
 }
