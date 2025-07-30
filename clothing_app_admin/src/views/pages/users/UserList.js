@@ -23,10 +23,10 @@ const UserList = () => {
   const navigate = useNavigate()
 
   useEffect(() => {
-    axios.get('http://localhost:3001/api/user/list')
+    axios.post('http://localhost:3001/api/user/users')
       .then(res => {
         if (res.data.success) {
-          setUsers(res.data.users)
+          setUsers(res.data.data)
         }
       })
       .catch(err => {
@@ -130,7 +130,7 @@ const UserList = () => {
                       style={{ cursor: 'pointer' }}
                       onClick={(e) => {
                         if (e.target.closest('.delete-icon')) return
-                        navigate(`/users/${user._id || index}`)
+                        navigate(`/users/${user._id}`)
                       }}
                     >
                       <CTableDataCell className="text-center">

@@ -54,6 +54,8 @@ class HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  
+
   fetchData() async {
     await fetchCategories();
   }
@@ -81,6 +83,8 @@ class HomeScreenState extends State<HomeScreen> {
 
   screenBody() {
     final categories = Provider.of<CategoryProvider>(context).categories;
+    final getProductsByCategory =
+        Provider.of<CategoryProvider>(context).categoryProducts;
     return SizedBox(
       height: dH,
       width: dW,

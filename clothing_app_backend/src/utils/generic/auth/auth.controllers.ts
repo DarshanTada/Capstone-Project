@@ -2,7 +2,7 @@ import { Response, Request, NextFunction } from "express";
 import { otpRecordModel, OTPStatus } from "./otpRecord.model";
 import { createAccessToken } from "./auth.middlewares";
 import { uploadToS3Bucket } from "../fileUpload";
-import { UserModel } from "./../../../userModule/user.model";
+import User from "./../../../userModule/user.model"; // Fixed import
 
 const axios = require("axios").default;
 const SendOtp = require("sendotp");

@@ -45,6 +45,39 @@ class CategoryProvider with ChangeNotifier {
     }
   }
 
+  Map<String, dynamic> _categoryProducts = {};
+  bool _isLoadingProducts = false;
+
+  Map<String, dynamic> get categoryProducts => _categoryProducts;
+  bool get isLoadingProducts => _isLoadingProducts;
+
+  Future<Map<String, dynamic>> getProductsByCategory({String? bodyType}) async {
+    try {
+      _isLoadingProducts = true;
+      notifyListeners();
+
+      final url = '${webApi['domain']}${endPoint['getProductsByCategory']}';
+
+      final response = await RemoteServices.httpRequest(
+        method: 'POST',
+        url: url,
+        body: {if (bodyType != null) 'bodyType': bodyType},
+      );
+
+      if (response['success'] == true && response['data'] != null) {
+        _categoryProducts = response;
+        notifyListeners();
+      }
+
+      return response;
+    } catch (error) {
+      return {'success': false, 'message': 'failedGetCategoryProducts'};
+    } finally {
+      _isLoadingProducts = false;
+      notifyListeners();
+    }
+  }
+
   // likeUnlike({required Map body, required String accessToken}) async {
   //   try {
   //     final url = '${webApi['domain']}${endPoint['likeUnlike']}';

@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const SIZE = {
+export const SIZE = {
   ES: "ex",
   S: "s",
   M: "m",
@@ -29,6 +29,7 @@ const productVariantSchema = new mongoose.Schema(
       default: AVAILABLE_STATUS.IN_STOCK,
       required: true,
     },
+    avatarUrl:String,
     ageGroup: String,
     skin_tone:[String],
     under_tone:[String],

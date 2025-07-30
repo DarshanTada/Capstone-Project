@@ -85,7 +85,8 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
         centerTitle: true,
         elevation: 3,
         backgroundColor: Colors.white,
-        title: Column(
+        
+                title: Column(
           children: [
             TextWidget(title: 'Vintage jeans'),
             SizedBox(height: dW * 0.02),

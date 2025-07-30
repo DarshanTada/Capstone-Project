@@ -16,6 +16,9 @@ const MainLayout = React.lazy(() => import('./layout/MainLayout'))// ...existing
 const Login = React.lazy(() => import('./views/pages/login/Login'))
 const Page404 = React.lazy(() => import('./views/pages/page404/Page404'))
 import AddOrder from './views/pages/orders/AddOrder'
+const AddProduct = React.lazy(() => import('./views/pages/products/AddProduct'))
+const CategoryManagement = React.lazy(() => import('./views/pages/category/CategoryManagement'))
+const SubcategoryManagement = React.lazy(() => import('./views/pages/subcategory/SubcategoryManagement'))
 
 
 const App = () => {
@@ -41,9 +44,21 @@ const App = () => {
           <Route path="/login" element={isLoggedIn ? <Navigate to="/" replace /> : <Login />} />
           <Route
             path="/*"
-            element={isLoggedIn ? <MainLayout /> : <Navigate to="/login" replace />}
-          />
-          <Route path="/orders/add" element={<AddOrder />} />
+            element={
+              isLoggedIn ? (
+                <MainLayout />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          >
+            {/* Nested routes inside MainLayout */}
+            <Route path="orders/add" element={<AddOrder />} />
+            <Route path="products/add" element={<AddProduct />} />
+            <Route path="categories" element={<CategoryManagement />} />
+            <Route path="subcategories" element={<SubcategoryManagement />} />
+            {/* You can add more nested routes here if needed */}
+          </Route>
           <Route path="*" element={<Page404 />} />
         </Routes>
       </Suspense>
