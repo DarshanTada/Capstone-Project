@@ -8,6 +8,7 @@ class AddressCard extends StatelessWidget {
   final VoidCallback? onSelect;
   final bool isSelected;
   final bool showActions;
+  final bool isSelectionMode;
 
   const AddressCard({
     Key? key,
@@ -17,6 +18,7 @@ class AddressCard extends StatelessWidget {
     this.onSelect,
     this.isSelected = false,
     this.showActions = true,
+    this.isSelectionMode = false,
   }) : super(key: key);
 
   @override
@@ -329,6 +331,39 @@ class AddressCard extends StatelessWidget {
                           ),
                         ),
                       ],
+                    ),
+                  ),
+                ],
+                
+                // Add selection button when in selection mode
+                if (isSelectionMode && onSelect != null) ...[
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton.icon(
+                      onPressed: onSelect,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: isSelected 
+                          ? const Color(0xFFB8956A) 
+                          : const Color(0xFFD2B193),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        elevation: isSelected ? 4 : 2,
+                      ),
+                      icon: Icon(
+                        isSelected ? Icons.check_circle : Icons.radio_button_unchecked,
+                        size: 20,
+                      ),
+                      label: Text(
+                        isSelected ? 'Selected' : 'Select This Address',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                 ],

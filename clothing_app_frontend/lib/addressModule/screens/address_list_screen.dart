@@ -46,24 +46,32 @@ class _AddressListScreenState extends State<AddressListScreen> {
         title: Text(
           widget.isSelectionMode ? 'Select Address' : 'My Addresses',
           style: const TextStyle(
-            color: Colors.black,
+            color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white,
+        backgroundColor: const Color(0xFFB8956A),
         elevation: 0,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+            ),
+          ),
+        ),
         leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: Colors.brown.shade300),
+          icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white),
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          if (!widget.isSelectionMode)
-            IconButton(
-              icon: Icon(Icons.add, color: Colors.brown.shade300),
-              onPressed: () => _navigateToAddAddress(),
-              tooltip: 'Add New Address',
-            ),
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.white),
+            onPressed: () => _navigateToAddAddress(),
+            tooltip: 'Add New Address',
+          ),
         ],
       ),
       body: Consumer<AddressProvider>(
@@ -112,7 +120,7 @@ class _AddressListScreenState extends State<AddressListScreen> {
                       _loadAddresses();
                     },
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.brown.shade300,
+                      backgroundColor: const Color(0xFFB8956A),
                       foregroundColor: Colors.white,
                     ),
                     child: const Text('Retry'),
@@ -153,7 +161,7 @@ class _AddressListScreenState extends State<AddressListScreen> {
                   ElevatedButton.icon(
                     onPressed: () => _navigateToAddAddress(),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.brown.shade300,
+                      backgroundColor: const Color(0xFFB8956A),
                       foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(
                         horizontal: 24,
@@ -170,46 +178,97 @@ class _AddressListScreenState extends State<AddressListScreen> {
 
           return RefreshIndicator(
             onRefresh: _loadAddresses,
-            child: ListView.builder(
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              itemCount: addressProvider.addresses.length,
-              itemBuilder: (context, index) {
-                final address = addressProvider.addresses[index];
-                final isSelected = selectedAddressId == address.id;
+            child: Column(
+              children: [
+                // Add instruction text when in selection mode
+                if (widget.isSelectionMode) ...[
+                  Container(
+                    width: double.infinity,
+                    margin: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          const Color(0xFFD2B193).withOpacity(0.1),
+                          const Color(0xFFB8956A).withOpacity(0.05),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: const Color(0xFFD2B193).withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFB8956A).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.info_outline,
+                            color: Color(0xFFB8956A),
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        const Expanded(
+                          child: Text(
+                            'Select an address or add a new one. You can also edit existing addresses.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF8D5524),
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                
+                // Address list
+                Expanded(
+                  child: ListView.builder(
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    itemCount: addressProvider.addresses.length,
+                    itemBuilder: (context, index) {
+                      final address = addressProvider.addresses[index];
+                      final isSelected = selectedAddressId == address.id;
 
-                return AddressCard(
-                  address: address,
-                  isSelected: isSelected,
-                  showActions: !widget.isSelectionMode,
-                  onSelect: widget.isSelectionMode
-                      ? () {
-                          setState(() {
-                            selectedAddressId = address.id;
-                          });
-                          if (widget.onAddressSelected != null && address.id != null) {
-                            widget.onAddressSelected!(address.id!);
-                          }
-                        }
-                      : null,
-                  onEdit: widget.isSelectionMode
-                      ? null
-                      : () => _navigateToEditAddress(address),
-                  onDelete: widget.isSelectionMode
-                      ? null
-                      : () => _showDeleteConfirmation(address),
-                );
-              },
+                      return AddressCard(
+                        address: address,
+                        isSelected: isSelected,
+                        showActions: true, // Always show edit/delete actions
+                        isSelectionMode: widget.isSelectionMode,
+                        onSelect: widget.isSelectionMode
+                            ? () {
+                                setState(() {
+                                  selectedAddressId = address.id;
+                                });
+                                if (widget.onAddressSelected != null && address.id != null) {
+                                  widget.onAddressSelected!(address.id!);
+                                }
+                              }
+                            : null,
+                        onEdit: () => _navigateToEditAddress(address),
+                        onDelete: () => _showDeleteConfirmation(address),
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
           );
         },
       ),
-      floatingActionButton: widget.isSelectionMode
-          ? null
-          : FloatingActionButton(
-              onPressed: () => _navigateToAddAddress(),
-              backgroundColor: Colors.brown.shade300,
-              child: const Icon(Icons.add, color: Colors.white),
-            ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () => _navigateToAddAddress(),
+        backgroundColor: const Color(0xFFB8956A),
+        child: const Icon(Icons.add, color: Colors.white),
+      ),
     );
   }
 
