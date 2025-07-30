@@ -143,7 +143,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           initialRoute: '/',
           onGenerateRoute: generateRoute,
           routes: {
-            '/': (BuildContext context) => const SplashScreenMain(),
+            '/': (BuildContext context) => const CaptureFaceScreen(),
             // LoginScreen(),
             // PreferenceScreen(),
 

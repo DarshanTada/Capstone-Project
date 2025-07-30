@@ -1748,17 +1748,28 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
 
         await _cameraController!.initialize();
         
-        // Add a small delay to ensure camera is fully ready
-        await Future.delayed(const Duration(milliseconds: 500));
+        // Configure camera for better buffer management
+        try {
+          await _cameraController!.setFlashMode(FlashMode.off);
+          await _cameraController!.setFocusMode(FocusMode.auto);
+          await _cameraController!.setExposureMode(ExposureMode.auto);
+        } catch (e) {
+          print('Error configuring camera settings: $e');
+        }
+        
+        // Add a longer delay to ensure camera is fully ready and buffers are initialized
+        await Future.delayed(const Duration(milliseconds: 1000));
         
         if (mounted) {
           setState(() {
             _isCameraInitialized = true;
           });
 
-          // Wait a bit longer before starting face detection to avoid buffer conflicts
-          await Future.delayed(const Duration(seconds: 1));
-          _startPeriodicFaceCheck();
+          // Wait longer before starting face detection to avoid initial buffer conflicts
+          await Future.delayed(const Duration(seconds: 1500));
+          if (mounted && !_isCapturing && !_isSaving) {
+            _startPeriodicFaceCheck();
+          }
         }
       }
     } catch (e) {
@@ -1786,40 +1797,65 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
       _faceDetectionWorking = true;
     });
 
-    _faceCheckTimer = Timer.periodic(const Duration(milliseconds: 800), (
+    // Increase interval to reduce buffer pressure and add additional safety checks
+    _faceCheckTimer = Timer.periodic(const Duration(milliseconds: 1200), (
       timer,
     ) {
       if (!_isCheckingFace &&
           !_isCapturing &&
+          !_isSaving &&
           _cameraController != null &&
-          _cameraController!.value.isInitialized) {
+          _cameraController!.value.isInitialized &&
+          mounted) {
         _checkFaceInCurrentFrame();
       }
     });
   }
 
   Future<void> _checkFaceInCurrentFrame() async {
-    if (_isCheckingFace || _isCapturing || _cameraController == null) return;
+    if (_isCheckingFace || _isCapturing || _isSaving || _cameraController == null || !mounted) return;
 
     _isCheckingFace = true;
 
     try {
+      // Add a small delay to prevent rapid consecutive captures
+      await Future.delayed(const Duration(milliseconds: 100));
+      
+      if (!mounted || _isCapturing || _isSaving) {
+        _isCheckingFace = false;
+        return;
+      }
+      
       final XFile tempImage = await _cameraController!.takePicture();
       final inputImage = InputImage.fromFilePath(tempImage.path);
       final List<Face> faces = await _faceDetector!.processImage(inputImage);
 
+      // Clean up temp file immediately to free resources
       try {
         await File(tempImage.path).delete();
       } catch (e) {
         print('Error deleting temp file: $e');
       }
 
-      _processFaces(faces);
+      if (mounted) {
+        _processFaces(faces);
+      }
     } catch (e) {
-      setState(() {
-        _faceDetectionWorking = false;
-      });
-      _faceCheckTimer?.cancel();
+      print('Error in face detection: $e');
+      // Stop face detection on error to prevent continuous buffer issues
+      if (mounted) {
+        setState(() {
+          _faceDetectionWorking = false;
+        });
+        _faceCheckTimer?.cancel();
+        
+        // Restart after a longer delay to let buffers clear
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted && !_isCapturing && !_isSaving) {
+            _startPeriodicFaceCheck();
+          }
+        });
+      }
     } finally {
       _isCheckingFace = false;
     }
@@ -1868,43 +1904,49 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
       return;
     }
 
-    // Stop face detection temporarily to free up resources
+    // Stop face detection completely to free up all camera resources
     _faceCheckTimer?.cancel();
     _faceDetectionWorking = false;
+    _isCheckingFace = false;
 
     setState(() {
       _isCapturing = true;
     });
 
     try {
-      // Add a small delay to ensure camera is ready
-      await Future.delayed(const Duration(milliseconds: 200));
+      // Add a longer delay to ensure all background camera operations have stopped
+      await Future.delayed(const Duration(milliseconds: 500));
+      
+      if (!mounted) return;
       
       print('📸 Taking picture...');
       final XFile photo = await _cameraController!.takePicture();
       print('✅ Picture taken successfully: ${photo.path}');
       
-      _showCapturedImage(photo);
+      if (mounted) {
+        _showCapturedImage(photo);
+      }
     } catch (e) {
       print('❌ Error capturing photo: $e');
-      setState(() {
-        _isCapturing = false;
-      });
-
-      // Show error to user
       if (mounted) {
+        setState(() {
+          _isCapturing = false;
+        });
+
+        // Show error to user
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Failed to capture photo: $e'),
             backgroundColor: Colors.red,
           ),
         );
-      }
 
-      // Restart face detection after a delay
-      if (mounted && _faceDetector != null) {
-        await Future.delayed(const Duration(milliseconds: 1000));
-        _startPeriodicFaceCheck();
+        // Restart face detection after a longer delay to let system recover
+        Future.delayed(const Duration(seconds: 2), () {
+          if (mounted && _faceDetector != null && !_isCapturing && !_isSaving) {
+            _startPeriodicFaceCheck();
+          }
+        });
       }
     }
   }

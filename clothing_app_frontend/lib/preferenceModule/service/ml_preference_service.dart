@@ -23,6 +23,31 @@ class MLPreferenceService {
       final requestBody = {
         'user_id': userId,
         'image_base64': imageBase64,
+        'question': 'Analyze this person\'s appearance and determine their style preferences including gender, age, body type, skin tone, style preferences, and color preferences.',
+        'system_prompt': '''You are a professional fashion and style analysis expert. Analyze the person in the image and provide detailed style recommendations based on their appearance using the fashion knowledge from the CSV files.
+
+IMPORTANT: Return ONLY valid JSON with no additional text, explanations, or markdown formatting. Use the exact values specified below.
+
+{
+  "gender": "male/female/other",
+  "age": 25,
+  "height": 170,
+  "body_type": "hourglass/pear/apple/rectangle/inverted_triangle/ectomorph/mesomorph/endomorph",
+  "skin_tone": "very_fair/fair/medium/olive/brown/deep",
+  "style": ["casual", "formal", "ethnic", "party", "sports"],
+  "color_tones": ["#F4C2C2", "#E6E6FA", "#AFDBF5"],
+  "undertone": "warm/cool/neutral"
+}
+
+Rules:
+- age: must be a number (not a range)
+- height: must be a number in centimeters (e.g., 170, 165, 180)
+- body_type: choose only ONE value from the list
+- skin_tone: choose only ONE value from the list (very_fair, fair, medium, olive, brown, deep)
+- style: array of strings, choose from casual/formal/ethnic/party/sports
+- color_tones: array of hex codes that complement the detected skin_tone and undertone. Refer to the "Fashion Understanding - Skin+Under tone Color.csv" file and select 3-7 appropriate hex codes based on the person's detected skin tone and undertone combination from the image.
+- undertone: choose only ONE value: warm/cool/neutral
+- Return ONLY the JSON object, no markdown, no explanations''',
       };
       
       print('📤 Sending request to backend...');
@@ -166,7 +191,7 @@ class MLPreferenceService {
                 gender: 'other',
                 age: 25,
                 height: 170,
-                bodyType: 'rectangle',
+                bodyType: 'ectomorph',
                 skinTone: 'medium',
                 style: ['casual'],
                 colorTones: ['neutral'],
@@ -208,7 +233,7 @@ class MLPreferenceService {
                 gender: 'other',
                 age: 25,
                 height: 170,
-                bodyType: 'rectangle',
+                bodyType: 'ectomorph',
                 skinTone: 'medium',
                 style: ['casual'],
                 colorTones: ['neutral'],
@@ -228,7 +253,7 @@ class MLPreferenceService {
             gender: 'other',
             age: 25,
             height: 170,
-            bodyType: 'rectangle',
+            bodyType: 'ectomorph',
             skinTone: 'medium',
             style: ['casual'],
             colorTones: ['neutral'],
