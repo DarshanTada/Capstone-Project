@@ -2,25 +2,43 @@ import React, { useEffect, useState } from 'react'
 import { CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow, CTableHeaderCell, CTableBody, CTableDataCell, CPagination, CPaginationItem, CButton, CFormInput } from '@coreui/react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import AddOrder from './AddOrder'
 
 const OrderList = () => {
+  const [apiError, setApiError] = useState('');
+  // Update order status handler
+  const handleStatusChange = async (orderId, newStatus) => {
+    try {
+      const res = await axios.put(`http://localhost:3001/api/order/${orderId}/status`, { status: newStatus });
+      if (res.data.success) {
+        setOrders(prevOrders => prevOrders.map(order => order._id === orderId ? { ...order, status: newStatus } : order));
+      } else {
+        alert(res.data.message || 'Failed to update order status');
+      }
+    } catch (err) {
+      alert('Failed to update order status');
+    }
+  }
   const [orders, setOrders] = useState([])
   const [search, setSearch] = useState('')
   const [currentPage, setCurrentPage] = useState(1)
   const [ordersPerPage, setOrdersPerPage] = useState(10)
-  const [showAddOrder, setShowAddOrder] = useState(false)
   const navigate = useNavigate()
+  // Example: get user role from localStorage, context, or props
+  const userRole = localStorage.getItem('userRole') || 'user';
 
   useEffect(() => {
-    axios.get('http://localhost:3001/api/order/list')
+    axios.post('http://localhost:3001/api/order/getAllOrders', { page: 1, limit: 100 })
       .then(res => {
         if (res.data.success) {
-          setOrders(res.data.orders)
+          setOrders(res.data.orders || res.data.data || [])
+          setApiError('');
+        } else {
+          setApiError(res.data.message || 'Failed to fetch orders');
         }
       })
       .catch(err => {
-        console.error('Failed to fetch orders:', err)
+        setApiError('Failed to fetch orders: ' + (err?.message || err));
+        setOrders([]);
       })
   }, [])
 
@@ -81,9 +99,6 @@ const OrderList = () => {
               </option>
             ))}
           </select>
-          <CButton color="primary" className="float-end ms-3" onClick={() => navigate('/orders/add')}>
-            Add Order
-          </CButton>
         </div>
       </CCardHeader>
       <CCardBody>
@@ -108,19 +123,46 @@ const OrderList = () => {
             </CTableRow>
           </CTableHead>
           <CTableBody>
-            {paginatedOrders.map((order, idx) => (
+            {apiError && (
+              <CTableRow>
+                <CTableDataCell colSpan={6} className="text-danger text-center">
+                  {apiError}
+                </CTableDataCell>
+              </CTableRow>
+            )}
+            {!apiError && paginatedOrders.length === 0 && (
+              <CTableRow>
+                <CTableDataCell colSpan={6} className="text-center">
+                  No orders found.
+                </CTableDataCell>
+              </CTableRow>
+            )}
+            {!apiError && paginatedOrders.map((order, idx) => (
               <CTableRow key={order._id || idx}>
                 <CTableDataCell>{order._id}</CTableDataCell>
                 <CTableDataCell>{order.customerName}</CTableDataCell>
-                <CTableDataCell>{order.status}</CTableDataCell>
+                <CTableDataCell>
+                  {['super_admin', 'admin', 'product_manager'].includes(userRole) ? (
+                    <select
+                      value={order.status}
+                      onChange={e => handleStatusChange(order._id, e.target.value)}
+                      className="form-select form-select-sm"
+                    >
+                      <option value="Pending">Pending</option>
+                      <option value="Processing">Processing</option>
+                      <option value="Shipped">Shipped</option>
+                      <option value="Delivered">Delivered</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  ) : (
+                    order.status
+                  )}
+                </CTableDataCell>
                 <CTableDataCell>{order.totalAmount}</CTableDataCell>
                 <CTableDataCell>{order.createdAt && new Date(order.createdAt).toLocaleString()}</CTableDataCell>
                 <CTableDataCell>
                   <CButton color="info" size="sm" className="me-2" onClick={() => navigate(`/orders/${order._id}`)}>
                     View
-                  </CButton>
-                  <CButton color="danger" size="sm" onClick={() => handleDelete(order._id)}>
-                    Delete
                   </CButton>
                 </CTableDataCell>
               </CTableRow>

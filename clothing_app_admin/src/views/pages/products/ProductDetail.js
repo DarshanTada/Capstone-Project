@@ -366,6 +366,20 @@ const ProductDetail = () => {
                   </CRow>
                   <CRow className="mt-2">
                     <CCol md={4}>
+                      <CFormLabel>Avatar URL</CFormLabel>
+                      <CFormInput
+                        name="avatarUrl"
+                        value={variant.avatarUrl || ''}
+                        onChange={e => handleVariantChange(idx, e)}
+                        disabled={!isEditing}
+                      />
+                      {variant.avatarUrl && (
+                        <img src={variant.avatarUrl} alt="Avatar" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6, marginTop: 8 }} />
+                      )}
+                    </CCol>
+                  </CRow>
+                  <CRow className="mt-2">
+                    <CCol md={4}>
                       <CFormLabel>SKU</CFormLabel>
                       <CFormInput
                         name="sku"
@@ -425,7 +439,7 @@ const ProductDetail = () => {
                   </CRow>
                   <CRow className="mt-2">
                     <CCol md={12}>
-                      <CFormLabel>Images</CFormLabel>
+                      {/* <CFormLabel>Images</CFormLabel>
                       <div className="d-flex flex-wrap gap-2">
                         {images
                           .filter(img => img.productVariantObjectId === variant._id)
@@ -437,7 +451,7 @@ const ProductDetail = () => {
                               style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6 }}
                             />
                           ))}
-                      </div>
+                      </div> */}
                       {isEditing && (
                         <CFormInput
                           type="file"

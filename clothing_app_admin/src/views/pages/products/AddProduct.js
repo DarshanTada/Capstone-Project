@@ -66,6 +66,7 @@ const ProductAdd = () => {
     barcode: '',
     price: '',
     discount_price: '',
+    avatarUrl: '',
     is_featured: false,
     is_new_arrival: false,
     is_best_seller: false,
@@ -820,6 +821,13 @@ const ProductAdd = () => {
                     name="barcode"
                     className="mb-2"
                     value={variant.barcode}
+                    onChange={handleVariantChange}
+                  />
+                  <CFormInput
+                    label="Avatar URL"
+                    name="avatarUrl"
+                    className="mb-2"
+                    value={variant.avatarUrl}
                     onChange={handleVariantChange}
                   />
                 </CCol>
