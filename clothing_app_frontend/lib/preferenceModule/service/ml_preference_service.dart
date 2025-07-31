@@ -1,8 +1,9 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../api.dart';
-// import '../../storage_manager.dart'; // TODO: Uncomment when login flow is implemented
 import '../model/preference_model.dart';
+import '../services/user_api_service.dart';
 
 class MLPreferenceService {
   
@@ -44,8 +45,8 @@ class MLPreferenceService {
         REQUIRED JSON FORMAT (fill with your actual analysis):
         {
           "gender": "analyze_from_image",
-          "age": your_age_estimate_not_25,
-          "height": your_height_estimate_not_170,
+          "age": your_age_estimate,
+          "height": your_height_estimate,
           "body_type": "your_analysis_of_body_shape",
           "skin_tone": "your_detected_skin_tone",
           "style": ["your_style_recommendations"],
@@ -113,17 +114,23 @@ class MLPreferenceService {
     try {
       final url = Uri.parse('${webApi['domain']}${endPoint['getPrefByUserId']}/$userId');
       
-      final response = await http.get(
+      final response = await http.post(  // Changed to POST as per backend
         url,
         headers: {
           'ngrok-skip-browser-warning': 'true',
+          'Content-Type': 'application/json',
         },
+        body: jsonEncode({'userId': userId}),  // Send userId in body
       );
 
       if (response.statusCode == 200) {
         final responseData = jsonDecode(response.body);
-        if (responseData['success'] == true && responseData['data'].isNotEmpty) {
-          return Preference.fromJson(responseData['data'][0]);
+        if (responseData['success'] == true && responseData['data'] != null) {
+          // Extract preference from the user data structure
+          final preferenceData = responseData['data']['preference'];
+          if (preferenceData != null) {
+            return Preference.fromJson(preferenceData);
+          }
         }
       } else {
         print('Failed to get preferences: ${response.statusCode}');
@@ -138,25 +145,49 @@ class MLPreferenceService {
 
   /// Update user preferences
   static Future<bool> updateUserPreferences({
-    required String preferenceId,
+    required String userId,  // Changed from preferenceId to userId
     required Preference preferences,
   }) async {
     try {
-      final url = Uri.parse('${webApi['domain']}${endPoint['updatePreference']}/$preferenceId');
+      final url = Uri.parse('${webApi['domain']}${endPoint['updatePreference']}');
+      
+      // Get auth token for the request
+      final token = await UserApiService.getAuthToken();
+      if (token == null) {
+        print('No auth token available for preference update');
+        return false;
+      }
+      
+      // Convert preference data to user API format
+      final requestBody = {
+        if (preferences.gender != null) 'gender': preferences.gender,
+        if (preferences.age != null) 'age': preferences.age,
+        if (preferences.height != null) 'height': preferences.height,
+        if (preferences.bodyType != null) 'body_type': preferences.bodyType,
+        if (preferences.skinTone != null) 'skin_tone': preferences.skinTone,
+        if (preferences.style != null) 'style': preferences.style,
+        if (preferences.occasion != null) 'occasion': preferences.occasion,
+        if (preferences.festivals != null) 'festivals': preferences.festivals,
+        if (preferences.colorTones != null) 'color_tones': preferences.colorTones,
+        if (preferences.undertone != null) 'undertone': preferences.undertone,
+      };
       
       final response = await http.put(
         url,
         headers: {
           'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
           'ngrok-skip-browser-warning': 'true',
         },
-        body: jsonEncode(preferences.toJson()),
+        body: jsonEncode(requestBody),
       );
 
       if (response.statusCode == 200) {
-        return true;
+        final responseData = jsonDecode(response.body);
+        return responseData['success'] == true;
       } else {
         print('Failed to update preferences: ${response.statusCode}');
+        print('Response body: ${response.body}');
         return false;
       }
     } catch (e) {
@@ -305,23 +336,140 @@ class MLPreferenceService {
   /// Get current user ID from storage
   static Future<String?> getCurrentUserId() async {
     try {
-      // For testing purposes, use static user ID since login flow isn't set up
-      print('🆔 Using static user ID for testing');
+      // Use the UserApiService to get the actual logged in user ID
+      print('🆔 Getting current user ID from storage...');
+      final userId = await UserApiService.getUserId();
+      
+      if (userId != null && userId.isNotEmpty) {
+        print('✅ Found user ID: $userId');
+        return userId; 
+      }
+      
+      // Fallback: try to get from SharedPreferences directly
+      final prefs = await SharedPreferences.getInstance();
+      final storedUserId = prefs.getString('user_id');
+      if (storedUserId != null && storedUserId.isNotEmpty) {
+        print('✅ Found user ID from prefs: $storedUserId');
+        return storedUserId;
+      }
+      
+      // Last resort: use static ID for testing
+      print('⚠️ No user ID found in storage, using test ID');
       return "68659717fde8b5c9994263e3";
       
-      // TODO: Uncomment this when login flow is implemented
-      /*
-      final userData = await StorageManager.readData('userData');
-      if (userData != null) {
-        final userMap = jsonDecode(userData);
-        return userMap['_id'] ?? userMap['id'];
-      }
-      return null;
-      */
     } catch (e) {
       print('Error getting current user ID: $e');
       // Fallback to static ID
+      print('⚠️ Error occurred, using test ID as fallback');
       return "68659717fde8b5c9994263e3";
+    }
+  }
+
+  /// Get current user phone number from storage
+  static Future<String?> getCurrentUserPhone() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      
+      // Try multiple possible keys for phone number
+      String? phone = prefs.getString('user_phone') ?? 
+                     prefs.getString('phone_number') ??
+                     prefs.getString('phoneNumber');
+      
+      if (phone != null && phone.isNotEmpty) {
+        print('📱 Found user phone: $phone');
+        return phone;
+      }
+      
+      print('⚠️ No phone number found in storage');
+      return null;
+    } catch (e) {
+      print('Error getting current user phone: $e');
+      return null;
+    }
+  }
+
+  /// Get current auth token from storage  
+  static Future<String?> getCurrentAuthToken() async {
+    try {
+      final token = await UserApiService.getAuthToken();
+      if (token != null && token.isNotEmpty) {
+        print('🔐 Found auth token');
+        return token;
+      }
+      
+      print('⚠️ No auth token found');
+      return null;
+    } catch (e) {
+      print('Error getting auth token: $e');
+      return null;
+    }
+  }
+
+  /// Update user preferences via API and then navigate to home screen
+  static Future<bool> updatePreferencesAndRedirectHome({
+    required Map<String, dynamic> preferenceData,
+    Function? onSuccess,
+    Function(String)? onError,
+  }) async {
+    try {
+      print('🔄 Starting preference update flow...');
+      
+      // Get user authentication data
+      final userId = await getCurrentUserId();
+      final phone = await getCurrentUserPhone();
+      final token = await getCurrentAuthToken();
+      
+      if (userId == null) {
+        final error = 'User ID not found. Please login again.';
+        print('❌ $error');
+        if (onError != null) onError(error);
+        return false;
+      }
+      
+      if (token == null) {
+        final error = 'Authentication token not found. Please login again.';
+        print('❌ $error');
+        if (onError != null) onError(error);
+        return false;
+      }
+      
+      print('👤 Using user ID: $userId');
+      if (phone != null) print('📱 User phone: $phone');
+      
+      // Call the updateUser API with the preference data
+      final result = await UserApiService.updateUserProfile(
+        phoneNumber: phone,
+        email: preferenceData['email'],
+        username: preferenceData['username'],
+        gender: preferenceData['gender'],
+        age: preferenceData['age'],
+        height: preferenceData['height'],
+        bodyType: preferenceData['bodyType'],
+        skinTone: preferenceData['skinTone'],
+        styles: List<String>.from(preferenceData['styles'] ?? []),
+        occasions: List<String>.from(preferenceData['occasions'] ?? []),
+        festivals: List<String>.from(preferenceData['festivals'] ?? []),
+        colorTones: List<String>.from(preferenceData['colorTones'] ?? []),
+        size: preferenceData['size'],
+        undertone: preferenceData['undertone'],
+      );
+      
+      if (result != null && result['success'] == true) {
+        print('✅ Preferences updated successfully!');
+        if (onSuccess != null) onSuccess();
+        return true;
+      } else {
+        final error = result?['message'] ?? 'Failed to update preferences';
+        print('❌ Update failed: $error');
+        if (onError != null) onError(error);
+        return false;
+      }
+      
+    } catch (e) {
+      final error = 'Error updating preferences: $e';
+      print('💥 $error');
+      if (onError != null) onError(error);
+      return false;
     }
   }
 }

@@ -7,7 +7,8 @@ import '../service/ml_preference_service.dart';
 import '../model/preference_model.dart';
 import '../services/user_api_service.dart';
 import '../../authModule/screens/capture_face_screen.dart';
-import '../../authModule/providers/auth_provider.dart';
+import '../../navigation/routes.dart';
+import '../../api.dart';
 
 void main() => runApp(PreferenceScreenApp());
 
@@ -383,12 +384,13 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       final url = Uri.parse('${webApi['domain']}${endPoint['getUserById']}/$userId');
       print('🌐 Fetching user data from: $url');
 
-      final response = await http.get(
+      final response = await http.post(
         url,
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
+        body: jsonEncode({'userId': userId}),
       );
 
       print('📊 User data response status: ${response.statusCode}');
@@ -407,12 +409,13 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         
         final newToken = await UserApiService.getAuthToken();
         if (newToken != null) {
-          final retryResponse = await http.get(
+          final retryResponse = await http.post(
             url,
             headers: {
               'Authorization': 'Bearer $newToken',
               'Content-Type': 'application/json',
             },
+            body: jsonEncode({'userId': userId}),
           );
           
           if (retryResponse.statusCode == 200) {
@@ -500,12 +503,13 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       final url = Uri.parse('${webApi['domain']}${endPoint['getPrefByUserId']}/$userId');
       print('🌐 Fetching preferences from: $url');
 
-      final response = await http.get(
+      final response = await http.post(
         url,
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
         },
+        body: jsonEncode({'userId': userId}),
       );
 
       print('📊 Preferences response status: ${response.statusCode}');
@@ -514,24 +518,27 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['success'] == true && responseData['data'] != null) {
-          final prefData = responseData['data'];
+          final userData = responseData['data'];
+          final prefData = userData['preference']; // Extract preference from user data
           
-          // Convert API response to Preference model
-          return Preference(
-            userObjectId: int.tryParse(userId) ?? 0,
-            gender: prefData['gender'],
-            age: prefData['age'] is int ? prefData['age'] : int.tryParse(prefData['age']?.toString() ?? '0'),
-            height: prefData['height'] is int ? prefData['height'] : int.tryParse(prefData['height']?.toString() ?? '0'),
-            bodyType: prefData['body_type'],
-            skinTone: prefData['skin_tone'],
-            style: prefData['style'] is List ? List<String>.from(prefData['style']) : [],
-            occasion: prefData['occasion'] is List ? List<String>.from(prefData['occasion']) : [],
-            festivals: prefData['festivals'] is List ? List<String>.from(prefData['festivals']) : [],
-            colorTones: prefData['color_tones'] is List ? List<String>.from(prefData['color_tones']) : [],
-            undertone: prefData['undertone'],
-            createdAt: prefData['createdAt'] != null ? DateTime.tryParse(prefData['createdAt']) : null,
-            updatedAt: prefData['updatedAt'] != null ? DateTime.tryParse(prefData['updatedAt']) : null,
-          );
+          if (prefData != null) {
+            // Convert API response to Preference model
+            return Preference(
+              userObjectId: int.tryParse(userId) ?? 0,
+              gender: prefData['gender'],
+              age: prefData['age'] is int ? prefData['age'] : int.tryParse(prefData['age']?.toString() ?? '0'),
+              height: prefData['height'] is int ? prefData['height'] : int.tryParse(prefData['height']?.toString() ?? '0'),
+              bodyType: prefData['body_type'],
+              skinTone: prefData['skin_tone'],
+              style: prefData['style'] is List ? List<String>.from(prefData['style']) : [],
+              occasion: prefData['occasion'] is List ? List<String>.from(prefData['occasion']) : [],
+              festivals: prefData['festivals'] is List ? List<String>.from(prefData['festivals']) : [],
+              colorTones: prefData['color_tones'] is List ? List<String>.from(prefData['color_tones']) : [],
+              undertone: prefData['undertone'],
+              createdAt: prefData['createdAt'] != null ? DateTime.tryParse(prefData['createdAt']) : null,
+              updatedAt: prefData['updatedAt'] != null ? DateTime.tryParse(prefData['updatedAt']) : null,
+            );
+          }
         }
       } else if (response.statusCode == 401) {
         print('🔄 Token expired for preferences, clearing and retrying...');
@@ -541,34 +548,38 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         
         final newToken = await UserApiService.getAuthToken();
         if (newToken != null) {
-          final retryResponse = await http.get(
+          final retryResponse = await http.post(
             url,
             headers: {
               'Authorization': 'Bearer $newToken',
               'Content-Type': 'application/json',
             },
+            body: jsonEncode({'userId': userId}),
           );
           
           if (retryResponse.statusCode == 200) {
             final retryData = json.decode(retryResponse.body);
             if (retryData['success'] == true && retryData['data'] != null) {
-              final prefData = retryData['data'];
+              final userData = retryData['data'];
+              final prefData = userData['preference']; // Extract preference from user data
               
-              return Preference(
-                userObjectId: int.tryParse(userId) ?? 0,
-                gender: prefData['gender'],
-                age: prefData['age'] is int ? prefData['age'] : int.tryParse(prefData['age']?.toString() ?? '0'),
-                height: prefData['height'] is int ? prefData['height'] : int.tryParse(prefData['height']?.toString() ?? '0'),
-                bodyType: prefData['body_type'],
-                skinTone: prefData['skin_tone'],
-                style: prefData['style'] is List ? List<String>.from(prefData['style']) : [],
-                occasion: prefData['occasion'] is List ? List<String>.from(prefData['occasion']) : [],
-                festivals: prefData['festivals'] is List ? List<String>.from(prefData['festivals']) : [],
-                colorTones: prefData['color_tones'] is List ? List<String>.from(prefData['color_tones']) : [],
-                undertone: prefData['undertone'],
-                createdAt: prefData['createdAt'] != null ? DateTime.tryParse(prefData['createdAt']) : null,
-                updatedAt: prefData['updatedAt'] != null ? DateTime.tryParse(prefData['updatedAt']) : null,
-              );
+              if (prefData != null) {
+                return Preference(
+                  userObjectId: int.tryParse(userId) ?? 0,
+                  gender: prefData['gender'],
+                  age: prefData['age'] is int ? prefData['age'] : int.tryParse(prefData['age']?.toString() ?? '0'),
+                  height: prefData['height'] is int ? prefData['height'] : int.tryParse(prefData['height']?.toString() ?? '0'),
+                  bodyType: prefData['body_type'],
+                  skinTone: prefData['skin_tone'],
+                  style: prefData['style'] is List ? List<String>.from(prefData['style']) : [],
+                  occasion: prefData['occasion'] is List ? List<String>.from(prefData['occasion']) : [],
+                  festivals: prefData['festivals'] is List ? List<String>.from(prefData['festivals']) : [],
+                  colorTones: prefData['color_tones'] is List ? List<String>.from(prefData['color_tones']) : [],
+                  undertone: prefData['undertone'],
+                  createdAt: prefData['createdAt'] != null ? DateTime.tryParse(prefData['createdAt']) : null,
+                  updatedAt: prefData['updatedAt'] != null ? DateTime.tryParse(prefData['updatedAt']) : null,
+                );
+              }
             }
           }
         }
@@ -586,12 +597,15 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     try {
       final userId = await MLPreferenceService.getCurrentUserId();
       if (userId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('User not found. Please login again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        // Check if widget is still mounted before showing snackbar
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('User not found. Please login again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
         return;
       }
 
@@ -622,29 +636,35 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       if (existingPrefs != null) {
         // Update existing preference (we would need the preference ID for this)
         // For now, just show success message as the backend handles create/update
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Preferences updated successfully!'),
-            backgroundColor: Color(0xFFB8956A),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Preferences updated successfully!'),
+              backgroundColor: Color(0xFFB8956A),
+            ),
+          );
+        }
       } else {
         // New preference will be created by the backend
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Preferences saved successfully!'),
-            backgroundColor: Color(0xFFB8956A),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Preferences saved successfully!'),
+              backgroundColor: Color(0xFFB8956A),
+            ),
+          );
+        }
       }
     } catch (e) {
       print('Error saving preferences: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save preferences. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save preferences. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -676,12 +696,14 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       final userId = await MLPreferenceService.getCurrentUserId();
       if (userId == null) {
         print('❌ No user ID found');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('User not found. Please login again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('User not found. Please login again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
         return;
       }
       print('✅ User ID found: $userId');
@@ -690,15 +712,20 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       final base64Image = await PhotoStorageHelper.getSavedSelfieAsBase64();
       if (base64Image == null) {
         print('❌ No saved selfie found');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No saved selfie found. Please capture a new photo.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('No saved selfie found. Please capture a new photo.'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
         return;
       }
       print('✅ Base64 image retrieved, length: ${base64Image.length}');
+
+      // Check if widget is still mounted before showing dialog
+      if (!mounted) return;
 
       // Show loading dialog
       showDialog(
@@ -1053,15 +1080,27 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                   Icon(Icons.auto_awesome, color: Colors.white),
                   SizedBox(width: 8),
                   Expanded(
-                    child: Text('Your personalized recommendations are ready! You can now browse personalized products.'),
+                    child: Text('Your personalized recommendations are ready! Redirecting to home...'),
                   ),
                 ],
               ),
               backgroundColor: Color(0xFFD2B193),
-              duration: Duration(seconds: 3),
+              duration: Duration(seconds: 2),
             ),
           );
         });
+
+        // Navigate to home screen after a short delay
+        Future.delayed(Duration(seconds: 2), () {
+          Navigator.pushNamedAndRemoveUntil(
+            context,
+            NamedRoute.homeScreen,
+            (route) => false, // Remove all previous routes
+          );
+        });
+
+        print('✅ Complete profile update successful - navigating to home');
+
       } else {
         // Close loading dialog
         Navigator.pop(context);
@@ -1753,8 +1792,11 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                 ),
                 icon: Icon(Icons.auto_awesome, size: 20),
                 label: Text(
-                  "Get Curated Results",
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  "Save & Get Personalized Products",
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
             ),

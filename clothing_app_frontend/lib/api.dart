@@ -1,14 +1,6 @@
-// var webApi = {'domain': 'http://10.144.121.67:3001/'}; //PC IP ADDRESS
-
-// var webApi = {'domain': 'https://api.iteeha.co'}; //PROD
-
-// var webApi = {'domain': 'http://10.144.121.158:3001/'}; //DEV PROD
-
-var webApi = {'domain': 'http://localhost:3001/'}; //DEV PROD
-
-var mlApi = {
-  'domain': 'https://naturally-giving-chow.ngrok-free.app/',
-}; //ML NGROK
+// var webApi = {'domain': 'http://localhost:3001/'}; // LOCALHOST
+var webApi = {'domain': 'http://10.0.0.85:3001/'}; //PC IP ADDRESS
+var mlApi = {'domain': 'https://naturally-giving-chow.ngrok-free.app/'}; //ML NGROK
 
 var endPoint = {
   // Authentication
@@ -26,11 +18,11 @@ var endPoint = {
   // SubCategory
   'getSubCategories': 'api/subCategory/getAll',
 
-  //Preference
-  'getAllPreferences': 'api/preferences/getPreferences',
-  'getPrefByUserId': 'api/preferences/user',
-  'updatePreference': 'api/preferences/updatePreference',
-  'deletePreference': 'api/preferences/deletePreference',
+  //Preference (handled by user module)
+  'getAllPreferences': 'api/user/users',
+  'getPrefByUserId': 'api/user/getUserById',
+  'updatePreference': 'api/user/updateUser',
+  'deletePreference': 'api/user/updateUser', // Use updateUser to clear preference data
 
   // Address
   'addAddress': 'api/address/addAddress',
