@@ -4,12 +4,14 @@ import 'package:clothing_app_frontend/common_widgets/custom_app_bar.dart';
 import 'package:clothing_app_frontend/common_widgets/custom_text_field.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
+import 'package:clothing_app_frontend/homeModule/provider/home_provider.dart';
 import 'package:clothing_app_frontend/homeModule/screens/product_list_screen.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_big_product_card_grid.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_small_product_card_grid.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
 import 'package:clothing_app_frontend/navigation/navigators.dart';
 import 'package:clothing_app_frontend/navigation/routes.dart';
+import 'package:clothing_app_frontend/searchModule/screens/search_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -43,21 +45,18 @@ class HomeScreenState extends State<HomeScreen> {
     'assets/images/g2.png',
     'assets/images/g3.png',
   ];
-  fetchCategories() async {
-    final response = await Provider.of<CategoryProvider>(context, listen: false)
-        .fetchCategory(
-          // accessToken: User.accessToken,
-          query: 'page=1&limit=10',
-        );
+  fetchHomeData() async {
+    final response = await Provider.of<HomeProvider>(
+      context,
+      listen: false,
+    ).fetchHomeData();
     if (!response['success']) {
       showSnackbar(response['message']);
     }
   }
 
-  
-
   fetchData() async {
-    await fetchCategories();
+    await fetchHomeData();
   }
 
   @override
@@ -82,9 +81,7 @@ class HomeScreenState extends State<HomeScreen> {
   }
 
   screenBody() {
-    final categories = Provider.of<CategoryProvider>(context).categories;
-    final getProductsByCategory =
-        Provider.of<CategoryProvider>(context).categoryProducts;
+    final homeData = Provider.of<HomeProvider>(context).homeData;
     return SizedBox(
       height: dH,
       width: dW,
@@ -104,18 +101,46 @@ class HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         children: [
                           Expanded(
-                            child: CustomTextFieldWithLabel(
-                              controller: searchController,
-                              border: 25,
-                              backgroundColor: Color(0xffF2F2F2),
-                              borderColor: Colors.transparent,
-                              prefixIcon: const Icon(
-                                Icons.search,
-                                color: Colors.grey,
+                            child: GestureDetector(
+                              onTap: () {
+                                // Navigate to search screen when search field is tapped
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => const SearchScreen(),
+                                  ),
+                                );
+                              },
+                              child: Container(
+                                height:
+                                    50, // Set a fixed height for the container
+                                decoration: BoxDecoration(
+                                  color: Color(0xffF2F2F2),
+                                  borderRadius: BorderRadius.circular(25),
+                                ),
+                                child: Row(
+                                  children: [
+                                    Padding(
+                                      padding: EdgeInsets.only(left: dW * 0.04),
+                                      child: Icon(
+                                        Icons.search,
+                                        color: Colors.grey,
+                                      ),
+                                    ),
+                                    SizedBox(width: dW * 0.02),
+                                    Expanded(
+                                      child: Text(
+                                        language['personalizedSearch'] ??
+                                            'Personalized Search',
+                                        style: TextStyle(
+                                          color: Colors.grey[600],
+                                          fontSize: 16,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ),
-                              label: '',
-                              hintText: language['personalizedSearch'],
-                              onChanged: (value) {},
                             ),
                           ),
                           SizedBox(width: dW * 0.025),
@@ -370,8 +395,8 @@ class HomeScreenState extends State<HomeScreen> {
                       child: Row(
                         children: [
                           Image.asset("assets/images/b1.png"),
-                          SizedBox(width: dW * 0.03),
-                          Image.asset("assets/images/b4.png"),
+                          SizedBox(width: dW * 0.02),
+                          Image.asset("assets/images/b2.png"),
                         ],
                       ),
                     ),

@@ -3,7 +3,10 @@
 
 // var webApi = {'domain': 'https://api.iteeha.co'}; //PROD
 
-var webApi = {'domain': 'http://10.144.121.158:3001/'}; //DEV PROD
+// var webApi = {'domain': 'http://10.144.121.158:3001/'}; //DEV PROD
+
+var webApi = {'domain': 'http://10.0.0.213:3001/'}; //DEV PROD
+
 
 var mlApi = {'domain': 'https://naturally-giving-chow.ngrok-free.app/'}; //ML NGROK
 
