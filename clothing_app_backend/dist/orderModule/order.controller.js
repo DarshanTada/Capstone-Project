@@ -48,17 +48,15 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getOrderById = exports.getOrdersByUserId = exports.getAllOrders = exports.cancelProduct = exports.updateProductStatus = exports.createOrder = void 0;
 const order_model_1 = __importStar(require("./order.model"));
 const user_model_1 = __importDefault(require("../userModule/user.model"));
-const product_model_1 = __importDefault(require("../productModule/product.model"));
 const productVariant_model_1 = __importDefault(require("../productModule/productVariant.model"));
+const productImage_model_1 = __importDefault(require("../productModule/productImage.model"));
 const address_model_1 = __importDefault(require("../addressModule/address.model"));
+const preference_model_1 = __importDefault(require("../userModule/preference.model"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const sendMail_1 = require("../utils/sendMail");
 const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _a, _b;
     try {
-        console.log("Received request body:", req.body);
-        console.log("Products type:", typeof req.body.products);
-        console.log("Products value:", req.body.products);
         let { products, user, address, paymentMethod } = req.body;
         if (typeof products === 'string') {
             try {
@@ -96,9 +94,16 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             res.status(400).json({ success: false, message: "Invalid address ID" });
             return;
         }
-        const userExists = yield user_model_1.default.findById(user);
+        const userExists = yield user_model_1.default.findById(user).select('-password -token');
         if (!userExists) {
             res.status(404).json({ success: false, message: "User not found" });
+            return;
+        }
+        if (!userExists.email) {
+            res.status(400).json({
+                success: false,
+                message: "User must have an email address to place orders"
+            });
             return;
         }
         const addressExists = yield address_model_1.default.findById(address);
@@ -113,55 +118,57 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const processedProducts = [];
         let totalAmount = 0;
         for (const productItem of products) {
-            const { product, quantity, size } = productItem;
+            const { variantId, quantity } = productItem;
             const parsedQuantity = parseInt(quantity);
-            if (!product || !parsedQuantity || !size) {
+            if (!variantId || !parsedQuantity) {
                 res.status(400).json({
                     success: false,
-                    message: "Each product must have: product ID, quantity, and size"
+                    message: "Each product must have: variantId and quantity"
                 });
                 return;
             }
-            if (!mongoose_1.default.Types.ObjectId.isValid(product)) {
-                res.status(400).json({ success: false, message: `Invalid product ID: ${product}` });
+            if (!mongoose_1.default.Types.ObjectId.isValid(variantId)) {
+                res.status(400).json({ success: false, message: `Invalid variant ID: ${variantId}` });
                 return;
             }
             if (isNaN(parsedQuantity) || parsedQuantity <= 0) {
                 res.status(400).json({ success: false, message: "Quantity must be a positive number" });
                 return;
             }
-            const productExists = yield product_model_1.default.findById(product);
-            if (!productExists) {
-                res.status(404).json({ success: false, message: `Product not found: ${product}` });
+            const variant = yield productVariant_model_1.default.findById(variantId).populate('productObjectId');
+            if (!variant) {
+                res.status(404).json({
+                    success: false,
+                    message: `Product variant not found: ${variantId}`
+                });
                 return;
             }
-            console.log("Product details:", {
-                id: product,
-                name: productExists.name,
-                price: productExists.price,
-                priceType: typeof productExists.price
-            });
-            const variant = yield productVariant_model_1.default.findOne({
-                productObjectId: product,
-                size: size.toLowerCase(),
-                available_status: 'in_stock'
-            });
-            if (!variant) {
+            const product = variant.productObjectId;
+            if (!product) {
+                res.status(404).json({
+                    success: false,
+                    message: `Product not found for variant: ${variantId}`
+                });
+                return;
+            }
+            if (variant.available_status !== 'in_stock') {
                 res.status(400).json({
                     success: false,
-                    message: `Product variant with size ${size} is not available or out of stock for ${productExists.name}`
+                    message: `Product variant is not available or out of stock for ${product.name} (Size: ${variant.size})`
                 });
                 return;
             }
             if (variant.stock_qty && variant.stock_qty < parsedQuantity) {
                 res.status(400).json({
                     success: false,
-                    message: `Insufficient stock for ${productExists.name}. Available: ${variant.stock_qty}, Requested: ${parsedQuantity}`
+                    message: `Insufficient stock for ${product.name}. Available: ${variant.stock_qty}, Requested: ${parsedQuantity}`
                 });
                 return;
             }
             console.log("Variant details:", {
                 variantId: variant._id,
+                productId: product._id,
+                productName: product.name,
                 price: variant.price,
                 priceType: typeof variant.price,
                 size: variant.size,
@@ -171,7 +178,7 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             if (isNaN(variantPrice) || variantPrice <= 0) {
                 res.status(400).json({
                     success: false,
-                    message: `Invalid variant price for ${productExists.name} (Size: ${size}). Price: ${variant.price}`
+                    message: `Invalid variant price for ${product.name} (Size: ${variant.size}). Price: ${variant.price}`
                 });
                 return;
             }
@@ -184,9 +191,10 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 totalAmount
             });
             processedProducts.push({
-                product,
+                product: product._id,
+                variantId: variant._id,
                 quantity: parsedQuantity,
-                size: size.toLowerCase(),
+                size: variant.size,
                 status: order_model_1.STATUS.PENDING,
                 price: itemPrice
             });
@@ -207,9 +215,23 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         });
         const populatedOrder = yield order_model_1.default.findById(newOrder._id)
             .populate('products.product', 'name price images')
-            .populate('user', 'name email phone_number')
+            .populate('user', 'email phone_number')
             .populate('address');
+        const orderWithImages = yield Promise.all(populatedOrder.products.map((item) => __awaiter(void 0, void 0, void 0, function* () {
+            const images = yield productImage_model_1.default.find({
+                variantObjectid: item.variantId
+            }).sort({ sort_order: 1 });
+            const primaryImage = images.find(img => img.is_primary) || images[0];
+            return Object.assign(Object.assign({}, item.toObject()), { image: primaryImage ? {
+                    _id: primaryImage._id,
+                    image: primaryImage.image,
+                    is_primary: primaryImage.is_primary,
+                    sort_order: primaryImage.sort_order
+                } : null });
+        })));
         try {
+            const userPreference = yield preference_model_1.default.findOne({ user: userExists._id });
+            const userName = (userPreference === null || userPreference === void 0 ? void 0 : userPreference.username) || ((_b = userExists.email) === null || _b === void 0 ? void 0 : _b.split('@')[0]) || 'Customer';
             const productList = processedProducts.map((item, index) => {
                 const product = populatedOrder.products[index].product;
                 return `- ${product.name} (Size: ${item.size}, Quantity: ${item.quantity}) - $${item.price.toFixed(2)}`;
@@ -217,7 +239,7 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
             yield (0, sendMail_1.sendMail)({
                 to: userExists.email,
                 subject: `Order Confirmation - Order #${newOrder._id}`,
-                text: `Dear ${userExists.name || 'Customer'},
+                text: `Dear ${userName},
 
 Your order has been successfully placed!
 
@@ -244,7 +266,7 @@ Your Shopping Team`
         res.status(200).json({
             success: true,
             message: "Order created successfully",
-            data: populatedOrder
+            data: Object.assign(Object.assign({}, populatedOrder === null || populatedOrder === void 0 ? void 0 : populatedOrder.toObject()), { products: orderWithImages })
         });
     }
     catch (error) {
@@ -258,12 +280,13 @@ Your Shopping Team`
 });
 exports.createOrder = createOrder;
 const updateProductStatus = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
     try {
-        const { orderId, productId, status, reason } = req.body;
-        if (!orderId || !productId || !status) {
+        const { orderId, productId, variantId, status, reason } = req.body;
+        if (!orderId || !variantId || !status) {
             res.status(400).json({
                 success: false,
-                message: "Order ID, Product ID, and status are required"
+                message: "Order ID, Variant ID, and status are required"
             });
             return;
         }
@@ -271,8 +294,8 @@ const updateProductStatus = (req, res) => __awaiter(void 0, void 0, void 0, func
             res.status(400).json({ success: false, message: "Invalid order ID" });
             return;
         }
-        if (!mongoose_1.default.Types.ObjectId.isValid(productId)) {
-            res.status(400).json({ success: false, message: "Invalid product ID" });
+        if (!mongoose_1.default.Types.ObjectId.isValid(variantId)) {
+            res.status(400).json({ success: false, message: "Invalid variant ID" });
             return;
         }
         if (!Object.values(order_model_1.STATUS).includes(status)) {
@@ -283,42 +306,64 @@ const updateProductStatus = (req, res) => __awaiter(void 0, void 0, void 0, func
             return;
         }
         const order = yield order_model_1.default.findById(orderId)
-            .populate("user", "name email phone_number")
+            .populate("user", "email phone_number")
             .populate("products.product", "name");
         if (!order) {
             res.status(404).json({ success: false, message: "Order not found" });
             return;
         }
-        const productIndex = order.products.findIndex((item) => item.product._id.toString() === productId);
+        const productIndex = order.products.findIndex((item) => item.variantId && item.variantId.toString() === variantId);
         if (productIndex === -1) {
             res.status(404).json({
                 success: false,
-                message: "Product not found in this order"
+                message: "Product variant not found in this order"
             });
             return;
         }
         const oldStatus = order.products[productIndex].status;
         order.products[productIndex].status = status;
         yield order.save();
+        const orderWithImages = yield order_model_1.default.findById(orderId)
+            .populate('products.product', 'name images price')
+            .populate('user', 'email phone_number')
+            .populate('address');
+        const productsWithImages = yield Promise.all(orderWithImages.products.map((item) => __awaiter(void 0, void 0, void 0, function* () {
+            const images = yield productImage_model_1.default.find({
+                variantObjectid: item.variantId
+            }).sort({ sort_order: 1 });
+            const primaryImage = images.find(img => img.is_primary) || images[0];
+            return Object.assign(Object.assign({}, item.toObject()), { image: primaryImage ? {
+                    _id: primaryImage._id,
+                    image: primaryImage.image,
+                    is_primary: primaryImage.is_primary,
+                    sort_order: primaryImage.sort_order
+                } : null });
+        })));
+        const orderResponse = Object.assign(Object.assign({}, orderWithImages.toObject()), { products: productsWithImages });
         try {
             const user = order.user;
             const product = order.products[productIndex].product;
-            yield (0, sendMail_1.sendMail)({
-                to: user.email,
-                subject: `Order Status Update - Order #${order._id}`,
-                text: `Dear ${user.name || 'Customer'},
+            const productItem = order.products[productIndex];
+            if (user.email) {
+                const userPreference = yield preference_model_1.default.findOne({ user: user._id });
+                const userName = (userPreference === null || userPreference === void 0 ? void 0 : userPreference.username) || ((_a = user.email) === null || _a === void 0 ? void 0 : _a.split('@')[0]) || 'Customer';
+                yield (0, sendMail_1.sendMail)({
+                    to: user.email,
+                    subject: `Order Status Update - Order #${order._id}`,
+                    text: `Dear ${userName},
 
 Your order status has been updated!
 
 Order ID: ${order._id}
-Product: ${product.name}
+Product: ${product.name} (Size: ${productItem.size})
 Previous Status: ${oldStatus}
 New Status: ${status}
 ${reason ? `Reason: ${reason}` : ''}
 
 Best regards,
 Your Shopping Team`
-            });
+                });
+            }
         }
         catch (emailError) {
             console.error('Failed to send status update email:', emailError);
@@ -326,7 +371,7 @@ Your Shopping Team`
         res.status(200).json({
             success: true,
             message: `Product status updated from ${oldStatus} to ${status}`,
-            data: order
+            data: orderResponse
         });
     }
     catch (error) {
@@ -340,13 +385,13 @@ Your Shopping Team`
 });
 exports.updateProductStatus = updateProductStatus;
 const cancelProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a;
+    var _a, _b;
     try {
-        const { orderId, productId, cancelReason } = req.body;
-        if (!orderId || !productId) {
+        const { orderId, variantId, cancelReason } = req.body;
+        if (!orderId || !variantId) {
             res.status(400).json({
                 success: false,
-                message: "Order ID and Product ID are required"
+                message: "Order ID and Variant ID are required"
             });
             return;
         }
@@ -354,22 +399,22 @@ const cancelProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             res.status(400).json({ success: false, message: "Invalid order ID" });
             return;
         }
-        if (!mongoose_1.default.Types.ObjectId.isValid(productId)) {
-            res.status(400).json({ success: false, message: "Invalid product ID" });
+        if (!mongoose_1.default.Types.ObjectId.isValid(variantId)) {
+            res.status(400).json({ success: false, message: "Invalid variant ID" });
             return;
         }
         const order = yield order_model_1.default.findById(orderId)
-            .populate("user", "name email phone_number")
+            .populate("user", "email phone_number")
             .populate("products.product", "name");
         if (!order) {
             res.status(404).json({ success: false, message: "Order not found" });
             return;
         }
-        const productIndex = order.products.findIndex((item) => item.product._id.toString() === productId);
+        const productIndex = order.products.findIndex((item) => item.variantId && item.variantId.toString() === variantId);
         if (productIndex === -1) {
             res.status(404).json({
                 success: false,
-                message: "Product not found in this order"
+                message: "Product variant not found in this order"
             });
             return;
         }
@@ -391,10 +436,10 @@ const cancelProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
         productItem.status = order_model_1.STATUS.CANCELLED;
         productItem.isCancelled = true;
         productItem.cancelReason = cancelReason || "Cancelled by user";
-        const variant = yield productVariant_model_1.default.findOne({
-            productObjectId: productId,
-            size: productItem.size,
-        });
+        let variant = null;
+        if (productItem.variantId) {
+            variant = yield productVariant_model_1.default.findById(productItem.variantId);
+        }
         if (variant) {
             if (variant.stock_qty !== undefined) {
                 variant.stock_qty = ((_a = variant.stock_qty) !== null && _a !== void 0 ? _a : 0) + productItem.quantity;
@@ -408,18 +453,38 @@ const cancelProduct = (req, res) => __awaiter(void 0, void 0, void 0, function* 
             .filter((item) => !item.isCancelled)
             .reduce((total, item) => total + item.price, 0);
         yield order.save();
+        const orderWithImages = yield order_model_1.default.findById(orderId)
+            .populate('products.product', 'name images price')
+            .populate('user', 'email phone_number')
+            .populate('address');
+        const productsWithImages = yield Promise.all(orderWithImages.products.map((item) => __awaiter(void 0, void 0, void 0, function* () {
+            const images = yield productImage_model_1.default.find({
+                variantObjectid: item.variantId
+            }).sort({ sort_order: 1 });
+            const primaryImage = images.find(img => img.is_primary) || images[0];
+            return Object.assign(Object.assign({}, item.toObject()), { image: primaryImage ? {
+                    _id: primaryImage._id,
+                    image: primaryImage.image,
+                    is_primary: primaryImage.is_primary,
+                    sort_order: primaryImage.sort_order
+                } : null });
+        })));
+        const orderResponse = Object.assign(Object.assign({}, orderWithImages.toObject()), { products: productsWithImages });
         try {
             const user = order.user;
             const product = productItem.product;
-            yield (0, sendMail_1.sendMail)({
-                to: user.email,
-                subject: `Product Cancelled - Order #${order._id}`,
-                text: `Dear ${user.name || 'Customer'},
+            if (user.email) {
+                const userPreference = yield preference_model_1.default.findOne({ user: user._id });
+                const userName = (userPreference === null || userPreference === void 0 ? void 0 : userPreference.username) || ((_b = user.email) === null || _b === void 0 ? void 0 : _b.split('@')[0]) || 'Customer';
+                yield (0, sendMail_1.sendMail)({
+                    to: user.email,
+                    subject: `Product Cancelled - Order #${order._id}`,
+                    text: `Dear ${userName},
 
 A product in your order has been cancelled.
 
 Order ID: ${order._id}
-Cancelled Product: ${product.name}
+Cancelled Product: ${product.name} (Size: ${productItem.size})
 Reason: ${cancelReason || "No reason provided"}
 
 Refund Amount: $${productItem.price.toFixed(2)}
@@ -429,7 +494,8 @@ If you didn't request this cancellation, please contact our support team.
 
 Best regards,
 Your Shopping Team`
-            });
+                });
+            }
         }
         catch (emailError) {
             console.error('Failed to send cancellation email:', emailError);
@@ -437,7 +503,7 @@ Your Shopping Team`
         res.status(200).json({
             success: true,
             message: "Product cancelled successfully",
-            data: order
+            data: orderResponse
         });
     }
     catch (error) {
@@ -463,14 +529,29 @@ const getAllOrders = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         const total = yield order_model_1.default.countDocuments(filterCondition);
         const orders = yield order_model_1.default.find(filterCondition)
             .populate('products.product', 'name images price')
-            .populate('user', 'name email phone_number')
+            .populate('user', 'email phone_number')
             .populate('address')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parsedLimit);
+        const ordersWithImages = yield Promise.all(orders.map((order) => __awaiter(void 0, void 0, void 0, function* () {
+            const productsWithImages = yield Promise.all(order.products.map((item) => __awaiter(void 0, void 0, void 0, function* () {
+                const images = yield productImage_model_1.default.find({
+                    variantObjectid: item.variantId
+                }).sort({ sort_order: 1 });
+                const primaryImage = images.find(img => img.is_primary) || images[0];
+                return Object.assign(Object.assign({}, item.toObject()), { image: primaryImage ? {
+                        _id: primaryImage._id,
+                        image: primaryImage.image,
+                        is_primary: primaryImage.is_primary,
+                        sort_order: primaryImage.sort_order
+                    } : null });
+            })));
+            return Object.assign(Object.assign({}, order.toObject()), { products: productsWithImages });
+        })));
         res.status(200).json({
             success: true,
-            data: orders,
+            data: ordersWithImages,
             pagination: {
                 total,
                 currentPage: parsedPage,
@@ -511,9 +592,24 @@ const getOrdersByUserId = (req, res) => __awaiter(void 0, void 0, void 0, functi
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(parsedLimit);
+        const ordersWithImages = yield Promise.all(orders.map((order) => __awaiter(void 0, void 0, void 0, function* () {
+            const productsWithImages = yield Promise.all(order.products.map((item) => __awaiter(void 0, void 0, void 0, function* () {
+                const images = yield productImage_model_1.default.find({
+                    variantObjectid: item.variantId
+                }).sort({ sort_order: 1 });
+                const primaryImage = images.find(img => img.is_primary) || images[0];
+                return Object.assign(Object.assign({}, item.toObject()), { image: primaryImage ? {
+                        _id: primaryImage._id,
+                        image: primaryImage.image,
+                        is_primary: primaryImage.is_primary,
+                        sort_order: primaryImage.sort_order
+                    } : null });
+            })));
+            return Object.assign(Object.assign({}, order.toObject()), { products: productsWithImages });
+        })));
         res.status(200).json({
             success: true,
-            data: orders,
+            data: ordersWithImages,
             pagination: {
                 total,
                 currentPage: parsedPage,
@@ -544,15 +640,28 @@ const getOrderById = (req, res) => __awaiter(void 0, void 0, void 0, function* (
         }
         const order = yield order_model_1.default.findById(orderId)
             .populate('products.product', 'name price images description')
-            .populate('user', 'name email phone_number gender age')
+            .populate('user', 'email phone_number')
             .populate('address');
         if (!order) {
             res.status(404).json({ success: false, message: "Order not found" });
             return;
         }
+        const productsWithImages = yield Promise.all(order.products.map((item) => __awaiter(void 0, void 0, void 0, function* () {
+            const images = yield productImage_model_1.default.find({
+                variantObjectid: item.variantId
+            }).sort({ sort_order: 1 });
+            const primaryImage = images.find(img => img.is_primary) || images[0];
+            return Object.assign(Object.assign({}, item.toObject()), { image: primaryImage ? {
+                    _id: primaryImage._id,
+                    image: primaryImage.image,
+                    is_primary: primaryImage.is_primary,
+                    sort_order: primaryImage.sort_order
+                } : null });
+        })));
+        const orderWithImages = Object.assign(Object.assign({}, order.toObject()), { products: productsWithImages });
         res.status(200).json({
             success: true,
-            data: order
+            data: orderWithImages
         });
     }
     catch (error) {
