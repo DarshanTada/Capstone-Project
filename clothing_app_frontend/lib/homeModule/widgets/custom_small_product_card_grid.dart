@@ -101,7 +101,7 @@ class CustomSmallProductCardGrid extends StatelessWidget {
             )
           : Image.asset(
               imageUrl,
-              fit: BoxFit.cover,git 
+              fit: BoxFit.cover,
               errorBuilder: (context, error, stackTrace) {
                 return Container(
                   color: Colors.grey[300],
