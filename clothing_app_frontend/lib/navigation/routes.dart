@@ -15,6 +15,7 @@ class NamedRoute {
 
   static const String addAddressManually = '/addAddressManually';
   static const String captureFaceScreen = '/captureFaceScreen';
+  static const String captureBodyScreen = '/captureBodyScreen';
 
   static const String searchCafeScreen = '/searchCafeScreen';
   static const String loginScreen = '/loginScreen';
