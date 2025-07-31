@@ -1,27 +1,9 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'dart:io';
-
-import 'package:clothing_app_frontend/authModule/screens/intro_screen_1.dart';
-import 'package:clothing_app_frontend/authModule/screens/login.dart';
-import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
-import 'package:clothing_app_frontend/categoryModule/screens/category.dart';
 import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
-
 import 'package:clothing_app_frontend/addressModule/provider/address_provider.dart';
-
 import 'package:clothing_app_frontend/homeModule/provider/home_provider.dart';
-
-// import 'package:clothing_app_frontend/homeModule/screens/category_provider.dart';
-import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
-import 'package:clothing_app_frontend/profileModule/screens/profile_screen.dart';
-// import 'package:clothing_app_frontend/cartModule/screens/cart_screen.dart';
-// import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
-// import 'package:clothing_app_frontend/homeModule/widgets/size_chart_screen.dart';
-// import 'package:clothing_app_frontend/preferenceModule/screen/preference_screen.dart';
-// import 'package:clothing_app_frontend/checkoutModule/screens/checkout_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:face_camera/face_camera.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -32,7 +14,6 @@ import 'package:provider/provider.dart';
 import 'authModule/providers/auth_provider.dart';
 import 'navigation/navigation_service.dart';
 import 'firebase_options.dart';
-import 'test_screen.dart';
 
 final LocalStorage storage = LocalStorage('re_household');
 
