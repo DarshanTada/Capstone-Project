@@ -67,6 +67,7 @@ class _SplashScreenState extends State<SplashScreenMain>
     // Simulate loading (e.g., Firebase.init(), shared prefs, API calls, etc.)
     await Future.delayed(const Duration(seconds: 2));
 
+
     if (!mounted) {
       print("Widget is not mounted, returning");
       return;
@@ -80,6 +81,7 @@ class _SplashScreenState extends State<SplashScreenMain>
       Navigator.pushReplacementNamed(context, NamedRoute.onBoardingScreen1);
     }
   }
+
 
   @override
   void dispose() {

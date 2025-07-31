@@ -6,7 +6,11 @@ import 'package:clothing_app_frontend/authModule/screens/splash.dart';
 import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
+
 import 'package:clothing_app_frontend/addressModule/provider/address_provider.dart';
+
+import 'package:clothing_app_frontend/homeModule/provider/home_provider.dart';
+
 // import 'package:clothing_app_frontend/homeModule/screens/category_provider.dart';
 import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
 import 'package:clothing_app_frontend/profileModule/screens/profile_screen.dart';
@@ -125,7 +129,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
+
         ChangeNotifierProvider(create: (_) => AddressProvider()),
+
+        ChangeNotifierProvider(create: (_) => HomeProvider()),
+
 
         // ChangeNotifierProvider(create: (_) => CafeProvider()),
         // ChangeNotifierProvider(create: (_) => CartProvider()),

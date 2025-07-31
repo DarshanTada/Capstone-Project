@@ -44,7 +44,7 @@ class Product {
       description: json['description'] ?? '',
       fabricType: json['fabric_type'] ?? '',
       categoryId: json['categoryId'] ?? json['category_id'] ?? '',
-      subCategoryId: json['subCategoryId'] ?? json['sub_category_id'] ?? '',
+      subCategoryId: json['subCategoryId'] ?? json['subcategory_id'] ?? '',
       reviewObjectId: json['reviewObjectId']?.toString() ?? '',
       gender: json['gender'] ?? '',
       bodyType: json['bodyType'] ?? '',

@@ -47,7 +47,7 @@ class CustomBigProductCardGridWidgetState
     tS = MediaQuery.of(context).textScaleFactor;
     language = Provider.of<AuthProvider>(context).selectedLanguage;
     customTextTheme = Theme.of(context).textTheme;
-    
+
     return GestureDetector(
       onTap: widget.onTap,
       child: Container(
@@ -75,30 +75,12 @@ class CustomBigProductCardGridWidgetState
                   gradient: LinearGradient(
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,
-                    colors: [
-                      Colors.grey.shade200,
-                      Colors.grey.shade100,
-                    ],
+                    colors: [Colors.grey.shade200, Colors.grey.shade100],
                   ),
                 ),
-                child: Image.asset(
-                  widget.imageUrl,
-                  fit: BoxFit.cover,
-                  width: dW * 0.55,
-                  height: dW * 0.605,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      color: Colors.grey.shade200,
-                      child: Icon(
-                        Icons.image_not_supported_outlined,
-                        color: Colors.grey.shade400,
-                        size: 40,
-                      ),
-                    );
-                  },
-                ),
+                child: _buildProductImage(),
               ),
-              
+
               // Top gradient overlay with product name and favorite
               Positioned(
                 top: 0,
@@ -179,7 +161,7 @@ class CustomBigProductCardGridWidgetState
                   ),
                 ),
               ),
-              
+
               // Bottom gradient overlay with price, size chart, and rating
               Positioned(
                 bottom: 0,
@@ -221,13 +203,14 @@ class CustomBigProductCardGridWidgetState
                               ),
                             ),
                             child: TextWidget(
-                              title: '\$${double.tryParse(widget.price)?.toStringAsFixed(0) ?? widget.price}',
+                              title:
+                                  '\$${double.tryParse(widget.price)?.toStringAsFixed(0) ?? widget.price}',
                               fontSize: tS * 14,
                               color: Colors.white,
                               fontWeight: FontWeight.w700,
                             ),
                           ),
-                          
+
                           // Rating with background
                           Container(
                             padding: EdgeInsets.symmetric(
@@ -248,11 +231,7 @@ class CustomBigProductCardGridWidgetState
                             child: Row(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                Icon(
-                                  Icons.star,
-                                  color: Colors.white,
-                                  size: 14,
-                                ),
+                                Icon(Icons.star, color: Colors.white, size: 14),
                                 SizedBox(width: 2),
                                 TextWidget(
                                   title: widget.rating.toString(),
@@ -265,9 +244,9 @@ class CustomBigProductCardGridWidgetState
                           ),
                         ],
                       ),
-                      
+
                       SizedBox(height: dW * 0.02),
-                      
+
                       // Size Chart Button
                       GestureDetector(
                         onTap: () {
@@ -331,7 +310,7 @@ class CustomBigProductCardGridWidgetState
                   ),
                 ),
               ),
-              
+
               // Hover/Press effect overlay
               Positioned.fill(
                 child: Material(
@@ -349,5 +328,55 @@ class CustomBigProductCardGridWidgetState
         ),
       ),
     );
+  }
+
+  Widget _buildProductImage() {
+    return widget.imageUrl.startsWith('http')
+        ? Image.network(
+            widget.imageUrl,
+            fit: BoxFit.cover,
+            width: dW * 0.55,
+            height: dW * 0.605,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey.shade200,
+                child: Icon(
+                  Icons.image_not_supported_outlined,
+                  color: Colors.grey.shade400,
+                  size: 40,
+                ),
+              );
+            },
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return Container(
+                color: Colors.grey[300],
+                child: Center(
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Colors.grey[600]!,
+                    ),
+                  ),
+                ),
+              );
+            },
+          )
+        : Image.asset(
+            widget.imageUrl,
+            fit: BoxFit.cover,
+            width: dW * 0.55,
+            height: dW * 0.605,
+            errorBuilder: (context, error, stackTrace) {
+              return Container(
+                color: Colors.grey.shade200,
+                child: Icon(
+                  Icons.image_not_supported_outlined,
+                  color: Colors.grey.shade400,
+                  size: 40,
+                ),
+              );
+            },
+          );
   }
 }

@@ -7,8 +7,6 @@ class CustomSmallProductCardGrid extends StatelessWidget {
   final String price;
   final double rating;
 
-  double dW = 0.0;
-
   CustomSmallProductCardGrid({
     super.key,
     required this.imageUrl,
@@ -19,7 +17,7 @@ class CustomSmallProductCardGrid extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    dW = MediaQuery.of(context).size.width;
+    final dW = MediaQuery.of(context).size.width;
     return GestureDetector(
       onTap: onTap,
       child: ClipRRect(
@@ -28,14 +26,7 @@ class CustomSmallProductCardGrid extends StatelessWidget {
           alignment: Alignment.bottomCenter,
           children: [
             // Product Image
-            // AssetSvgIcon(imageUrl, width: 116, height: 116),
-            // Image.network(imageUrl, fit: BoxFit.cover, width: 110, height: 116),
-            Image.asset(
-              imageUrl,
-              fit: BoxFit.cover,
-              width: dW * 0.29,
-              height: dW * 0.29,
-            ),
+            _buildProductImage(context),
             // Gradient Overlay
             Container(
               width: dW * 0.29,
@@ -75,6 +66,53 @@ class CustomSmallProductCardGrid extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildProductImage(BuildContext context) {
+    final dW = MediaQuery.of(context).size.width;
+    return Container(
+      width: dW * 0.29,
+      height: dW * 0.29,
+      child: imageUrl.startsWith('http')
+          ? Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Image.asset(
+                  'assets/images/placeholder.png',
+                  fit: BoxFit.cover,
+                );
+              },
+              loadingBuilder: (context, child, loadingProgress) {
+                if (loadingProgress == null) return child;
+                return Container(
+                  color: Colors.grey[300],
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      valueColor: AlwaysStoppedAnimation<Color>(
+                        Colors.grey[600]!,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            )
+          : Image.asset(
+              imageUrl,
+              fit: BoxFit.cover,git 
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Colors.grey[300],
+                  child: Icon(
+                    Icons.image_not_supported,
+                    size: 30,
+                    color: Colors.grey[600],
+                  ),
+                );
+              },
+            ),
     );
   }
 }

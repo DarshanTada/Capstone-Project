@@ -8,6 +8,7 @@ var endPoint = {
   'getUserById': 'api/user/getUserById',
 
   // Home
+  'getHomeData': 'api/home/home',
   'getCategory': 'api/category/getCategory',
   'getProductsByCategory': 'api/category/getProductsByCategory',
   // Product
