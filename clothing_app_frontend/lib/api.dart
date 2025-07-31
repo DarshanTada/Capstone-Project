@@ -1,20 +1,21 @@
-
 // var webApi = {'domain': 'http://10.144.121.67:3001/'}; //PC IP ADDRESS
 
 // var webApi = {'domain': 'https://api.iteeha.co'}; //PROD
 
 // var webApi = {'domain': 'http://10.144.121.158:3001/'}; //DEV PROD
 
-var webApi = {'domain': 'http://10.0.0.213:3001/'}; //DEV PROD
+var webApi = {'domain': 'http://localhost:3001/'}; //DEV PROD
 
-
-var mlApi = {'domain': 'https://naturally-giving-chow.ngrok-free.app/'}; //ML NGROK
+var mlApi = {
+  'domain': 'https://naturally-giving-chow.ngrok-free.app/',
+}; //ML NGROK
 
 var endPoint = {
   // Authentication
   'login': 'api/user/loginOrRegisterUser',
   'updateUser': 'api/user/updateUser',
   'getUserById': 'api/user/getUserById',
+  'logout': 'api/user/logout',
 
   // Home
   'getHomeData': 'api/home/home',

@@ -159,6 +159,7 @@ export const loginOrRegisterUser = [
         success: true,
         message: isNewUser ? "User registered successfully." : "Login successful.",
         token,
+        isNewUser: isNewUser, // Flag to indicate if user is new
         data: {
           user: userData,
           relationProfile: formattedRelationProfiles,
@@ -495,6 +496,74 @@ export const getUserById = async (req: Request, res: Response): Promise<void> =>
     res.status(500).json({
       success: false,
       message: 'Server error while fetching user.',
+      error: error.message
+    });
+  }
+};
+
+// Logout User
+export const logoutUser = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      res.status(401).json({ 
+        success: false, 
+        message: "Unauthorized - No token provided" 
+      });
+      return;
+    }
+
+    const token = authHeader.split(" ")[1];
+    
+    // Verify the token
+    const decoded: any = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    // Find the user and clear their token
+    const user = await User.findById(userId);
+    
+    if (!user) {
+      res.status(404).json({
+        success: false,
+        message: "User not found"
+      });
+      return;
+    }
+
+    // Clear the user's token from database
+    await User.findByIdAndUpdate(userId, { 
+      $unset: { token: 1 } // Remove token field
+    });
+
+    res.status(200).json({
+      success: true,
+      message: "Logout successful"
+    });
+
+  } catch (error: any) {
+    console.error("Logout Error:", error);
+    
+    // Handle JWT specific errors
+    if (error.name === 'JsonWebTokenError') {
+      res.status(401).json({
+        success: false,
+        message: "Invalid token"
+      });
+      return;
+    }
+    
+    if (error.name === 'TokenExpiredError') {
+      res.status(401).json({
+        success: false,
+        message: "Token expired"
+      });
+      return;
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Server error during logout",
       error: error.message
     });
   }

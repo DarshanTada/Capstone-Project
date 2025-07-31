@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:provider/provider.dart';
 import '../service/ml_preference_service.dart';
 import '../model/preference_model.dart';
 import '../services/user_api_service.dart';
 import '../../authModule/screens/capture_face_screen.dart';
+import '../../authModule/providers/auth_provider.dart';
 
 void main() => runApp(PreferenceScreenApp());
 
@@ -41,7 +43,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   Set<String> selectedFestivals = {};
   List<String> mlColorTones = []; // Store hex codes from ML model
   List<String> mlRecommendedStyles = []; // Store ML-recommended styles
-  bool _hasLoadedMLRecommendations = false; // Track if ML recommendations have been loaded
+  bool _hasLoadedMLRecommendations =
+      false; // Track if ML recommendations have been loaded
   String selectedUndertone = 'Neutral';
 
   // App permissions state
@@ -54,35 +57,161 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   @override
   void initState() {
     super.initState();
-    _loadPreferences();
     _loadUserData();
+    _loadPreferences();
+    _loadDataFromAuthProvider();
   }
 
-  /// Load user data from SharedPreferences (including phone number)
+  /// Load user data from SharedPreferences (legacy method - now mainly for fallback)
   Future<void> _loadUserData() async {
     try {
+      // This method is now mainly for fallback if AuthProvider fails
       final prefs = await SharedPreferences.getInstance();
-      final storedPhone = prefs.getString('user_phone') ?? prefs.getString('phone_number');
-      
-      if (storedPhone != null && storedPhone.isNotEmpty) {
-        setState(() {
-          phoneNumber = storedPhone;
-        });
+
+      // Only load phone if not already loaded from AuthProvider
+      if (phoneNumber.isEmpty) {
+        final storedPhone =
+            prefs.getString('user_phone') ?? prefs.getString('phone_number');
+        if (storedPhone != null && storedPhone.isNotEmpty) {
+          setState(() {
+            phoneNumber = storedPhone;
+          });
+        }
       }
-      
-      // Also try to get user info from JWT token if available
-      final token = await UserApiService.getAuthToken();
-      if (token != null) {
-        // For testing, we know the phone from the JWT token
-        // In production, you might decode the JWT or call a user info API
-        setState(() {
-          if (phoneNumber.isEmpty) {
-            phoneNumber = "+12222222222"; // From the test token
-          }
-        });
+
+      // Also try to get user info from JWT token if available (fallback)
+      if (phoneNumber.isEmpty) {
+        final token = await UserApiService.getAuthToken();
+        if (token != null) {
+          setState(() {
+            phoneNumber = "+12222222222"; // From the test token (fallback)
+          });
+        }
       }
     } catch (e) {
       print('Error loading user data: $e');
+    }
+  }
+
+  /// Load data from AuthProvider (similar to profile screen)
+  Future<void> _loadDataFromAuthProvider() async {
+    try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      // Ensure auth provider loads user data from preferences
+      await authProvider.loadUserFromPrefs();
+
+      // Get user object and active preference separately
+      final user = authProvider.user;
+      final activePreference = authProvider.activePreference;
+
+      print('Loading data from AuthProvider...');
+      print('- User ID: ${user.id}');
+      print('- Phone Number: ${user.phoneNumber}');
+      print('- Email: ${user.email}');
+
+      if (activePreference != null) {
+        print('- Username: ${activePreference.username}');
+        print('- Gender: ${activePreference.gender}');
+        print('- Age: ${activePreference.age}');
+        print('- Height: ${activePreference.height}');
+        print('- Body Type: ${activePreference.bodyType}');
+
+        setState(() {
+          // Load phone number and email from user object
+          if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) {
+            phoneNumber = user.phoneNumber!;
+          }
+          if (user.email != null && user.email!.isNotEmpty) {
+            email = user.email!;
+          }
+
+          // Load other details from preference model
+          if (activePreference.username != null &&
+              activePreference.username!.isNotEmpty) {
+            name = activePreference.username!;
+          }
+          if (activePreference.gender != null) {
+            gender = activePreference.gender!;
+          }
+          if (activePreference.age != null) {
+            age = activePreference.age!;
+          }
+          if (activePreference.height != null) {
+            height = activePreference.height!.round();
+          }
+          if (activePreference.bodyType != null) {
+            bodyType = activePreference.bodyType!;
+          }
+
+          // Load skin tone
+          if (activePreference.skinTone != null) {
+            selectedSkin = _mapSkinToneToIndex(activePreference.skinTone!);
+          }
+
+          // Load style preferences
+          if (activePreference.style != null &&
+              activePreference.style!.isNotEmpty) {
+            selectedStyles = activePreference.style!
+                .map(
+                  (style) =>
+                      style[0].toUpperCase() + style.substring(1).toLowerCase(),
+                )
+                .toSet();
+            mlRecommendedStyles = selectedStyles.toList();
+          }
+
+          // Load occasions
+          if (activePreference.occasion != null &&
+              activePreference.occasion!.isNotEmpty) {
+            selectedOccasions = activePreference.occasion!.toSet();
+          }
+
+          // Load festivals
+          if (activePreference.festivals != null &&
+              activePreference.festivals!.isNotEmpty) {
+            selectedFestivals = activePreference.festivals!.toSet();
+          }
+
+          // Load color preferences
+          if (activePreference.colorTones != null &&
+              activePreference.colorTones!.isNotEmpty) {
+            mlColorTones = activePreference.colorTones!;
+          }
+
+          // Load undertone
+          if (activePreference.undertone != null &&
+              activePreference.undertone!.isNotEmpty) {
+            selectedUndertone =
+                activePreference.undertone![0].toUpperCase() +
+                activePreference.undertone!.substring(1);
+          }
+        });
+
+        print('✅ Data loaded from AuthProvider successfully');
+        print('📱 Phone from User: $phoneNumber');
+        print('✉️ Email from User: $email');
+        print('👤 Name from Preference: $name');
+        print('🎨 Selected Styles: $selectedStyles');
+        print('🎯 Selected Occasions: $selectedOccasions');
+        print('🎉 Selected Festivals: $selectedFestivals');
+      } else {
+        // Even if no active preference, still load user data
+        setState(() {
+          if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) {
+            phoneNumber = user.phoneNumber!;
+          }
+          if (user.email != null && user.email!.isNotEmpty) {
+            email = user.email!;
+          }
+        });
+
+        print('ℹ️ No active preference found - loaded user data only');
+        print('📱 Phone from User: $phoneNumber');
+        print('✉️ Email from User: $email');
+      }
+    } catch (e) {
+      print('Error loading data from AuthProvider: $e');
     }
   }
 
@@ -91,7 +220,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     try {
       // First try to load from local storage
       final localPrefs = await PreferencePrefs.loadFromPrefs();
-      
+
       if (localPrefs != null) {
         _populatePreferencesFromModel(localPrefs);
         return;
@@ -100,7 +229,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       // If no local preferences, try to fetch from server
       final userId = await MLPreferenceService.getCurrentUserId();
       if (userId != null) {
-        final serverPrefs = await MLPreferenceService.getUserPreferences(userId);
+        final serverPrefs = await MLPreferenceService.getUserPreferences(
+          userId,
+        );
         if (serverPrefs != null) {
           _populatePreferencesFromModel(serverPrefs);
           // Save to local storage for future use
@@ -117,7 +248,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     setState(() {
       if (prefs.gender != null) gender = prefs.gender!;
       if (prefs.age != null) age = prefs.age!;
-      if (prefs.height != null) height = prefs.height!;
+      if (prefs.height != null) height = prefs.height!.round();
       if (prefs.bodyType != null) bodyType = prefs.bodyType!;
       if (prefs.skinTone != null) {
         // Map skin tone string to index
@@ -125,16 +256,19 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       }
       if (prefs.style != null) {
         // Convert styles to title case for UI display
-        final titleCaseStyles = prefs.style!.map((style) => 
-          style[0].toUpperCase() + style.substring(1).toLowerCase()
-        ).toList();
-        
+        final titleCaseStyles = prefs.style!
+            .map(
+              (style) =>
+                  style[0].toUpperCase() + style.substring(1).toLowerCase(),
+            )
+            .toList();
+
         // If this is the first time loading ML recommendations, auto-select them
         if (!_hasLoadedMLRecommendations && titleCaseStyles.isNotEmpty) {
           selectedStyles = titleCaseStyles.toSet();
           _hasLoadedMLRecommendations = true;
         }
-        
+
         // Always update ML-recommended styles for display purposes
         mlRecommendedStyles = titleCaseStyles;
       }
@@ -142,7 +276,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       if (prefs.festivals != null) selectedFestivals = prefs.festivals!.toSet();
       if (prefs.undertone != null) {
         // Capitalize first letter to match UI display
-        selectedUndertone = prefs.undertone![0].toUpperCase() + prefs.undertone!.substring(1);
+        selectedUndertone =
+            prefs.undertone![0].toUpperCase() + prefs.undertone!.substring(1);
       }
       if (prefs.colorTones != null) {
         // Handle hex codes directly from ML model
@@ -197,15 +332,18 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         occasion: selectedOccasions.toList(),
         festivals: selectedFestivals.toList(),
         colorTones: mlColorTones, // Use hex codes directly
-        undertone: selectedUndertone.toLowerCase(), // Convert to lowercase for ML model
+        undertone: selectedUndertone
+            .toLowerCase(), // Convert to lowercase for ML model
       );
 
       // Save to local storage
       await preference.saveToPrefs();
 
       // Try to get existing preference ID to update, or create new
-      final existingPrefs = await MLPreferenceService.getUserPreferences(userId);
-      
+      final existingPrefs = await MLPreferenceService.getUserPreferences(
+        userId,
+      );
+
       if (existingPrefs != null) {
         // Update existing preference (we would need the preference ID for this)
         // For now, just show success message as the backend handles create/update
@@ -259,7 +397,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   Future<void> _reAnalyzePreferences() async {
     try {
       print('🔄 Starting preference re-analysis...');
-      
+
       final userId = await MLPreferenceService.getCurrentUserId();
       if (userId == null) {
         print('❌ No user ID found');
@@ -299,15 +437,17 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               SizedBox(height: 16),
               Text('Re-analyzing your preferences...'),
               SizedBox(height: 8),
-              Text('This may take 10-30 seconds', 
-                style: TextStyle(fontSize: 12, color: Colors.grey)),
+              Text(
+                'This may take 10-30 seconds',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
             ],
           ),
         ),
       );
 
       print('🚀 Sending request to ML service...');
-      
+
       // Analyze preferences
       final preferences = await MLPreferenceService.analyzeAndGetPreferences(
         userId: userId,
@@ -324,10 +464,10 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         print('📋 Skin Tone: ${preferences.skinTone}');
         print('📋 Style: ${preferences.style}');
         print('📋 Colors: ${preferences.colorTones}');
-        
+
         // Update UI with new preferences
         _populatePreferencesFromModel(preferences);
-        
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Preferences re-analyzed successfully!'),
@@ -338,7 +478,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         print('❌ No preferences returned from ML service');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Failed to re-analyze preferences. Please try again.'),
+            content: Text(
+              'Failed to re-analyze preferences. Please try again.',
+            ),
             backgroundColor: Colors.red,
           ),
         );
@@ -348,7 +490,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       if (Navigator.canPop(context)) {
         Navigator.pop(context);
       }
-      
+
       print('💥 Error re-analyzing preferences: $e');
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -364,13 +506,13 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     try {
       // Remove # if present
       String cleanHex = hexCode.replaceFirst('#', '');
-      
+
       // Parse RGB values
       int colorValue = int.parse(cleanHex, radix: 16);
       int r = (colorValue >> 16) & 0xFF;
       int g = (colorValue >> 8) & 0xFF;
       int b = colorValue & 0xFF;
-      
+
       // Determine dominant color channel
       if (r > g && r > b) {
         return 'Red';
@@ -427,7 +569,16 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         "Inverted Triangle", // Changed from "inverted_triangle"
       ];
     } else {
-      return ["Ectomorph", "Mesomorph", "Endomorph", "Hourglass", "Triangle", "Round", "Straight", "Inverted Triangle"];
+      return [
+        "Ectomorph",
+        "Mesomorph",
+        "Endomorph",
+        "Hourglass",
+        "Triangle",
+        "Round",
+        "Straight",
+        "Inverted Triangle",
+      ];
     }
   }
 
@@ -500,7 +651,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     if (email.isEmpty || email.trim().isEmpty) {
       return 'Please enter your email address';
     }
-    
+
     if (!UserApiService.isValidEmail(email.trim())) {
       return 'Please enter a valid email address';
     }
@@ -553,7 +704,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         context: context,
         barrierDismissible: false,
         builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -563,18 +716,12 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               SizedBox(height: 16),
               Text(
                 'Updating your preferences...',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
               ),
               SizedBox(height: 8),
               Text(
                 'This may take a few seconds',
-                style: TextStyle(
-                  fontSize: 12,
-                  color: Colors.grey.shade600,
-                ),
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
               ),
             ],
           ),
@@ -605,7 +752,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
 
       if (result != null) {
         print('✅ Profile updated successfully');
-        
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -614,7 +761,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                 Icon(Icons.check_circle, color: Colors.white),
                 SizedBox(width: 8),
                 Expanded(
-                  child: Text('Profile updated successfully! Getting your curated results...'),
+                  child: Text(
+                    'Profile updated successfully! Getting your curated results...',
+                  ),
                 ),
               ],
             ),
@@ -642,7 +791,6 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
             ),
           );
         });
-
       } else {
         print('❌ Update failed - no result returned');
         ScaffoldMessenger.of(context).showSnackBar(
@@ -651,14 +799,15 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               children: [
                 Icon(Icons.error, color: Colors.white),
                 SizedBox(width: 8),
-                Expanded(child: Text('Failed to update profile. Please try again.')),
+                Expanded(
+                  child: Text('Failed to update profile. Please try again.'),
+                ),
               ],
             ),
             backgroundColor: Colors.red.shade700,
           ),
         );
       }
-
     } catch (e) {
       // Close loading dialog if open
       if (Navigator.canPop(context)) {
@@ -666,7 +815,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       }
 
       print('💥 Error updating profile: $e');
-      
+
       String errorMessage = 'Failed to update profile. Please try again.';
       if (e.toString().contains('No authentication token')) {
         errorMessage = 'Please log in again to continue.';
@@ -694,11 +843,14 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   Widget build(BuildContext context) {
     double dH = MediaQuery.of(context).size.height;
     double dW = MediaQuery.of(context).size.width;
-    
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Preferences', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Preferences',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -771,7 +923,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                         onTap: () async {
                           ScaffoldMessenger.of(context).showSnackBar(
                             SnackBar(
-                              content: Text('Navigate to avatar selection screen'),
+                              content: Text(
+                                'Navigate to avatar selection screen',
+                              ),
                               backgroundColor: Color(0xFFB8956A),
                             ),
                           );
@@ -785,11 +939,17 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 gradient: LinearGradient(
-                                  colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+                                  colors: [
+                                    Color(0xFFD2B193),
+                                    Color(0xFFB8956A),
+                                  ],
                                   begin: Alignment.topLeft,
                                   end: Alignment.bottomRight,
                                 ),
-                                border: Border.all(color: Colors.white, width: 3),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 3,
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.15),
@@ -798,14 +958,21 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                                   ),
                                 ],
                               ),
-                              child: Icon(Icons.person, size: 35, color: Colors.white),
+                              child: Icon(
+                                Icons.person,
+                                size: 35,
+                                color: Colors.white,
+                              ),
                             ),
                             Container(
                               padding: EdgeInsets.all(6),
                               decoration: BoxDecoration(
                                 color: Color(0xFFD2B193),
                                 shape: BoxShape.circle,
-                                border: Border.all(color: Colors.white, width: 2),
+                                border: Border.all(
+                                  color: Colors.white,
+                                  width: 2,
+                                ),
                                 boxShadow: [
                                   BoxShadow(
                                     color: Colors.black.withOpacity(0.15),
@@ -814,14 +981,18 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                                   ),
                                 ],
                               ),
-                              child: Icon(Icons.edit, size: 12, color: Colors.white),
+                              child: Icon(
+                                Icons.edit,
+                                size: 12,
+                                color: Colors.white,
+                              ),
                             ),
                           ],
                         ),
                       ),
-                      
+
                       SizedBox(width: dW * 0.05),
-                      
+
                       // User Info Section
                       Expanded(
                         child: Column(
@@ -837,7 +1008,10 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                             ),
                             SizedBox(height: dH * 0.008),
                             Container(
-                              padding: EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 4,
+                              ),
                               decoration: BoxDecoration(
                                 color: Color(0xFFD2B193).withOpacity(0.2),
                                 borderRadius: BorderRadius.circular(20),
@@ -854,10 +1028,16 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                             SizedBox(height: dH * 0.008),
                             Row(
                               children: [
-                                Icon(Icons.phone_outlined, size: 16, color: Colors.grey.shade600),
+                                Icon(
+                                  Icons.phone_outlined,
+                                  size: 16,
+                                  color: Colors.grey.shade600,
+                                ),
                                 SizedBox(width: 6),
                                 Text(
-                                  phoneNumber.isEmpty ? "+1 000-000-0000" : phoneNumber,
+                                  phoneNumber.isEmpty
+                                      ? "+1 000-000-0000"
+                                      : phoneNumber,
                                   style: TextStyle(
                                     color: Colors.grey.shade600,
                                     fontSize: 13,
@@ -868,19 +1048,33 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                             SizedBox(height: dH * 0.008),
                             Row(
                               children: [
-                                Icon(Icons.height, size: 16, color: Colors.grey.shade600),
+                                Icon(
+                                  Icons.height,
+                                  size: 16,
+                                  color: Colors.grey.shade600,
+                                ),
                                 SizedBox(width: 6),
                                 Text(
                                   "$height cm",
-                                  style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                                  style: TextStyle(
+                                    color: Colors.grey.shade700,
+                                    fontSize: 13,
+                                  ),
                                 ),
                                 SizedBox(width: 16),
-                                Icon(Icons.fitness_center, size: 16, color: Colors.grey.shade600),
+                                Icon(
+                                  Icons.fitness_center,
+                                  size: 16,
+                                  color: Colors.grey.shade600,
+                                ),
                                 SizedBox(width: 6),
                                 Expanded(
                                   child: Text(
                                     bodyType,
-                                    style: TextStyle(color: Colors.grey.shade700, fontSize: 13),
+                                    style: TextStyle(
+                                      color: Colors.grey.shade700,
+                                      fontSize: 13,
+                                    ),
                                     overflow: TextOverflow.ellipsis,
                                   ),
                                 ),
@@ -891,7 +1085,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                       ),
                     ],
                   ),
-                  
+
                   // Settings Icon - Positioned at top right
                   Positioned(
                     top: 0,
@@ -926,195 +1120,197 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                 ],
               ),
             ),
-            
+
             SizedBox(height: dH * 0.025),
-            
+
             // Basic Information Card
-            _buildSectionCard(
-              "Basic Information",
-              Icons.person_outline,
-              [
-                _infoTile("Name", name.isEmpty ? "Enter your name" : name, () async {
-                  final selected = await _showTextInputDialog("Enter Name", name);
+            _buildSectionCard("Basic Information", Icons.person_outline, [
+              _infoTile(
+                "Name",
+                name.isEmpty ? "Enter your name" : name,
+                () async {
+                  final selected = await _showTextInputDialog(
+                    "Enter Name",
+                    name,
+                  );
                   if (selected != null && selected.isNotEmpty) {
                     setState(() => name = selected);
                   }
-                }),
-                _infoTile("Email", email.isEmpty ? "Enter your email" : email, () async {
-                  final selected = await _showTextInputDialog("Enter Email", email);
+                },
+              ),
+              _infoTile(
+                "Email",
+                email.isEmpty ? "Enter your email" : email,
+                () async {
+                  final selected = await _showTextInputDialog(
+                    "Enter Email",
+                    email,
+                  );
                   if (selected != null && selected.isNotEmpty) {
                     setState(() => email = selected);
                   }
-                }),
-                _infoTile("Gender", gender, () async {
-                  final selected = await _showOptionsDialog("Select Gender", [
-                    "Male",
-                    "Female",
-                    "Other",
-                  ]);
-                  if (selected != null) {
-                    setState(() {
-                      gender = selected;
-                      updateBodyTypeOnGenderChange(selected);
-                    });
-                  }
-                }),
-                _infoTile("Age", "$age Years", () async {
-                  final selected = await _showNumberInputDialog("Enter Age", age);
-                  if (selected != null) setState(() => age = selected);
-                }),
-                _infoTile("Height", "$height cm", () async {
-                  final selected = await _showNumberInputDialog(
-                    "Enter Height (cm)",
-                    height,
-                  );
-                  if (selected != null) setState(() => height = selected);
-                }),
-                _infoTile("Body Type", formatBodyTypeName(bodyType), () async {
-                  final options = getBodyTypeOptions(gender);
-                  final selected = await _showBodyTypeDialog(
-                    "Select Body Type",
-                    options,
-                    gender,
-                  );
-                  if (selected != null) setState(() => bodyType = selected);
-                }),
-              ],
-            ),
+                },
+              ),
+              _infoTile("Gender", gender, () async {
+                final selected = await _showOptionsDialog("Select Gender", [
+                  "Male",
+                  "Female",
+                  "Other",
+                ]);
+                if (selected != null) {
+                  setState(() {
+                    gender = selected;
+                    updateBodyTypeOnGenderChange(selected);
+                  });
+                }
+              }),
+              _infoTile("Age", "$age Years", () async {
+                final selected = await _showNumberInputDialog("Enter Age", age);
+                if (selected != null) setState(() => age = selected);
+              }),
+              _infoTile("Height", "$height cm", () async {
+                final selected = await _showNumberInputDialog(
+                  "Enter Height (cm)",
+                  height,
+                );
+                if (selected != null) setState(() => height = selected);
+              }),
+              _infoTile("Body Type", formatBodyTypeName(bodyType), () async {
+                final options = getBodyTypeOptions(gender);
+                final selected = await _showBodyTypeDialog(
+                  "Select Body Type",
+                  options,
+                  gender,
+                );
+                if (selected != null) setState(() => bodyType = selected);
+              }),
+            ]),
 
             SizedBox(height: dH * 0.02),
 
             // Skin Tone Card
-            _buildSectionCard(
-              "Skin Tone",
-              Icons.palette_outlined,
-              [
-                SizedBox(height: dH * 0.01),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: List.generate(skinTones.length, (index) {
-                    return GestureDetector(
-                      onTap: () => setState(() => selectedSkin = index),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          border: selectedSkin == index
-                              ? Border.all(width: 3, color: Color(0xFFB8956A))
-                              : Border.all(width: 2, color: Colors.grey.shade300),
-                          color: skinTones[index],
-                          shape: BoxShape.circle,
-                          boxShadow: selectedSkin == index ? [
-                            BoxShadow(
-                              color: Color(0xFFB8956A).withOpacity(0.3),
-                              blurRadius: 8,
-                              offset: Offset(0, 4),
-                            ),
-                          ] : [],
-                        ),
-                        width: 40,
-                        height: 40,
+            _buildSectionCard("Skin Tone", Icons.palette_outlined, [
+              SizedBox(height: dH * 0.01),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: List.generate(skinTones.length, (index) {
+                  return GestureDetector(
+                    onTap: () => setState(() => selectedSkin = index),
+                    child: Container(
+                      decoration: BoxDecoration(
+                        border: selectedSkin == index
+                            ? Border.all(width: 3, color: Color(0xFFB8956A))
+                            : Border.all(width: 2, color: Colors.grey.shade300),
+                        color: skinTones[index],
+                        shape: BoxShape.circle,
+                        boxShadow: selectedSkin == index
+                            ? [
+                                BoxShadow(
+                                  color: Color(0xFFB8956A).withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: Offset(0, 4),
+                                ),
+                              ]
+                            : [],
                       ),
-                    );
-                  }),
-                ),
-                SizedBox(height: dH * 0.01),
-              ],
-            ),
+                      width: 40,
+                      height: 40,
+                    ),
+                  );
+                }),
+              ),
+              SizedBox(height: dH * 0.01),
+            ]),
 
             SizedBox(height: dH * 0.02),
 
             // Style Preferences Card
-            _buildSectionCard(
-              "Style Preferences",
-              Icons.style_outlined,
-              [
-                _stylesSection(),
-                _chipSection("Select Occasions", [
-                  "Daily",
-                  "Vacation",
-                  "Office",
-                  "Festival",
-                  "Wedding",
-                ], selectedOccasions),
-                _chipSection("Select Festivals", [
-                  "Christmas",
-                  "Diwali",
-                  "New Year",
-                  "Holi",
-                  "Eid",
-                ], selectedFestivals),
-              ],
-            ),
+            _buildSectionCard("Style Preferences", Icons.style_outlined, [
+              _stylesSection(),
+              _chipSection("Select Occasions", [
+                "Daily",
+                "Vacation",
+                "Office",
+                "Festival",
+                "Wedding",
+              ], selectedOccasions),
+              _chipSection("Select Festivals", [
+                "Christmas",
+                "Diwali",
+                "New Year",
+                "Holi",
+                "Eid",
+              ], selectedFestivals),
+            ]),
 
             SizedBox(height: dH * 0.02),
 
             // Color Preferences Card
-            _buildSectionCard(
-              "Color Preferences",
-              Icons.color_lens_outlined,
-              [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+            _buildSectionCard("Color Preferences", Icons.color_lens_outlined, [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      _sectionTitle("Color Palette"),
+                      if (mlColorTones.isNotEmpty) ...[
+                        SizedBox(width: 8),
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 4,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFB8956A).withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: Color(0xFFB8956A).withOpacity(0.5),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.auto_awesome,
+                                size: 12,
+                                color: Color(0xFFB8956A),
+                              ),
+                              SizedBox(width: 4),
+                              Text(
+                                "ML Recommended",
+                                style: TextStyle(
+                                  fontSize: 10,
+                                  color: Color(0xFFB8956A),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                  if (mlColorTones.isNotEmpty) ...[
+                    SizedBox(height: 4),
                     Row(
                       children: [
-                        _sectionTitle("Color Palette"),
-                        if (mlColorTones.isNotEmpty) ...[
-                          SizedBox(width: 8),
-                          Container(
-                            padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: Color(0xFFB8956A).withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Color(0xFFB8956A).withOpacity(0.5)),
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Icon(
-                                  Icons.auto_awesome,
-                                  size: 12,
-                                  color: Color(0xFFB8956A),
-                                ),
-                                SizedBox(width: 4),
-                                Text(
-                                  "ML Recommended",
-                                  style: TextStyle(
-                                    fontSize: 10,
-                                    color: Color(0xFFB8956A),
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                              ],
-                            ),
+                        Icon(Icons.star, size: 12, color: Color(0xFFB8956A)),
+                        SizedBox(width: 4),
+                        Text(
+                          "Colors recommended based on your skin tone analysis",
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                            fontStyle: FontStyle.italic,
                           ),
-                        ],
+                        ),
                       ],
                     ),
-                    if (mlColorTones.isNotEmpty) ...[
-                      SizedBox(height: 4),
-                      Row(
-                        children: [
-                          Icon(
-                            Icons.star,
-                            size: 12,
-                            color: Color(0xFFB8956A),
-                          ),
-                          SizedBox(width: 4),
-                          Text(
-                            "Colors recommended based on your skin tone analysis",
-                            style: TextStyle(
-                              fontSize: 11,
-                              color: Colors.grey.shade600,
-                              fontStyle: FontStyle.italic,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                    SizedBox(height: 8),
-                    Container(
-                      height: 80, // Increased height to accommodate hex codes
-                      child: mlColorTones.isEmpty 
+                  ],
+                  SizedBox(height: 8),
+                  Container(
+                    height: 80, // Increased height to accommodate hex codes
+                    child: mlColorTones.isEmpty
                         ? Container(
                             width: double.infinity,
                             padding: EdgeInsets.all(16),
@@ -1141,15 +1337,20 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                               children: mlColorTones.map((hexCode) {
                                 Color color;
                                 try {
-                                  color = Color(int.parse(hexCode.replaceFirst('#', '0xFF')));
+                                  color = Color(
+                                    int.parse(
+                                      hexCode.replaceFirst('#', '0xFF'),
+                                    ),
+                                  );
                                 } catch (e) {
                                   color = Colors.grey; // Fallback color
                                 }
-                                
+
                                 return Padding(
                                   padding: const EdgeInsets.only(right: 16),
                                   child: Column(
-                                    mainAxisSize: MainAxisSize.min, // Added to prevent overflow
+                                    mainAxisSize: MainAxisSize
+                                        .min, // Added to prevent overflow
                                     children: [
                                       Container(
                                         decoration: BoxDecoration(
@@ -1161,7 +1362,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                                           color: color,
                                           boxShadow: [
                                             BoxShadow(
-                                              color: Color(0xFFB8956A).withOpacity(0.3),
+                                              color: Color(
+                                                0xFFB8956A,
+                                              ).withOpacity(0.3),
                                               blurRadius: 8,
                                               offset: Offset(0, 4),
                                             ),
@@ -1191,65 +1394,63 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                               }).toList(),
                             ),
                           ),
+                  ),
+                ],
+              ),
+              SizedBox(height: dH * 0.02),
+              // _sectionTitle("Undertone"),
+              Container(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Color(0xFFD2B193).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: Color(0xFFD2B193).withOpacity(0.2),
+                    width: 1,
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.palette, color: Color(0xFFB8956A), size: 20),
+                    SizedBox(width: 12),
+                    Text(
+                      "Detected Undertone:",
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    SizedBox(width: 8),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Text(
+                        selectedUndertone,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                   ],
                 ),
-                SizedBox(height: dH * 0.02),
-                // _sectionTitle("Undertone"),
-                Container(
-                  padding: EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: BoxDecoration(
-                    color: Color(0xFFD2B193).withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: Color(0xFFD2B193).withOpacity(0.2),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.palette,
-                        color: Color(0xFFB8956A),
-                        size: 20,
-                      ),
-                      SizedBox(width: 12),
-                      Text(
-                        "Detected Undertone:",
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                          color: Colors.black87,
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Container(
-                        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          selectedUndertone,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ]),
 
             SizedBox(height: dH * 0.03),
-            
+
             // Action Button
             SizedBox(
               width: double.infinity,
@@ -1270,14 +1471,11 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                 icon: Icon(Icons.auto_awesome, size: 20),
                 label: Text(
                   "Get Curated Results",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ),
-            
+
             SizedBox(height: dH * 0.03),
           ],
         ),
@@ -1321,11 +1519,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                     width: 1,
                   ),
                 ),
-                child: Icon(
-                  icon,
-                  color: Color(0xFFB8956A),
-                  size: 20,
-                ),
+                child: Icon(icon, color: Color(0xFFB8956A), size: 20),
               ),
               SizedBox(width: 12),
               Text(
@@ -1347,7 +1541,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
 
   Widget _infoTile(String title, String value, VoidCallback onTap) {
     bool isPlaceholder = value.startsWith("Enter your");
-    
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: GestureDetector(
@@ -1380,8 +1574,12 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: isPlaceholder ? Colors.grey.shade500 : Color(0xFFB8956A),
-                      fontStyle: isPlaceholder ? FontStyle.italic : FontStyle.normal,
+                      color: isPlaceholder
+                          ? Colors.grey.shade500
+                          : Color(0xFFB8956A),
+                      fontStyle: isPlaceholder
+                          ? FontStyle.italic
+                          : FontStyle.normal,
                     ),
                   ),
                   SizedBox(width: 8),
@@ -1490,42 +1688,44 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
-          children: options.map((option) => 
-            Container(
-              margin: EdgeInsets.symmetric(vertical: 4),
-              child: ListTile(
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                tileColor: Color(0xFFD2B193).withOpacity(0.1),
-                title: Text(
-                  option,
-                  style: TextStyle(fontWeight: FontWeight.w500),
+          children: options
+              .map(
+                (option) => Container(
+                  margin: EdgeInsets.symmetric(vertical: 4),
+                  child: ListTile(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    tileColor: Color(0xFFD2B193).withOpacity(0.1),
+                    title: Text(
+                      option,
+                      style: TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    onTap: () => Navigator.pop(context, option),
+                  ),
                 ),
-                onTap: () => Navigator.pop(context, option),
-              ),
-            ),
-          ).toList(),
+              )
+              .toList(),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              "Cancel",
-              style: TextStyle(color: Color(0xFFB8956A)),
-            ),
+            child: Text("Cancel", style: TextStyle(color: Color(0xFFB8956A))),
           ),
         ],
       ),
     );
   }
 
-  Future<String?> _showBodyTypeDialog(String title, List<String> options, String gender) {
+  Future<String?> _showBodyTypeDialog(
+    String title,
+    List<String> options,
+    String gender,
+  ) {
     return showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
@@ -1571,98 +1771,99 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         content: Container(
           width: double.maxFinite,
           constraints: BoxConstraints(
-            maxHeight: MediaQuery.of(context).size.height * 0.6, // Limit height to 60% of screen
+            maxHeight:
+                MediaQuery.of(context).size.height *
+                0.6, // Limit height to 60% of screen
           ),
           child: SingleChildScrollView(
             child: Column(
               mainAxisSize: MainAxisSize.min,
-              children: options.map((option) => 
-                Container(
-                  margin: EdgeInsets.symmetric(vertical: 6),
-                  child: InkWell(
-                    onTap: () => Navigator.pop(context, option),
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      padding: EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: Color(0xFFD2B193).withOpacity(0.05),
+              children: options
+                  .map(
+                    (option) => Container(
+                      margin: EdgeInsets.symmetric(vertical: 6),
+                      child: InkWell(
+                        onTap: () => Navigator.pop(context, option),
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: Color(0xFFD2B193).withOpacity(0.2),
-                          width: 1,
+                        child: Container(
+                          padding: EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Color(0xFFD2B193).withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: Color(0xFFD2B193).withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [
+                                      Color(0xFFD2B193).withOpacity(0.2),
+                                      Color(0xFFB8956A).withOpacity(0.15),
+                                    ],
+                                    begin: Alignment.topLeft,
+                                    end: Alignment.bottomRight,
+                                  ),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: Color(0xFFD2B193).withOpacity(0.3),
+                                    width: 1,
+                                  ),
+                                ),
+                                child: Icon(
+                                  getBodyTypeIcon(option, gender),
+                                  color: Color(0xFFB8956A),
+                                  size: 24,
+                                ),
+                              ),
+                              SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      formatBodyTypeName(option),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                        color: Colors.black87,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      _getBodyTypeDescription(option, gender),
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        color: Colors.grey.shade600,
+                                        height: 1.2,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                                color: Color(0xFFB8956A),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(12),
-                            decoration: BoxDecoration(
-                              gradient: LinearGradient(
-                                colors: [
-                                  Color(0xFFD2B193).withOpacity(0.2),
-                                  Color(0xFFB8956A).withOpacity(0.15),
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                color: Color(0xFFD2B193).withOpacity(0.3),
-                                width: 1,
-                              ),
-                            ),
-                            child: Icon(
-                              getBodyTypeIcon(option, gender),
-                              color: Color(0xFFB8956A),
-                              size: 24,
-                            ),
-                          ),
-                          SizedBox(width: 16),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  formatBodyTypeName(option),
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 16,
-                                    color: Colors.black87,
-                                  ),
-                                ),
-                                SizedBox(height: 4),
-                                Text(
-                                  _getBodyTypeDescription(option, gender),
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: Colors.grey.shade600,
-                                    height: 1.2,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                          Icon(
-                            Icons.arrow_forward_ios,
-                            size: 16,
-                            color: Color(0xFFB8956A),
-                          ),
-                        ],
-                      ),
                     ),
-                  ),
-                ),
-              ).toList(),
+                  )
+                  .toList(),
             ),
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              "Cancel",
-              style: TextStyle(color: Color(0xFFB8956A)),
-            ),
+            child: Text("Cancel", style: TextStyle(color: Color(0xFFB8956A))),
           ),
         ],
       ),
@@ -1735,10 +1936,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
         ),
         content: TextField(
           controller: controller,
@@ -1793,19 +1991,16 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           title,
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.black87),
         ),
         content: TextField(
           controller: controller,
-          keyboardType: title.toLowerCase().contains('email') 
-              ? TextInputType.emailAddress 
+          keyboardType: title.toLowerCase().contains('email')
+              ? TextInputType.emailAddress
               : TextInputType.text,
           decoration: InputDecoration(
-            hintText: title.toLowerCase().contains('email') 
-                ? "Enter email address" 
+            hintText: title.toLowerCase().contains('email')
+                ? "Enter email address"
                 : "Enter $title",
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
@@ -1853,7 +2048,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         return StatefulBuilder(
           builder: (context, setDialogState) {
             return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+              ),
               title: Row(
                 children: [
                   Container(
@@ -1978,24 +2175,29 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     );
   }
 
-  Widget _buildPermissionTile(String title, String subtitle, IconData icon, bool value, Function(bool) onChanged) {
+  Widget _buildPermissionTile(
+    String title,
+    String subtitle,
+    IconData icon,
+    bool value,
+    Function(bool) onChanged,
+  ) {
     return Container(
       margin: EdgeInsets.symmetric(vertical: 4),
       padding: EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: Color(0xFFD2B193).withOpacity(0.05),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(
-          color: Color(0xFFD2B193).withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: Color(0xFFD2B193).withOpacity(0.2), width: 1),
       ),
       child: Row(
         children: [
           Container(
             padding: EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: value ? Color(0xFFD2B193).withOpacity(0.2) : Colors.grey.shade200,
+              color: value
+                  ? Color(0xFFD2B193).withOpacity(0.2)
+                  : Colors.grey.shade200,
               borderRadius: BorderRadius.circular(8),
             ),
             child: Icon(
@@ -2019,10 +2221,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                 ),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
                 ),
               ],
             ),
@@ -2044,27 +2243,27 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   Widget _stylesSection() {
     // Define all available style options
     final allStyleOptions = ["Casual", "Formal", "Ethnic", "Party", "Sports"];
-    
+
     // Combine ML-recommended styles with standard options, removing duplicates
     final availableStyles = <String>[];
-    
+
     // Add ML-recommended styles first (if any)
     if (mlRecommendedStyles.isNotEmpty) {
       availableStyles.addAll(mlRecommendedStyles);
     }
-    
+
     // Add any standard options that aren't already included
     for (final style in allStyleOptions) {
       if (!availableStyles.contains(style)) {
         availableStyles.add(style);
       }
     }
-    
+
     // If no ML styles, use standard options
     if (availableStyles.isEmpty) {
       availableStyles.addAll(allStyleOptions);
     }
-    
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -2107,11 +2306,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
           SizedBox(height: 4),
           Row(
             children: [
-              Icon(
-                Icons.star,
-                size: 12,
-                color: Color(0xFFB8956A),
-              ),
+              Icon(Icons.star, size: 12, color: Color(0xFFB8956A)),
               SizedBox(width: 4),
               Text(
                 "AI recommended styles (pre-selected)",
@@ -2131,7 +2326,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
           children: availableStyles.map((option) {
             final isSelected = selectedStyles.contains(option);
             final isMLRecommended = mlRecommendedStyles.contains(option);
-            
+
             return GestureDetector(
               onTap: () {
                 toggleSelection(selectedStyles, option);
@@ -2163,16 +2358,14 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                       option,
                       style: TextStyle(
                         color: isSelected ? Colors.white : Colors.black87,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.w500,
                       ),
                     ),
                     if (isMLRecommended && !isSelected) ...[
                       SizedBox(width: 4),
-                      Icon(
-                        Icons.star,
-                        size: 12,
-                        color: Color(0xFFB8956A),
-                      ),
+                      Icon(Icons.star, size: 12, color: Color(0xFFB8956A)),
                     ],
                   ],
                 ),
