@@ -1,4 +1,4 @@
-var webApi = {'domain': 'http://10.144.121.67:3001/'}; //PC IP ADDRESS
+var webApi = {'domain': 'http://10.0.0.85:3001/'}; //PC IP ADDRESS
 var mlApi = {'domain': 'https://naturally-giving-chow.ngrok-free.app/'}; //ML NGROK
 
 var endPoint = {
