@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
+import 'package:clothing_app_frontend/navigation/arguments.dart';
 import 'package:clothing_app_frontend/navigation/navigators.dart';
 import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:flutter/material.dart';
@@ -75,7 +76,12 @@ class _SplashScreenState extends State<SplashScreenMain>
     
     try {
       print("Attempting navigation to onBoardingScreen1");
-      pushAndRemoveUntil(NamedRoute.onBoardingScreen1);
+      // pushAndRemoveUntil(NamedRoute.onBoardingScreen1);
+      
+        pushAndRemoveUntil(
+      NamedRoute.bottomNavBarScreen,
+      arguments: BottomNavArgumnets(),
+      );
       print("Navigation initiated successfully");
     } catch (e) {
       print("Navigation error: $e");
