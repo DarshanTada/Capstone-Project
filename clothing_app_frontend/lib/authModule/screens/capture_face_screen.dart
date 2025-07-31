@@ -1293,23 +1293,8 @@ class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
     // Handle the saved photo path
     print('📸 Photo saved at: $savedPath');
     
-    // Show "Photo saved successfully" message first
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
-            Text('Selfie saved successfully!'),
-          ],
-        ),
-        backgroundColor: Colors.green,
-        duration: Duration(seconds: 2),
-      ),
-    );
-
-    // Wait a moment for the snackbar to show
-    await Future.delayed(Duration(milliseconds: 500));
+    // Check if widget is still mounted before using context
+    if (!mounted) return;
 
     // Get the current user ID
     final userId = await MLPreferenceService.getCurrentUserId();
@@ -1318,6 +1303,9 @@ class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
     if (userId != null) {
       try {
         print('🤖 Starting ML analysis...');
+        
+        // Check if widget is still mounted before showing dialog
+        if (!mounted) return;
         
         // Show analyzing dialog with better styling
         showDialog(
@@ -1367,6 +1355,9 @@ class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
 
           print('📋 ML analysis result: ${preferences != null}');
 
+          // Check if widget is still mounted before closing dialog
+          if (!mounted) return;
+
           // Close loading dialog
           if (Navigator.canPop(context)) {
             Navigator.pop(context);
@@ -1378,117 +1369,41 @@ class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
             // Save preferences locally using extension
             await preferences.saveToPrefs();
             
-            // Show success message
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.auto_awesome, color: Colors.white),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('Preferences analyzed and saved!')),
-                  ],
-                ),
-                backgroundColor: Colors.green,
-                duration: Duration(seconds: 3),
-              ),
-            );
-            
-            // Wait a moment before showing next message
-            await Future.delayed(Duration(seconds: 1));
-            
-            // Show additional info
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.info, color: Colors.white),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('You can review and modify your preferences in the next screen.')),
-                  ],
-                ),
-                backgroundColor: Color(0xFFB8956A),
-                duration: Duration(seconds: 3),
-              ),
-            );
+            print('✅ Preferences analyzed and saved!');
           } else {
-            print('⚠️ ML analysis failed');
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Row(
-                  children: [
-                    Icon(Icons.warning, color: Colors.white),
-                    SizedBox(width: 8),
-                    Expanded(child: Text('Failed to analyze preferences. You can set them manually.')),
-                  ],
-                ),
-                backgroundColor: Colors.orange,
-                duration: Duration(seconds: 3),
-              ),
-            );
+            print('⚠️ ML analysis failed - will allow manual preference setting');
           }
         } else {
           print('❌ Failed to get base64 image');
+          
+          // Check if widget is still mounted before closing dialog
+          if (!mounted) return;
           
           // Close loading dialog
           if (Navigator.canPop(context)) {
             Navigator.pop(context);
           }
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.error, color: Colors.white),
-                  SizedBox(width: 8),
-                  Expanded(child: Text('Failed to get image data. Please try again.')),
-                ],
-              ),
-              backgroundColor: Colors.red,
-              duration: Duration(seconds: 3),
-            ),
-          );
         }
       } catch (e) {
         print('💥 Error during ML analysis: $e');
+        
+        // Check if widget is still mounted before closing dialog
+        if (!mounted) return;
         
         // Close loading dialog if open
         if (Navigator.canPop(context)) {
           Navigator.pop(context);
         }
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error, color: Colors.white),
-                SizedBox(width: 8),
-                Expanded(child: Text('Error analyzing preferences: $e')),
-              ],
-            ),
-            backgroundColor: Colors.red,
-            duration: Duration(seconds: 4),
-          ),
-        );
       }
     } else {
-      print('❌ No user ID found');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.person_off, color: Colors.white),
-              SizedBox(width: 8),
-              Expanded(child: Text('User not found. You can set preferences manually.')),
-            ],
-          ),
-          backgroundColor: Colors.orange,
-          duration: Duration(seconds: 3),
-        ),
-      );
+      print('❌ No user ID found - will allow manual preference setting');
     }
 
-    // Wait a moment before navigation to ensure messages are seen
-    await Future.delayed(Duration(seconds: 2));
+    // Wait a moment before navigation
+    await Future.delayed(Duration(milliseconds: 500));
+
+    // Check if widget is still mounted before navigation
+    if (!mounted) return;
 
     // Navigate to preference screen after photo is saved and analyzed
     print('🧭 Navigating to preference screen...');
@@ -2072,12 +1987,15 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
     _faceCheckTimer?.cancel();
 
     if (_faceDetectionWorking && !_faceDetected) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please position your face in the circle first'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Check if widget is still mounted before showing snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please position your face in the circle first'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       _startPeriodicFaceCheck();
       return;
     }
@@ -2086,6 +2004,9 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
   }
 
   void _showCapturedImage(XFile photo) {
+    // Check if widget is still mounted before showing dialog
+    if (!mounted) return;
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -2149,6 +2070,9 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
     });
 
     try {
+      // Check if widget is still mounted before showing dialog
+      if (!mounted) return;
+      
       // Show analyzing popup
       showDialog(
         context: context,
@@ -2196,68 +2120,10 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
       // Save the photo using PhotoStorageHelper
       final String savedPath = await PhotoStorageHelper.savePhoto(photo);
 
-      // Close analyzing popup
-      Navigator.pop(context);
+      // Check if widget is still mounted before closing dialog
+      if (!mounted) return;
       
-      // Short delay for better UX
-      await Future.delayed(Duration(milliseconds: 500));
-
-      // Show photo saved message
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (BuildContext context) {
-          return Dialog(
-            backgroundColor: Colors.transparent,
-            child: Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(15),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black26,
-                    blurRadius: 10,
-                    offset: Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    Icons.check_circle,
-                    color: Colors.green,
-                    size: 50,
-                  ),
-                  const SizedBox(height: 15),
-                  Text(
-                    'Photo Saved Successfully!',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w600,
-                      color: Color(0xFF2D2D2D),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Proceeding to preferences...',
-                    style: TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      );
-
-      // Wait a bit to show the success message
-      await Future.delayed(Duration(milliseconds: 1500));
-
-      // Close success dialog
+      // Close analyzing popup
       Navigator.pop(context);
       
       // Close the camera screen dialog
@@ -2271,12 +2137,15 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
         _isSaving = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving photo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Check if widget is still mounted before showing snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -2551,12 +2420,15 @@ class _GallerySelectionScreenState extends State<GallerySelectionScreen> {
         widget.onBack();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error selecting image: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Check if widget is still mounted before showing snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error selecting image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       widget.onBack();
     }
   }
@@ -2581,12 +2453,15 @@ class _GallerySelectionScreenState extends State<GallerySelectionScreen> {
         _isValidating = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Face validation unavailable - accepting image'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      // Check if widget is still mounted before showing snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Face validation unavailable - accepting image'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
       await _saveAndAcceptPhoto(imageFile);
     }
   }
@@ -2847,6 +2722,9 @@ class _GallerySelectionScreenState extends State<GallerySelectionScreen> {
       // Wait a bit to show the success message
       await Future.delayed(Duration(milliseconds: 1500));
 
+      // Check if widget is still mounted before navigation
+      if (!mounted) return;
+
       // Close success dialog
       Navigator.pop(context);
 
@@ -2858,12 +2736,15 @@ class _GallerySelectionScreenState extends State<GallerySelectionScreen> {
         _isSaving = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving photo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Check if widget is still mounted before showing snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
