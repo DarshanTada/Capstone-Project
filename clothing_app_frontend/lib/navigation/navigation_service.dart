@@ -1,4 +1,5 @@
 import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
+import 'package:clothing_app_frontend/authModule/screens/capture_body_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
 import 'package:clothing_app_frontend/authModule/screens/intro_screen_1.dart';
@@ -56,6 +57,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
 
     case NamedRoute.captureFaceScreen:
       return _getPageRoute(CaptureFaceScreen());
+
+    case NamedRoute.captureBodyScreen:
+      return _getPageRoute(CaptureBodyScreen());
 
     // Home Screen
     case NamedRoute.bottomNavBarScreen:

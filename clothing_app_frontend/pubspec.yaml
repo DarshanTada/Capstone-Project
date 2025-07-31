@@ -89,6 +89,7 @@ dependencies:
   flutterfire_cli: ^1.2.0
   firebase_auth: ^5.1.2
   webview_flutter: ^4.13.0
+  image: ^4.5.4
   # # chewie: ^1.2.2
   # # share: ^2.0.4
   # # firebase_dynamic_links: 
