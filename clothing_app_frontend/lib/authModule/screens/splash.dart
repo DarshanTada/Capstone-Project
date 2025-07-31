@@ -75,14 +75,7 @@ class _SplashScreenState extends State<SplashScreenMain>
     }
     
     try {
-      print("Attempting navigation to onBoardingScreen1");
-      // pushAndRemoveUntil(NamedRoute.onBoardingScreen1);
-      
-        pushAndRemoveUntil(
-      NamedRoute.bottomNavBarScreen,
-      arguments: BottomNavArgumnets(),
-      );
-      print("Navigation initiated successfully");
+      pushAndRemoveUntil(NamedRoute.onBoardingScreen1);
     } catch (e) {
       print("Navigation error: $e");
       // Fallback navigation

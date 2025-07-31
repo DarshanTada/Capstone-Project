@@ -1291,29 +1291,62 @@ class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
 
   void _handlePhotoSaved(String savedPath) async {
     // Handle the saved photo path
+    print('📸 Photo saved at: $savedPath');
+    
+    // Show "Photo saved successfully" message first
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('Selfie saved successfully!'),
+        content: Row(
+          children: [
+            Icon(Icons.check_circle, color: Colors.white),
+            SizedBox(width: 8),
+            Text('Selfie saved successfully!'),
+          ],
+        ),
         backgroundColor: Colors.green,
+        duration: Duration(seconds: 2),
       ),
     );
 
+    // Wait a moment for the snackbar to show
+    await Future.delayed(Duration(milliseconds: 500));
+
     // Get the current user ID
     final userId = await MLPreferenceService.getCurrentUserId();
+    print('👤 Current user ID: $userId');
     
     if (userId != null) {
       try {
-        // Show loading dialog
+        print('🤖 Starting ML analysis...');
+        
+        // Show analyzing dialog with better styling
         showDialog(
           context: context,
           barrierDismissible: false,
           builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Analyzing your preferences...'),
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFB8956A)),
+                ),
+                SizedBox(height: 20),
+                Text(
+                  'Analyzing your preferences...',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'This may take a few seconds',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Colors.grey.shade600,
+                  ),
+                ),
               ],
             ),
           ),
@@ -1321,60 +1354,144 @@ class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
 
         // Get base64 image
         final base64Image = await PhotoStorageHelper.getSavedSelfieAsBase64();
+        print('📊 Base64 image obtained: ${base64Image != null}');
         
         if (base64Image != null) {
+          print('🔬 Calling ML analysis service...');
+          
           // Analyze preferences using ML service
           final preferences = await MLPreferenceService.analyzeAndGetPreferences(
             userId: userId,
             imageBase64: base64Image,
           );
 
+          print('📋 ML analysis result: ${preferences != null}');
+
           // Close loading dialog
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
 
           if (preferences != null) {
+            print('✅ Preferences analyzed successfully');
+            
             // Save preferences locally using extension
             await preferences.saveToPrefs();
             
+            // Show success message
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Preferences analyzed and saved!'),
+                content: Row(
+                  children: [
+                    Icon(Icons.auto_awesome, color: Colors.white),
+                    SizedBox(width: 8),
+                    Expanded(child: Text('Preferences analyzed and saved!')),
+                  ],
+                ),
                 backgroundColor: Colors.green,
+                duration: Duration(seconds: 3),
+              ),
+            );
+            
+            // Wait a moment before showing next message
+            await Future.delayed(Duration(seconds: 1));
+            
+            // Show additional info
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Row(
+                  children: [
+                    Icon(Icons.info, color: Colors.white),
+                    SizedBox(width: 8),
+                    Expanded(child: Text('You can review and modify your preferences in the next screen.')),
+                  ],
+                ),
+                backgroundColor: Color(0xFFB8956A),
+                duration: Duration(seconds: 3),
               ),
             );
           } else {
+            print('⚠️ ML analysis failed');
             ScaffoldMessenger.of(context).showSnackBar(
               SnackBar(
-                content: Text('Failed to analyze preferences. You can set them manually.'),
+                content: Row(
+                  children: [
+                    Icon(Icons.warning, color: Colors.white),
+                    SizedBox(width: 8),
+                    Expanded(child: Text('Failed to analyze preferences. You can set them manually.')),
+                  ],
+                ),
                 backgroundColor: Colors.orange,
+                duration: Duration(seconds: 3),
               ),
             );
           }
         } else {
+          print('❌ Failed to get base64 image');
+          
           // Close loading dialog
-          Navigator.pop(context);
+          if (Navigator.canPop(context)) {
+            Navigator.pop(context);
+          }
           
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Failed to get image data. Please try again.'),
+              content: Row(
+                children: [
+                  Icon(Icons.error, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(child: Text('Failed to get image data. Please try again.')),
+                ],
+              ),
               backgroundColor: Colors.red,
+              duration: Duration(seconds: 3),
             ),
           );
         }
       } catch (e) {
+        print('💥 Error during ML analysis: $e');
+        
         // Close loading dialog if open
-        Navigator.pop(context);
+        if (Navigator.canPop(context)) {
+          Navigator.pop(context);
+        }
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Error analyzing preferences: $e'),
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(child: Text('Error analyzing preferences: $e')),
+              ],
+            ),
             backgroundColor: Colors.red,
+            duration: Duration(seconds: 4),
           ),
         );
       }
+    } else {
+      print('❌ No user ID found');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.person_off, color: Colors.white),
+              SizedBox(width: 8),
+              Expanded(child: Text('User not found. You can set preferences manually.')),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          duration: Duration(seconds: 3),
+        ),
+      );
     }
 
-    // Navigate to preference screen after photo is saved
+    // Wait a moment before navigation to ensure messages are seen
+    await Future.delayed(Duration(seconds: 2));
+
+    // Navigate to preference screen after photo is saved and analyzed
+    print('🧭 Navigating to preference screen...');
     Navigator.pushNamed(context, NamedRoute.preferenceScreen);
   }
 
@@ -2032,10 +2149,120 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
     });
 
     try {
+      // Show analyzing popup
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFF5D4E75),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Analyzing photo...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF2D2D2D),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
       // Save the photo using PhotoStorageHelper
       final String savedPath = await PhotoStorageHelper.savePhoto(photo);
 
-      Navigator.pop(context); // Close dialog
+      // Close analyzing popup
+      Navigator.pop(context);
+      
+      // Short delay for better UX
+      await Future.delayed(Duration(milliseconds: 500));
+
+      // Show photo saved message
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 50,
+                  ),
+                  const SizedBox(height: 15),
+                  Text(
+                    'Photo Saved Successfully!',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D2D2D),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Proceeding to preferences...',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
+      // Wait a bit to show the success message
+      await Future.delayed(Duration(milliseconds: 1500));
+
+      // Close success dialog
+      Navigator.pop(context);
+      
+      // Close the camera screen dialog
+      Navigator.pop(context);
+
       widget.onPhotoSaved(
         savedPath,
       ); // This will trigger navigation to preference screen
@@ -2512,8 +2739,117 @@ class _GallerySelectionScreenState extends State<GallerySelectionScreen> {
     });
 
     try {
+      // Show analyzing popup
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFF5D4E75),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Analyzing photo...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF2D2D2D),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
       // Save the photo using PhotoStorageHelper
       final String savedPath = await PhotoStorageHelper.savePhoto(photo);
+
+      // Close analyzing popup
+      Navigator.pop(context);
+      
+      // Short delay for better UX
+      await Future.delayed(Duration(milliseconds: 500));
+
+      // Show photo saved message
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 50,
+                  ),
+                  const SizedBox(height: 15),
+                  Text(
+                    'Photo Saved Successfully!',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D2D2D),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Proceeding to preferences...',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
+      // Wait a bit to show the success message
+      await Future.delayed(Duration(milliseconds: 1500));
+
+      // Close success dialog
+      Navigator.pop(context);
+
       widget.onPhotoSaved(
         savedPath,
       ); // This will trigger navigation to preference screen
