@@ -279,7 +279,13 @@ class AuthProvider with ChangeNotifier {
           user = userData;
           notifyListeners();
 
-          return {'status': true, 'data': userData};
+          return {
+            'status': true,
+            'data': userData,
+            'isNewUser':
+                responseData['isNewUser'] ??
+                false, // Pass through the isNewUser flag
+          };
         } catch (parseError) {
           print('Error parsing user data: $parseError');
           return {
