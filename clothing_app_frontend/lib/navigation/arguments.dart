@@ -58,8 +58,9 @@ class ProductDetailScreenArguments{
 }
 
 class CategoryRelationScreenArguments{
+    final String category ;
  CategoryRelationScreenArguments ({
-  Null
+required this.category
   });
 }
 
