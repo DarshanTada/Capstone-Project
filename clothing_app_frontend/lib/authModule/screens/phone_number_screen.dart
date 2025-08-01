@@ -117,43 +117,45 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                   : Container(color: Colors.black),
             ),
 
-            Column(
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      const Spacer(flex: 2),
-                      Center(
-                        child: Column(
-                          children: [
-                            TextWidget(
-                              title: "YOLO",
-                              color: Colors.white70,
-                              fontSize: tS * 51,
-                            ),
-                            TextWidget(
-                              title: "chic",
-                              color: Colors.white70,
-                              fontSize: tS * 34,
-                            ),
-                            SizedBox(height: dH * 0.02),
-                            TextWidget(
-                              title: "Styling Made Simple",
-                              color: Colors.white70,
-                              fontSize: tS * 12,
-                            ),
-                          ],
+            SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height,
+                ),
+                child: Column(
+                  children: [
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.15), // Top spacing
+                    Center(
+                      child: Column(
+                        children: [
+                          TextWidget(
+                            title: "YOLO",
+                            color: Colors.white70,
+                            fontSize: tS * 51,
+                          ),
+                          TextWidget(
+                            title: "chic",
+                            color: Colors.white70,
+                            fontSize: tS * 34,
+                          ),
+                          SizedBox(height: dH * 0.02),
+                          TextWidget(
+                            title: "Styling Made Simple",
+                            color: Colors.white70,
+                            fontSize: tS * 12,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.1), // Spacing before form
+                    Container(
+                      padding: EdgeInsets.fromLTRB(30, 45, 30, 0), // Removed bottom padding
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(40),
                         ),
                       ),
-                      const Spacer(flex: 1),
-                      Container(
-                        padding: EdgeInsets.fromLTRB(30, 45, 30, 20),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(40),
-                          ),
-                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
@@ -216,6 +218,8 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                                   onChanged: (val) => setState(
                                     () => _termsAccepted = val ?? false,
                                   ),
+                                  activeColor: Colors.brown, // Brown background when checked
+                                  checkColor: Colors.white, // White check mark
                                 ),
                                 TextWidget(
                                   title: "I accept the ",
@@ -235,6 +239,7 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                               onPressed: _termsAccepted ? getOTP : null,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.black,
+                                foregroundColor: Colors.white, // Ensures text stays white
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 14,
                                 ),
@@ -247,10 +252,16 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                                 children: [
                                   Text(
                                     "Send OTP",
-                                    style: TextStyle(fontSize: 16),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white, // Explicit white color
+                                    ),
                                   ),
                                   SizedBox(width: 10),
-                                  Icon(Icons.arrow_forward),
+                                  Icon(
+                                    Icons.arrow_forward,
+                                    color: Colors.white, // Explicit white color for icon
+                                  ),
                                 ],
                               ),
                             ),
@@ -271,21 +282,23 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                               ),
                             ),
                             const SizedBox(height: 10),
-                            const Text(
-                              "Privacy Policy",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 20), // Add bottom padding here
+                              child: Text(
+                                "Privacy Policy",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),
