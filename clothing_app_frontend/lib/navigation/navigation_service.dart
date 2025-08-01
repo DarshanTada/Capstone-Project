@@ -23,10 +23,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     // Intro/Onboarding Screens
     case NamedRoute.onBoardingScreen1:
       return _getPageRoute(const IntroScreen1());
-    
+
     case NamedRoute.onBoardingScreen2:
       return _getPageRoute(const IntroScreen2());
-    
+
     case NamedRoute.onBoardingScreen3:
       return _getPageRoute(const IntroScreen3());
 
@@ -37,10 +37,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return _getPageRoute(const SizeChartScreen());
 
     case NamedRoute.preferenceScreen:
+      final args = settings.arguments as PreferenceScreenArguments?;
       return _getPageRoute(PreferenceScreen());
     case NamedRoute.checkoutScreen:
       return _getPageRoute(const CheckoutScreen());
-    
+
     case NamedRoute.addressesScreen:
       return _getPageRoute(const AddressesScreen());
 
@@ -74,10 +75,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       );
 
     case NamedRoute.categoryRelationScreen:
-      return _getPageRoute( CategoryRelationScreen(
-        args: settings.arguments as CategoryRelationScreenArguments,
-      ));
-
+      return _getPageRoute(
+        CategoryRelationScreen(
+          args: settings.arguments as CategoryRelationScreenArguments,
+        ),
+      );
 
     // case NamedRoute.walletScreen:
     //   return _getPageRoute(const WalletScreen());

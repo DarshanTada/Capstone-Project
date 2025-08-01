@@ -1,14 +1,13 @@
-import 'dart:convert';
+import 'package:clothing_app_frontend/navigation/arguments.dart';
+import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../service/ml_preference_service.dart';
 import '../model/preference_model.dart';
 import '../services/user_api_service.dart';
 import '../../authModule/screens/capture_face_screen.dart';
-import '../../navigation/routes.dart';
-import '../../api.dart';
+import '../../authModule/providers/auth_provider.dart';
+import '../../authModule/model/user_model.dart';
 
 void main() => runApp(PreferenceScreenApp());
 
@@ -39,6 +38,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   int height = 176;
   String bodyType = 'Ectomorph';
   String phoneNumber = ''; // Non-editable, populated from user data
+  String? token = ''; // Store auth token
+  String? userId = ''; // Store user ID
+  String? preferenceId = ''; // Store preference ID for updates
 
   int selectedSkin = 2;
   Set<String> selectedStyles = {};
@@ -68,31 +70,42 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   /// Load user data from SharedPreferences (legacy method - now mainly for fallback)
   Future<void> _loadUserData() async {
     try {
-      // This method is now mainly for fallback if AuthProvider fails
-      final prefs = await SharedPreferences.getInstance();
+      print('📷 Loading minimal capture data...');
 
-      // Only load phone if not already loaded from AuthProvider
-      if (phoneNumber.isEmpty) {
-        final storedPhone =
-            prefs.getString('user_phone') ?? prefs.getString('phone_number');
-        if (storedPhone != null && storedPhone.isNotEmpty) {
-          setState(() {
-            phoneNumber = storedPhone;
-          });
-        }
+      // Load data from AuthProvider and activePreference
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final user = authProvider.user;
+      final activePreference = authProvider.activePreference;
+
+      // Load authentication data (phone number, user ID, token)
+      if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) {
+        phoneNumber = user.phoneNumber!;
+        print('📱 Phone number loaded: ${phoneNumber.substring(0, 3)}***');
       }
 
-      // Also try to get user info from JWT token if available (fallback)
-      if (phoneNumber.isEmpty) {
-        final token = await UserApiService.getAuthToken();
-        if (token != null) {
-          setState(() {
-            phoneNumber = "+12222222222"; // From the test token (fallback)
-          });
+      if (user.id != null) {
+        userId = user.id!;
+        print('👤 User ID loaded: $userId');
+      }
+
+      if (user.token != null) {
+        token = user.token!;
+        print('🔐 Token loaded: ${token!.substring(0, 10)}***');
+      }
+
+      final dynamic id = activePreference?.id;
+      if (id != null) {
+        preferenceId = id.toString();
+        print('🆔 Preference ID loaded from id: $preferenceId');
+      } else {
+        // Fallback to userId if available
+        if (userId != null && userId!.isNotEmpty) {
+          preferenceId = userId!;
+          print('🆔 Preference ID set from userId: $preferenceId');
         }
       }
     } catch (e) {
-      print('❌ Error during data initialization: $e');
+      print('❌ Error loading minimal capture data: $e');
     }
   }
 
@@ -221,20 +234,10 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   /// Load preferences from local storage or server
   Future<void> _loadPreferences() async {
     try {
-      print('🔍 Loading preferences...');
-      
-      // Get user ID
-      final userId = await UserApiService.getUserId();
-      if (userId == null) {
-        print('❌ No user ID found for preferences');
-        return;
-      }
-      
       // First try to load from local storage
       final localPrefs = await PreferencePrefs.loadFromPrefs();
 
       if (localPrefs != null) {
-        print('✅ Found local preferences, populating...');
         _populatePreferencesFromModel(localPrefs);
         return;
       }
@@ -251,27 +254,13 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
           await serverPrefs.saveToPrefs();
         }
       }
-
-      // If no preferences found, try to load ML-analyzed preferences
-      final mlPrefs = await MLPreferenceService.getUserPreferences(userId);
-      if (mlPrefs != null) {
-        print('✅ Found ML preferences, populating...');
-        _populatePreferencesFromModel(mlPrefs);
-        // Save to local storage for future use
-        await mlPrefs.saveToPrefs();
-        return;
-      }
-      
-      print('ℹ️ No existing preferences found, using defaults');
     } catch (e) {
-      print('❌ Error loading preferences: $e');
+      print('Error loading preferences: $e');
     }
   }
 
   /// Populate UI fields from preference model
   void _populatePreferencesFromModel(Preference prefs) {
-    print('📋 Populating UI from preference model...');
-    
     setState(() {
       if (prefs.gender != null) gender = prefs.gender!;
       if (prefs.age != null) age = prefs.age!;
@@ -281,35 +270,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         // Map skin tone string to index
         selectedSkin = _mapSkinToneToIndex(prefs.skinTone!);
       }
-      
-      if (prefs.age != null && prefs.age! > 0) {
-        age = prefs.age!;
-        print('🎂 Age: $age');
-      }
-      
-      if (prefs.height != null && prefs.height! > 0) {
-        height = prefs.height!;
-        print('📏 Height: ${height}cm');
-      }
-      
-      if (prefs.bodyType != null && prefs.bodyType!.isNotEmpty) {
-        bodyType = _formatBodyTypeFromAPI(prefs.bodyType!);
-        print('🏋️ Body Type: $bodyType');
-      }
-      
-      // Skin tone and undertone
-      if (prefs.skinTone != null && prefs.skinTone!.isNotEmpty) {
-        selectedSkin = _mapSkinToneToIndex(prefs.skinTone!);
-        print('🎨 Skin Tone: ${prefs.skinTone} (index: $selectedSkin)');
-      }
-      
-      if (prefs.undertone != null && prefs.undertone!.isNotEmpty) {
-        selectedUndertone = _formatUndertoneFromAPI(prefs.undertone!);
-        print('🌈 Undertone: $selectedUndertone');
-      }
-      
-      // Style preferences
-      if (prefs.style != null && prefs.style!.isNotEmpty) {
+      if (prefs.style != null) {
         // Convert styles to title case for UI display
         final titleCaseStyles = prefs.style!
             .map(
@@ -322,7 +283,6 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         if (!_hasLoadedMLRecommendations && titleCaseStyles.isNotEmpty) {
           selectedStyles = titleCaseStyles.toSet();
           _hasLoadedMLRecommendations = true;
-          print('✨ Auto-selected ML recommended styles');
         }
 
         // Always update ML-recommended styles for display purposes
@@ -335,21 +295,11 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         selectedUndertone =
             prefs.undertone![0].toUpperCase() + prefs.undertone!.substring(1);
       }
-      
-      // Festivals
-      if (prefs.festivals != null && prefs.festivals!.isNotEmpty) {
-        selectedFestivals = prefs.festivals!.toSet();
-        print('🎊 Festivals: $selectedFestivals');
-      }
-      
-      // Color preferences
-      if (prefs.colorTones != null && prefs.colorTones!.isNotEmpty) {
+      if (prefs.colorTones != null) {
+        // Handle hex codes directly from ML model
         mlColorTones = prefs.colorTones!;
-        print('🎨 Color tones: ${mlColorTones.length} colors loaded');
       }
     });
-    
-    print('✅ UI population completed');
   }
 
   /// Map skin tone string to UI index
@@ -372,232 +322,11 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     }
   }
 
-  /// Fetch user data from API using getUserById endpoint
-  Future<Map<String, dynamic>?> _fetchUserDataFromAPI(String userId) async {
-    try {
-      final token = await UserApiService.getAuthToken();
-      if (token == null) {
-        print('❌ No auth token available for API call');
-        return null;
-      }
-
-      final url = Uri.parse('${webApi['domain']}${endPoint['getUserById']}/$userId');
-      print('🌐 Fetching user data from: $url');
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({'userId': userId}),
-      );
-
-      print('📊 User data response status: ${response.statusCode}');
-      print('📄 User data response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        if (responseData['success'] == true && responseData['data'] != null) {
-          return responseData['data'];
-        }
-      } else if (response.statusCode == 401) {
-        print('🔄 Token expired, clearing and retrying...');
-        // Clear token and try once more
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('auth_token');
-        
-        final newToken = await UserApiService.getAuthToken();
-        if (newToken != null) {
-          final retryResponse = await http.post(
-            url,
-            headers: {
-              'Authorization': 'Bearer $newToken',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({'userId': userId}),
-          );
-          
-          if (retryResponse.statusCode == 200) {
-            final retryData = json.decode(retryResponse.body);
-            if (retryData['success'] == true && retryData['data'] != null) {
-              return retryData['data'];
-            }
-          }
-        }
-      }
-
-      return null;
-    } catch (e) {
-      print('❌ Error fetching user data: $e');
-      return null;
-    }
-  }
-
-  /// Format gender from API response to UI format
-  String _formatGenderFromAPI(String apiGender) {
-    switch (apiGender.toLowerCase()) {
-      case 'male':
-        return 'Male';
-      case 'female':
-        return 'Female';
-      case 'other':
-        return 'Other';
-      default:
-        return 'Male'; // Default
-    }
-  }
-
-  /// Format body type from API response to UI format
-  String _formatBodyTypeFromAPI(String apiBodyType) {
-    // API might use lowercase or different format, normalize to UI format
-    switch (apiBodyType.toLowerCase()) {
-      case 'hourglass':
-        return 'Hourglass';
-      case 'triangle':
-      case 'pear':
-        return 'Triangle';
-      case 'round':
-      case 'apple':
-        return 'Round';
-      case 'straight':
-      case 'rectangle':
-        return 'Straight';
-      case 'inverted triangle':
-      case 'inverted_triangle':
-        return 'Inverted Triangle';
-      case 'ectomorph':
-        return 'Ectomorph';
-      case 'mesomorph':
-        return 'Mesomorph';
-      case 'endomorph':
-        return 'Endomorph';
-      default:
-        return apiBodyType; // Return as-is if no mapping found
-    }
-  }
-
-  /// Format undertone from API response to UI format
-  String _formatUndertoneFromAPI(String apiUndertone) {
-    switch (apiUndertone.toLowerCase()) {
-      case 'warm':
-        return 'Warm';
-      case 'cool':
-        return 'Cool';
-      case 'neutral':
-        return 'Neutral';
-      default:
-        return 'Neutral'; // Default
-    }
-  }
-
-  /// Fetch preferences from API using getPrefByUserId endpoint
-  Future<Preference?> _fetchPreferencesFromAPI(String userId) async {
-    try {
-      final token = await UserApiService.getAuthToken();
-      if (token == null) {
-        print('❌ No auth token available for preferences API call');
-        return null;
-      }
-
-      final url = Uri.parse('${webApi['domain']}${endPoint['getPrefByUserId']}/$userId');
-      print('🌐 Fetching preferences from: $url');
-
-      final response = await http.post(
-        url,
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({'userId': userId}),
-      );
-
-      print('📊 Preferences response status: ${response.statusCode}');
-      print('📄 Preferences response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final responseData = json.decode(response.body);
-        if (responseData['success'] == true && responseData['data'] != null) {
-          final userData = responseData['data'];
-          final prefData = userData['preference']; // Extract preference from user data
-          
-          if (prefData != null) {
-            // Convert API response to Preference model
-            return Preference(
-              userObjectId: int.tryParse(userId) ?? 0,
-              gender: prefData['gender'],
-              age: prefData['age'] is int ? prefData['age'] : int.tryParse(prefData['age']?.toString() ?? '0'),
-              height: prefData['height'] is int ? prefData['height'] : int.tryParse(prefData['height']?.toString() ?? '0'),
-              bodyType: prefData['body_type'],
-              skinTone: prefData['skin_tone'],
-              style: prefData['style'] is List ? List<String>.from(prefData['style']) : [],
-              occasion: prefData['occasion'] is List ? List<String>.from(prefData['occasion']) : [],
-              festivals: prefData['festivals'] is List ? List<String>.from(prefData['festivals']) : [],
-              colorTones: prefData['color_tones'] is List ? List<String>.from(prefData['color_tones']) : [],
-              undertone: prefData['undertone'],
-              createdAt: prefData['createdAt'] != null ? DateTime.tryParse(prefData['createdAt']) : null,
-              updatedAt: prefData['updatedAt'] != null ? DateTime.tryParse(prefData['updatedAt']) : null,
-            );
-          }
-        }
-      } else if (response.statusCode == 401) {
-        print('🔄 Token expired for preferences, clearing and retrying...');
-        // Clear token and try once more
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.remove('auth_token');
-        
-        final newToken = await UserApiService.getAuthToken();
-        if (newToken != null) {
-          final retryResponse = await http.post(
-            url,
-            headers: {
-              'Authorization': 'Bearer $newToken',
-              'Content-Type': 'application/json',
-            },
-            body: jsonEncode({'userId': userId}),
-          );
-          
-          if (retryResponse.statusCode == 200) {
-            final retryData = json.decode(retryResponse.body);
-            if (retryData['success'] == true && retryData['data'] != null) {
-              final userData = retryData['data'];
-              final prefData = userData['preference']; // Extract preference from user data
-              
-              if (prefData != null) {
-                return Preference(
-                  userObjectId: int.tryParse(userId) ?? 0,
-                  gender: prefData['gender'],
-                  age: prefData['age'] is int ? prefData['age'] : int.tryParse(prefData['age']?.toString() ?? '0'),
-                  height: prefData['height'] is int ? prefData['height'] : int.tryParse(prefData['height']?.toString() ?? '0'),
-                  bodyType: prefData['body_type'],
-                  skinTone: prefData['skin_tone'],
-                  style: prefData['style'] is List ? List<String>.from(prefData['style']) : [],
-                  occasion: prefData['occasion'] is List ? List<String>.from(prefData['occasion']) : [],
-                  festivals: prefData['festivals'] is List ? List<String>.from(prefData['festivals']) : [],
-                  colorTones: prefData['color_tones'] is List ? List<String>.from(prefData['color_tones']) : [],
-                  undertone: prefData['undertone'],
-                  createdAt: prefData['createdAt'] != null ? DateTime.tryParse(prefData['createdAt']) : null,
-                  updatedAt: prefData['updatedAt'] != null ? DateTime.tryParse(prefData['updatedAt']) : null,
-                );
-              }
-            }
-          }
-        }
-      }
-
-      return null;
-    } catch (e) {
-      print('❌ Error fetching preferences: $e');
-      return null;
-    }
-  }
-
   /// Save current preferences to local storage and server
   Future<void> _savePreferences() async {
     try {
       final userId = await MLPreferenceService.getCurrentUserId();
       if (userId == null) {
-        // Check if widget is still mounted before showing snackbar
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -715,7 +444,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('No saved selfie found. Please capture a new photo.'),
+              content: Text(
+                'No saved selfie found. Please capture a new photo.',
+              ),
               backgroundColor: Colors.orange,
             ),
           );
@@ -724,29 +455,28 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       }
       print('✅ Base64 image retrieved, length: ${base64Image.length}');
 
-      // Check if widget is still mounted before showing dialog
-      if (!mounted) return;
-
       // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Re-analyzing your preferences...'),
-              SizedBox(height: 8),
-              Text(
-                'This may take 10-30 seconds',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Re-analyzing your preferences...'),
+                SizedBox(height: 8),
+                Text(
+                  'This may take 10-30 seconds',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
+        );
+      }
 
       print('🚀 Sending request to ML service...');
 
@@ -757,7 +487,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       );
 
       // Close loading dialog
-      Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+      }
 
       if (preferences != null) {
         print('✅ Preferences received successfully');
@@ -770,36 +502,42 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         // Update UI with new preferences
         _populatePreferencesFromModel(preferences);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Preferences re-analyzed successfully!'),
-            backgroundColor: Color(0xFFB8956A),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Preferences re-analyzed successfully!'),
+              backgroundColor: Color(0xFFB8956A),
+            ),
+          );
+        }
       } else {
         print('❌ No preferences returned from ML service');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to re-analyze preferences. Please try again.',
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to re-analyze preferences. Please try again.',
+              ),
+              backgroundColor: Colors.red,
             ),
-            backgroundColor: Colors.red,
-          ),
-        );
+          );
+        }
       }
     } catch (e) {
       // Close loading dialog if open
-      if (Navigator.canPop(context)) {
+      if (mounted && Navigator.canPop(context)) {
         Navigator.pop(context);
       }
 
       print('💥 Error re-analyzing preferences: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error re-analyzing preferences: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error re-analyzing preferences: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -985,56 +723,102 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       // Validate fields first
       final validationError = _validateFields();
       if (validationError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.warning, color: Colors.white),
-                SizedBox(width: 8),
-                Expanded(child: Text(validationError)),
-              ],
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(child: Text(validationError)),
+                ],
+              ),
+              backgroundColor: Colors.orange.shade700,
+              duration: Duration(seconds: 4),
             ),
-            backgroundColor: Colors.orange.shade700,
-            duration: Duration(seconds: 4),
-          ),
-        );
+          );
+        }
         return;
       }
 
       // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFB8956A)),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Updating your preferences...',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'This may take a few seconds',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFB8956A)),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Updating your preferences...',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'This may take a few seconds',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-            ],
-          ),
-        ),
+        );
+      }
+
+      print('🚀 Starting profile update...');
+      print('📋 Parameters being sent:');
+      print(
+        '  � Token: ${token?.isNotEmpty == true ? '${token!.substring(0, 10)}***' : 'MISSING'}',
       );
+      print('  👤 User ID: ${userId?.isNotEmpty == true ? userId : 'MISSING'}');
+      print(
+        '  �📱 Phone Number: ${phoneNumber.isNotEmpty ? phoneNumber : 'null'}',
+      );
+      print('  ✉️ Email: ${email.trim().toLowerCase()}');
+      print('  👤 Role: user');
+      print('  🏷️ Username: ${name.trim()}');
+      print('  ⚧️ Gender: $gender');
+      print('  🎂 Age: $age');
+      print('  📏 Height: $height');
+      print('  🏃 Body Type: $bodyType');
+      print('  🎨 Skin Tone: ${_mapSkinIndexToTone(selectedSkin)}');
+      print('  👔 Styles: ${selectedStyles.toList()}');
+      print('  🎯 Occasions: ${selectedOccasions.toList()}');
+      print('  🎉 Festivals: ${selectedFestivals.toList()}');
+      print(
+        '  🌈 Color Tones: ${mlColorTones.isNotEmpty ? mlColorTones : 'null'}',
+      );
+      print('  📐 Size: M');
+      print('  🎭 Undertone: $selectedUndertone');
+      print('  🖼️ Avatar URL: null');
+      print(
+        '  🆔 Preference ID: ${preferenceId?.isNotEmpty == true ? preferenceId : 'MISSING'}',
+      );
+      print('  ✅ Is Active: true');
 
-      print('🚀 Starting comprehensive profile update...');
+      // Validate required authentication data
+      if (token == null || token!.isEmpty) {
+        throw Exception('Authentication token is missing. Please login again.');
+      }
 
-      // Step 1: Update user profile via UserApiService
+      if (userId == null || userId!.isEmpty) {
+        throw Exception('User ID is missing. Please login again.');
+      }
+
+      // Call the API with all required parameters
       final result = await UserApiService.updateUserProfile(
+        token: token ?? '', // Pass token from preference screen variable
+        userId: userId ?? '', // Pass userId from preference screen variable
+        phoneNumber: phoneNumber.isNotEmpty ? phoneNumber : null,
         email: email.trim().toLowerCase(),
+        role: 'user', // Role set to 'user' as requested
         username: name.trim(),
         gender: gender,
         age: age,
@@ -1045,110 +829,49 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         occasions: selectedOccasions.toList(),
         festivals: selectedFestivals.toList(),
         colorTones: mlColorTones.isNotEmpty ? mlColorTones : null,
+        size: 'M', // Size set to M as requested
         undertone: selectedUndertone,
-        size: 'M', // Default size - could be made configurable
+        avatarUrl:
+            null, // Can be updated later when avatar functionality is implemented
+        preferenceId: preferenceId,
+        isActive: true, // isActive set to true as requested
       );
 
-      if (result != null) {
+      // Close loading dialog
+      if (mounted) {
+        Navigator.pop(context);
+      }
+
+      if (result != null && result['success'] == true) {
         print('✅ Profile updated successfully');
 
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Profile updated successfully! Getting your curated results...',
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Color(0xFFB8956A),
-            duration: Duration(seconds: 3),
-          ),
-        );
+        // Save updated user data to preferences (similar to loginUser method)
+        try {
+          // Create updated user object from API response
+          if (result['data'] != null && token != null) {
+            final userData = User.jsonToUser(result['data'], token: token!);
 
-        // Show follow-up message about recommendations
-        Future.delayed(Duration(seconds: 1), () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.auto_awesome, color: Colors.white),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text('Your personalized recommendations are ready! Redirecting to home...'),
-                  ),
-                ],
-              ),
-              backgroundColor: Color(0xFFD2B193),
-              duration: Duration(seconds: 2),
-            ),
+            // Save to local preferences
+            await userData.saveToPrefs();
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              NamedRoute.bottomNavBarScreen,
+              (route) => false,
+              arguments: BottomNavArgumnets(),
+            );
+            print('💾 User preferences saved to local storage');
+          }
+        } catch (saveError) {
+          print(
+            '⚠️ Warning: Failed to save preferences to local storage: $saveError',
           );
-        });
-
-        // Navigate to home screen after a short delay
-        Future.delayed(Duration(seconds: 2), () {
-          Navigator.pushNamedAndRemoveUntil(
-            context,
-            NamedRoute.homeScreen,
-            (route) => false, // Remove all previous routes
-          );
-        });
-
-        print('✅ Complete profile update successful - navigating to home');
-
-      } else {
-        // Close loading dialog
-        Navigator.pop(context);
-        
-        print('❌ Update failed - no result returned');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error, color: Colors.white),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text('Failed to update profile. Please try again.'),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
+          // Continue execution - this is not a critical error
+        }
       }
     } catch (e) {
       // Close loading dialog if open
-      if (Navigator.canPop(context)) {
-        Navigator.pop(context);
-      }
 
       print('💥 Error updating profile: $e');
-
-      String errorMessage = 'Failed to update profile. Please try again.';
-      if (e.toString().contains('No authentication token')) {
-        errorMessage = 'Please log in again to continue.';
-      } else if (e.toString().contains('email')) {
-        errorMessage = 'Please check your email address and try again.';
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.error, color: Colors.white),
-              SizedBox(width: 8),
-              Expanded(child: Text(errorMessage)),
-            ],
-          ),
-          backgroundColor: Colors.red.shade700,
-          duration: Duration(seconds: 4),
-        ),
-      );
     }
   }
 
@@ -1172,14 +895,6 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
           onPressed: () => Navigator.pop(context),
         ),
         actions: [
-          IconButton(
-            icon: Icon(Icons.refresh, color: Colors.brown.shade300),
-            onPressed: () async {
-              // Refresh all data from APIs
-              await _refreshData();
-            },
-            tooltip: 'Refresh data from server',
-          ),
           IconButton(
             icon: Icon(Icons.camera_alt, color: Colors.brown.shade300),
             onPressed: () async {
@@ -1212,7 +927,6 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
               // Save preferences functionality
               await _savePreferences();
             },
-            tooltip: 'Save preferences locally',
           ),
         ],
       ),
@@ -1792,11 +1506,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                 ),
                 icon: Icon(Icons.auto_awesome, size: 20),
                 label: Text(
-                  "Save & Get Personalized Products",
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  "Get Curated Results",
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ),

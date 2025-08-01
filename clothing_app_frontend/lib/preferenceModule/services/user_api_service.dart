@@ -7,9 +7,12 @@ class UserApiService {
   static Future<String?> getAuthToken() async {
     final prefs = await SharedPreferences.getInstance();
     String? token = prefs.getString('auth_token');
-    
+
     // Check if we need to get a fresh token
-    if (token == null || token.isEmpty || token.contains('eyJhbGciOiRS') || token == 'test_token_placeholder') {
+    if (token == null ||
+        token.isEmpty ||
+        token.contains('eyJhbGciOiRS') ||
+        token == 'test_token_placeholder') {
       print('🔄 Getting fresh authentication token...');
       token = await _getNewAuthToken();
       if (token != null) {
@@ -21,7 +24,7 @@ class UserApiService {
         await prefs.remove('auth_token');
       }
     }
-    
+
     return token;
   }
 
@@ -29,17 +32,13 @@ class UserApiService {
   static Future<String?> _getNewAuthToken() async {
     try {
       final url = Uri.parse('${webApi['domain']}${endPoint['login']}');
-      
+
       print('🔐 Requesting new token with phone: +12222222222');
-      
+
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: {
-          'phone_number': '+12222222222',
-        },
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: {'phone_number': '+12222222222'},
       );
 
       print('📊 Token Response status: ${response.statusCode}');
@@ -61,7 +60,7 @@ class UserApiService {
           }
         }
       }
-      
+
       print('⚠️ Could not get valid JWT token from backend');
       return null; // Return null instead of placeholder to indicate failure
     } catch (e) {
@@ -73,7 +72,7 @@ class UserApiService {
   static Future<String?> getUserId() async {
     final prefs = await SharedPreferences.getInstance();
     String? userId = prefs.getString('user_id');
-    
+
     // For testing purposes, use hardcoded user ID if none exists
     if (userId == null || userId.isEmpty) {
       userId = "68659717fde8b5c9994263e3";
@@ -84,6 +83,8 @@ class UserApiService {
 
   /// Update user profile and preferences via the updateUser endpoint
   static Future<Map<String, dynamic>?> updateUserProfile({
+    required String token, // Token passed from preference screen
+    required String userId, // User ID passed from preference screen
     String? phoneNumber,
     String? email,
     String? username,
@@ -99,24 +100,29 @@ class UserApiService {
     String? size,
     String? undertone,
     String? avatarUrl,
+    String? role,
+    String? preferenceId,
+    bool? isActive,
   }) async {
     try {
-      final token = await getAuthToken();
-      if (token == null) {
-        throw Exception('No authentication token found');
+      if (token.isEmpty) {
+        throw Exception('No authentication token provided');
       }
 
       final url = Uri.parse('${webApi['domain']}${endPoint['updateUser']}');
-      
+
       // Prepare the request body matching backend structure
       final body = <String, dynamic>{};
-      
+
       // User fields
       if (phoneNumber != null) body['phone_number'] = phoneNumber;
       if (email != null) body['email'] = email;
-      
+      if (role != null) body['role'] = role;
+      if (isActive != null) body['isActive'] = isActive;
+
       // Preference fields - matching backend preference.model.ts exactly
       if (username != null) body['username'] = username;
+      if (preferenceId != null) body['preferenceId'] = preferenceId;
       if (gender != null) {
         // Convert to lowercase to match GENDER enum (male, female, other)
         body['gender'] = gender.toLowerCase();
@@ -143,7 +149,9 @@ class UserApiService {
       }
       if (size != null) body['size'] = size;
       if (undertone != null) body['undertone'] = undertone.toLowerCase();
-      if (avatarUrl != null) body['avartarURL'] = avatarUrl; // Note: backend uses 'avartarURL' (typo)
+      if (avatarUrl != null)
+        body['avartarURL'] =
+            avatarUrl; // Note: backend uses 'avartarURL' (typo)
 
       print('🚀 Sending updateUser request to: $url');
       print('📋 Request body: $body');
@@ -154,7 +162,9 @@ class UserApiService {
           'Content-Type': 'application/x-www-form-urlencoded',
           'Authorization': 'Bearer $token',
         },
-        body: body.map((key, value) => MapEntry(key, value.toString())), // Convert all values to strings for form-data
+        body: body.map(
+          (key, value) => MapEntry(key, value.toString()),
+        ), // Convert all values to strings for form-data
       );
 
       print('📊 Response status: ${response.statusCode}');
@@ -163,7 +173,7 @@ class UserApiService {
       if (response.statusCode == 200) {
         final responseData = json.decode(response.body);
         if (responseData['success'] == true) {
-          return responseData['data'];
+          return responseData; // Return the full response object with 'success' and 'data'
         } else {
           throw Exception(responseData['message'] ?? 'Update failed');
         }
@@ -171,41 +181,15 @@ class UserApiService {
         // Check if it's a JWT expiration error
         final errorData = json.decode(response.body);
         final errorMessage = errorData['message'] ?? '';
-        
-        if (errorMessage.contains('jwt expired') || errorMessage.contains('token')) {
-          print('🔄 JWT token expired, attempting to get new token...');
-          
-          // Clear the old token and get a new one
-          final prefs = await SharedPreferences.getInstance();
-          await prefs.remove('auth_token');
-          
-          // Get a fresh token and retry the request once
-          final newToken = await getAuthToken();
-          if (newToken != null && newToken != 'test_token_placeholder') {
-            print('🔄 Retrying request with new token...');
-            
-            // Retry the request with the new token
-            final retryResponse = await http.put(
-              url,
-              headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Authorization': 'Bearer $newToken',
-              },
-              body: body.map((key, value) => MapEntry(key, value.toString())),
-            );
-            
-            print('📊 Retry Response status: ${retryResponse.statusCode}');
-            
-            if (retryResponse.statusCode == 200) {
-              final retryData = json.decode(retryResponse.body);
-              if (retryData['success'] == true) {
-                print('✅ Request successful with new token');
-                return retryData['data'];
-              }
-            }
-          }
-          
-          throw Exception('Authentication failed - please login again');
+
+        if (errorMessage.contains('jwt expired') ||
+            errorMessage.contains('token')) {
+          print(
+            '🔄 JWT token expired, need fresh token from preference screen...',
+          );
+          throw Exception(
+            'Authentication token expired - please refresh the screen and try again',
+          );
         } else {
           throw Exception(errorMessage);
         }
@@ -245,8 +229,9 @@ class UserApiService {
 
   /// Validate email format
   static bool isValidEmail(String email) {
-    return RegExp(r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$')
-        .hasMatch(email);
+    return RegExp(
+      r'^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$',
+    ).hasMatch(email);
   }
 
   /// Validate phone number (basic validation)
