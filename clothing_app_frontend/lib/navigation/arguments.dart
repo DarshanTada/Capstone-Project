@@ -56,14 +56,12 @@ class ProductDetailScreenArguments {
   ProductDetailScreenArguments({Null});
 }
 
-class CategoryRelationScreenArguments {
-  CategoryRelationScreenArguments({Null});
-}
 
-class PreferenceScreenArguments {
-  final String sourceScreen;
-
-  PreferenceScreenArguments({required this.sourceScreen});
+class CategoryRelationScreenArguments{
+    final String category ;
+ CategoryRelationScreenArguments ({
+required this.category
+  });
 }
 
 class PaymentScreenArguments {
