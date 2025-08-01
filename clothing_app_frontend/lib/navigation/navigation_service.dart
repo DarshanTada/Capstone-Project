@@ -37,7 +37,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return _getPageRoute(const SizeChartScreen());
 
     case NamedRoute.preferenceScreen:
-      final args = settings.arguments as PreferenceScreenArguments?;
+      // final args = settings.arguments as PreferenceScreenArguments?;
       return _getPageRoute(PreferenceScreen());
     case NamedRoute.checkoutScreen:
       return _getPageRoute(const CheckoutScreen());
