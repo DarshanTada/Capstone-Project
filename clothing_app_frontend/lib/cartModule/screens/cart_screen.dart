@@ -13,7 +13,8 @@ class MyCartScreen extends StatefulWidget {
   State<MyCartScreen> createState() => _MyCartScreenState();
 }
 
-class _MyCartScreenState extends State<MyCartScreen> {
+class _MyCartScreenState extends State<MyCartScreen>
+    with SingleTickerProviderStateMixin {
   double dH = 0.0;
   double dW = 0.0;
   double tS = 0.0;
@@ -33,28 +34,54 @@ class _MyCartScreenState extends State<MyCartScreen> {
       "quantity": 1,
       "image": "assets/images/product_1_1.jpg",
       "rating": 4.7,
-      "reviews": "2.8k+ Reviews"
+      "reviews": "2.8k+ Reviews",
     },
-    // {
-    //   "name": "Classic Cotton T-Shirt",
-    //   "size": "M",
-    //   "color": "White",
-    //   "price": 24.99,
-    //   "originalPrice": 29.99,
-    //   "discount": "17% OFF",
-    //   "quantity": 1,
-    //   "image": "assets/images/g1.png",
-    //   "rating": 4.5,
-    //   "reviews": "1.5k+ Reviews"
-    // },
+    {
+      "name": "Classic Cotton T-Shirt",
+      "size": "M",
+      "color": "White",
+      "price": 24.99,
+      "originalPrice": 29.99,
+      "discount": "17% OFF",
+      "quantity": 1,
+      "image": "assets/images/g1.png",
+      "rating": 4.5,
+      "reviews": "1.5k+ Reviews",
+    },
   ];
 
   fetchData() async {}
+
+  late AnimationController _animationController;
+  late Animation<double> _badgeAnimation;
+
+  int get totalItems =>
+      cartItems.fold(0, (sum, item) => sum + (item['quantity'] as int));
 
   @override
   void initState() {
     super.initState();
     fetchData();
+
+    // Initialize animation controller
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 600),
+      vsync: this,
+    );
+
+    // Create badge animation
+    _badgeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _animationController, curve: Curves.elasticOut),
+    );
+
+    // Start animation when screen loads
+    _animationController.forward();
+  }
+
+  @override
+  void dispose() {
+    _animationController.dispose();
+    super.dispose();
   }
 
   @override
@@ -68,42 +95,93 @@ class _MyCartScreenState extends State<MyCartScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('My Cart', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'My Cart',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back_ios_new, color: Color(0xFFB8956A)),
-          onPressed: () => Navigator.pop(context),
+        leading: Center(
+          child: AnimatedBuilder(
+            animation: _badgeAnimation,
+            builder: (context, child) {
+              return Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Transform.scale(
+                    scale: _badgeAnimation.value,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Color(0xFFB8956A).withOpacity(0.1),
+                        shape: BoxShape.circle,
+                      ),
+                      padding: EdgeInsets.all(8),
+                      child: Icon(
+                        Icons.shopping_cart,
+                        color: Color(0xFFB8956A),
+                        size: 20,
+                      ),
+                    ),
+                  ),
+                  if (totalItems > 0)
+                    Positioned(
+                      right: -2,
+                      top: -2,
+                      child: Transform.scale(
+                        scale: _badgeAnimation.value,
+                        child: Container(
+                          padding: EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.red,
+                            shape: BoxShape.circle,
+                            border: Border.all(color: Colors.white, width: 1),
+                          ),
+                          constraints: BoxConstraints(
+                            minWidth: 16,
+                            minHeight: 16,
+                          ),
+                          child: Text(
+                            totalItems.toString(),
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            },
+          ),
         ),
       ),
-      body: iOSCondition(dH) ? screenBody() : SafeArea(child: screenBody()),
-    );
-  }
-
-  Widget screenBody() {
-    return SizedBox(
-      height: dH,
-      width: dW,
-      child: isLoading
-          ? CircularLoader(android: dW * 0.08, iOS: dW * 0.035)
-          : SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              padding: EdgeInsets.symmetric(horizontal: dW * 0.05),
-              child: Column(
-                children: [
-                  SizedBox(height: dW * 0.05),
-                  ...cartItems.map((item) => cartItemCard(item)),
-                  SizedBox(height: dW * 0.05),
-                  discountBox(),
-                  SizedBox(height: dW * 0.04),
-                  orderSummarySection(),
-                  SizedBox(height: dW * 0.06),
-                  checkoutButton(),
-                  SizedBox(height: dW * 0.1),
-                ],
+      body: SizedBox(
+        height: dH,
+        width: dW,
+        child: isLoading
+            ? CircularLoader(android: dW * 0.08, iOS: dW * 0.035)
+            : SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                padding: EdgeInsets.symmetric(horizontal: dW * 0.05),
+                child: Column(
+                  children: [
+                    SizedBox(height: dW * 0.05),
+                    ...cartItems.map((item) => cartItemCard(item)),
+                    SizedBox(height: dW * 0.05),
+                    discountBox(),
+                    SizedBox(height: dW * 0.04),
+                    orderSummarySection(),
+                    SizedBox(height: dW * 0.06),
+                    checkoutButton(),
+                    SizedBox(height: dW * 0.1),
+                  ],
+                ),
               ),
-            ),
+      ),
     );
   }
 
@@ -152,7 +230,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
                   ),
                 ),
                 SizedBox(height: 6),
-                
+
                 // Size and Color
                 Row(
                   children: [
@@ -190,7 +268,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
                   ],
                 ),
                 SizedBox(height: 8),
-                
+
                 // Price and Discount
                 Row(
                   children: [
@@ -214,7 +292,10 @@ class _MyCartScreenState extends State<MyCartScreen> {
                       ),
                       SizedBox(width: 6),
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           color: Color(0xFF8FBC8F),
                           borderRadius: BorderRadius.circular(6),
@@ -232,13 +313,16 @@ class _MyCartScreenState extends State<MyCartScreen> {
                   ],
                 ),
                 SizedBox(height: 8),
-                
+
                 // Rating if available
                 if (item['rating'] != null)
                   Row(
                     children: [
                       Container(
-                        padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: 6,
+                          vertical: 2,
+                        ),
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
@@ -273,16 +357,21 @@ class _MyCartScreenState extends State<MyCartScreen> {
                       ),
                     ],
                   ),
-                
+
                 SizedBox(height: 12),
-                
+
                 // Quantity Controls and Delete
                 Row(
                   children: [
                     GestureDetector(
                       onTap: () {
                         setState(() {
-                          if (item['quantity'] > 1) item['quantity']--;
+                          if (item['quantity'] > 1) {
+                            item['quantity']--;
+                            // Restart animation when quantity changes
+                            _animationController.reset();
+                            _animationController.forward();
+                          }
                         });
                       },
                       child: Container(
@@ -312,6 +401,9 @@ class _MyCartScreenState extends State<MyCartScreen> {
                       onTap: () {
                         setState(() {
                           item['quantity']++;
+                          // Restart animation when quantity changes
+                          _animationController.reset();
+                          _animationController.forward();
                         });
                       },
                       child: Container(
@@ -320,11 +412,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
                           color: Color(0xFFD2B193),
                           borderRadius: BorderRadius.circular(6),
                         ),
-                        child: Icon(
-                          Icons.add,
-                          size: 16,
-                          color: Colors.white,
-                        ),
+                        child: Icon(Icons.add, size: 16, color: Colors.white),
                       ),
                     ),
                     Spacer(),
@@ -343,7 +431,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
                 ),
               ],
             ),
-          )
+          ),
         ],
       ),
     );
@@ -369,10 +457,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
           Expanded(
             child: Text(
               "Enter a discount coupon",
-              style: TextStyle(
-                fontSize: 14,
-                color: Colors.grey.shade600,
-              ),
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
             ),
           ),
           GestureDetector(
@@ -440,20 +525,32 @@ class _MyCartScreenState extends State<MyCartScreen> {
     );
   }
 
-  Widget orderRow(String label, String value, {Color? color, bool isBold = false}) {
+  Widget orderRow(
+    String label,
+    String value, {
+    Color? color,
+    bool isBold = false,
+  }) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 5.0),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: TextStyle(fontSize: 14, fontWeight: isBold ? FontWeight.bold : null)),
-          Text(value,
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: isBold ? FontWeight.bold : null,
-                color: color,
-              )),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: isBold ? FontWeight.bold : null,
+            ),
+          ),
+          Text(
+            value,
+            style: TextStyle(
+              fontSize: 14,
+              fontWeight: isBold ? FontWeight.bold : null,
+              color: color,
+            ),
+          ),
         ],
       ),
     );
@@ -464,11 +561,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
       width: double.infinity,
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xFFD2B193),
-            Color(0xFFB8956A),
-            Color(0xFFA67C52),
-          ],
+          colors: [Color(0xFFD2B193), Color(0xFFB8956A), Color(0xFFA67C52)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -485,9 +578,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
         onPressed: () {
           Navigator.push(
             context,
-            MaterialPageRoute(
-              builder: (context) => const CheckoutScreen(),
-            ),
+            MaterialPageRoute(builder: (context) => const CheckoutScreen()),
           );
         },
         style: ElevatedButton.styleFrom(
@@ -498,11 +589,7 @@ class _MyCartScreenState extends State<MyCartScreen> {
             borderRadius: BorderRadius.circular(16),
           ),
         ),
-        icon: Icon(
-          Icons.payment,
-          color: Colors.white,
-          size: 20,
-        ),
+        icon: Icon(Icons.payment, color: Colors.white, size: 20),
         label: Text(
           'Proceed to Checkout - \$95.97',
           style: TextStyle(

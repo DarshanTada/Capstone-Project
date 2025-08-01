@@ -172,7 +172,7 @@ class BottomNavBarState extends State<BottomNavBar> {
     required String colouredsvg,
     required bool isSelected,
   }) => Container(
-    padding: iOSCondition(dH)
+    margin: iOSCondition(dH)
         ? EdgeInsets.only(top: dW * 0.02)
         : EdgeInsets.symmetric(vertical: dW * 0.048),
     child: Stack(
@@ -228,101 +228,92 @@ class BottomNavBarState extends State<BottomNavBar> {
     language = Provider.of<AuthProvider>(context).selectedLanguage;
 
     return Scaffold(
+      
+      // backgroundColor: Colors.white,
+      extendBody: true, // This allows body to extend behind the bottom nav
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _children[_currentIndex],
+          : _children[_currentIndex], // Remove SafeArea and Padding wrapper
       bottomNavigationBar: Container(
+        margin: EdgeInsets.only(
+          bottom: dW * 0.05,
+          left: dW * 0.04,
+          right: dW * 0.04,
+        ),
         decoration: BoxDecoration(
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              offset: const Offset(0, -1),
-              blurRadius: 2,
+              color: Colors.black.withOpacity(0.15),
+              offset: const Offset(0, 4),
+              blurRadius: 15,
               spreadRadius: 2,
             ),
           ],
-          border: Border.all(
-            width: 0,
-            style: BorderStyle.none,
-            color: Colors.transparent,
-          ),
-          color: Colors.white,
+          borderRadius: BorderRadius.circular(25),
+          border: Border.all(width: 1, color: Colors.grey[200]!),
+          color: Colors.white, // Make it transparent
         ),
-        child: Stack(
-          children: [
-            BottomNavigationBar(
-              elevation: 10,
-              currentIndex: _currentIndex,
-              onTap: onTapped,
-              selectedFontSize: 0,
-              unselectedFontSize: 0,
-              type: BottomNavigationBarType.fixed,
-              selectedItemColor: Theme.of(context).primaryColor,
-              items: [
-                BottomNavigationBarItem(
-                  icon: navbarItemContent(
-                    label: language['home'],
-                    colouredsvg: 'coloured_home',
-                    svg: 'home',
-                    isSelected: _currentIndex == 0,
-                  ),
-                  label: '',
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(25),
+          child: BottomNavigationBar(
+            backgroundColor: Colors.white.withOpacity(
+              0.9,
+            ), // Semi-transparent white
+            elevation: 0,
+            currentIndex: _currentIndex,
+            onTap: onTapped,
+            selectedFontSize: 0,
+            unselectedFontSize: 0,
+            type: BottomNavigationBarType.fixed,
+            selectedItemColor: Theme.of(context).primaryColor,
+            items: [
+              BottomNavigationBarItem(
+                icon: navbarItemContent(
+                  label: language['home'] ?? 'Home',
+                  colouredsvg: 'coloured_home',
+                  svg: 'home',
+                  isSelected: _currentIndex == 0,
                 ),
-                BottomNavigationBarItem(
-                  icon: navbarItemContent(
-                    label: language['shop'],
-                    colouredsvg: 'coloured_wallet',
-                    svg: 'wallet',
-                    isSelected: _currentIndex == 1,
-                  ),
-                  label: '',
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: navbarItemContent(
+                  label: language['shop'] ?? 'Shop',
+                  colouredsvg: 'coloured_wallet',
+                  svg: 'wallet',
+                  isSelected: _currentIndex == 1,
                 ),
-                BottomNavigationBarItem(
-                  icon: navbarItemContent(
-                    label: language['search'],
-                    colouredsvg: 'search',
-                    svg: 'search',
-                    isSelected: _currentIndex == 2,
-                  ),
-                  label: '',
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: navbarItemContent(
+                  label: language['search'] ?? 'Search',
+                  colouredsvg: 'search',
+                  svg: 'search',
+                  isSelected: _currentIndex == 2,
                 ),
-                BottomNavigationBarItem(
-                  icon: navbarItemContent(
-                    label: language['cart'],
-                    colouredsvg: 'coloured_rewards',
-                    svg: 'reward',
-                    isSelected: _currentIndex == 3,
-                  ),
-                  label: '',
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: navbarItemContent(
+                  label: language['cart'] ?? 'Cart',
+                  colouredsvg: 'coloured_rewards',
+                  svg: 'reward',
+                  isSelected: _currentIndex == 3,
                 ),
-                BottomNavigationBarItem(
-                  icon: navbarItemContent(
-                    label: language['profile'],
-                    colouredsvg: 'coloured_more',
-                    svg: 'more',
-                    isSelected: _currentIndex == 4,
-                  ),
-                  label: '',
+                label: '',
+              ),
+              BottomNavigationBarItem(
+                icon: navbarItemContent(
+                  label: language['profile'] ?? 'Profile',
+                  colouredsvg: 'coloured_more',
+                  svg: 'more',
+                  isSelected: _currentIndex == 4,
                 ),
-              ],
-            ),
-            // Positioned(
-            //   left: 0,
-            //   right: 0,
-            //   top: 0,
-            //   child: Center(
-            //     child: Container(
-            //       margin: const EdgeInsets.only(top: 13),
-            //       width: 1.5,
-            //       height: dH * 0.05,
-            //       decoration: BoxDecoration(
-            //         color: dividerColor,
-            //         borderRadius: BorderRadius.circular(25),
-            //       ),
-            //     ),
-            //   ),
-            // ),
-          ],
+                label: '',
+              ),
+            ],
+          ),
         ),
       ),
     );
