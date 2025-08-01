@@ -1236,16 +1236,14 @@
 //   }
 // }
 
-import 'package:clothing_app_frontend/navigation/navigators.dart';
 import 'package:clothing_app_frontend/navigation/routes.dart';
-import 'package:clothing_app_frontend/preferenceModule/service/ml_preference_service.dart';
-import 'package:clothing_app_frontend/preferenceModule/model/preference_model.dart';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:image/image.dart' as img;
 import 'dart:io';
 import 'dart:async';
 import 'dart:convert';
@@ -1291,91 +1289,14 @@ class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
 
   void _handlePhotoSaved(String savedPath) async {
     // Handle the saved photo path
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Selfie saved successfully!'),
-        backgroundColor: Colors.green,
-      ),
-    );
-
-    // Get the current user ID
-    final userId = await MLPreferenceService.getCurrentUserId();
+    print('📸 Face photo saved at: $savedPath');
     
-    if (userId != null) {
-      try {
-        // Show loading dialog
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (context) => AlertDialog(
-            content: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                CircularProgressIndicator(),
-                SizedBox(height: 16),
-                Text('Analyzing your preferences...'),
-              ],
-            ),
-          ),
-        );
+    // Check if widget is still mounted before using context
+    if (!mounted) return;
 
-        // Get base64 image
-        final base64Image = await PhotoStorageHelper.getSavedSelfieAsBase64();
-        
-        if (base64Image != null) {
-          // Analyze preferences using ML service
-          final preferences = await MLPreferenceService.analyzeAndGetPreferences(
-            userId: userId,
-            imageBase64: base64Image,
-          );
-
-          // Close loading dialog
-          Navigator.pop(context);
-
-          if (preferences != null) {
-            // Save preferences locally using extension
-            await preferences.saveToPrefs();
-            
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Preferences analyzed and saved!'),
-                backgroundColor: Colors.green,
-              ),
-            );
-          } else {
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(
-                content: Text('Failed to analyze preferences. You can set them manually.'),
-                backgroundColor: Colors.orange,
-              ),
-            );
-          }
-        } else {
-          // Close loading dialog
-          Navigator.pop(context);
-          
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Failed to get image data. Please try again.'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      } catch (e) {
-        // Close loading dialog if open
-        Navigator.pop(context);
-        
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error analyzing preferences: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-
-    // Navigate to preference screen after photo is saved
-    Navigator.pushNamed(context, NamedRoute.preferenceScreen);
+    // Navigate to body capture screen instead of direct ML analysis
+    print('🧭 Navigating to body capture screen...');
+    Navigator.pushNamed(context, NamedRoute.captureBodyScreen);
   }
 
   Widget _buildSelectionScreen() {
@@ -1529,7 +1450,7 @@ class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
 
               // Skip button
               GestureDetector(
-                onTap: () => push(NamedRoute.preferenceScreen),
+                onTap: () => Navigator.pushNamed(context, NamedRoute.preferenceScreen),
                 child: Container(
                   width: double.infinity,
                   padding: const EdgeInsets.symmetric(vertical: 16),
@@ -1555,6 +1476,7 @@ class _CaptureFaceScreenState extends State<CaptureFaceScreen> {
 // Photo Storage Helper Class
 class PhotoStorageHelper {
   static const String _selfiePathKey = 'user_selfie_path';
+  static const String _bodyPhotoPathKey = 'user_body_photo_path';
 
   // Save photo to app's document directory and store path in SharedPreferences
   static Future<String> savePhoto(XFile photo) async {
@@ -1590,6 +1512,40 @@ class PhotoStorageHelper {
     }
   }
 
+  // Save body photo to app's document directory and store path in SharedPreferences
+  static Future<String> saveBodyPhoto(XFile photo) async {
+    try {
+      // Get app's document directory
+      final Directory appDocDir = await getApplicationDocumentsDirectory();
+      final String appDocPath = appDocDir.path;
+
+      // Create body photos directory if it doesn't exist
+      final Directory bodyDir = Directory('$appDocPath/body_photos');
+      if (!await bodyDir.exists()) {
+        await bodyDir.create(recursive: true);
+      }
+
+      // Generate unique filename with timestamp
+      final String timestamp = DateTime.now().millisecondsSinceEpoch.toString();
+      final String fileName = 'body_$timestamp.jpg';
+      final String savedPath = '${bodyDir.path}/$fileName';
+
+      // Copy the photo to the new location
+      final File originalFile = File(photo.path);
+      await originalFile.copy(savedPath);
+
+      // Save the path in SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.setString(_bodyPhotoPathKey, savedPath);
+
+      print('Body photo saved to: $savedPath');
+      return savedPath;
+    } catch (e) {
+      print('Error saving body photo: $e');
+      throw Exception('Failed to save body photo: $e');
+    }
+  }
+
   // Get saved selfie path from SharedPreferences
   static Future<String?> getSavedSelfiePath() async {
     try {
@@ -1597,6 +1553,17 @@ class PhotoStorageHelper {
       return prefs.getString(_selfiePathKey);
     } catch (e) {
       print('Error getting saved selfie path: $e');
+      return null;
+    }
+  }
+
+  // Get saved body photo path from SharedPreferences
+  static Future<String?> getSavedBodyPhotoPath() async {
+    try {
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      return prefs.getString(_bodyPhotoPathKey);
+    } catch (e) {
+      print('Error getting saved body photo path: $e');
       return null;
     }
   }
@@ -1611,6 +1578,20 @@ class PhotoStorageHelper {
       return await file.exists();
     } catch (e) {
       print('Error checking if selfie exists: $e');
+      return false;
+    }
+  }
+
+  // Check if saved body photo file still exists
+  static Future<bool> savedBodyPhotoExists() async {
+    try {
+      final String? savedPath = await getSavedBodyPhotoPath();
+      if (savedPath == null) return false;
+
+      final File file = File(savedPath);
+      return await file.exists();
+    } catch (e) {
+      print('Error checking if body photo exists: $e');
       return false;
     }
   }
@@ -1637,6 +1618,28 @@ class PhotoStorageHelper {
     }
   }
 
+  // Delete saved body photo
+  static Future<bool> deleteSavedBodyPhoto() async {
+    try {
+      final String? savedPath = await getSavedBodyPhotoPath();
+      if (savedPath == null) return false;
+
+      final File file = File(savedPath);
+      if (await file.exists()) {
+        await file.delete();
+      }
+
+      // Remove from SharedPreferences
+      final SharedPreferences prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_bodyPhotoPathKey);
+
+      return true;
+    } catch (e) {
+      print('Error deleting saved body photo: $e');
+      return false;
+    }
+  }
+
   // Get saved selfie as Base64 string
   static Future<String?> getSavedSelfieAsBase64() async {
     try {
@@ -1657,6 +1660,121 @@ class PhotoStorageHelper {
     }
   }
 
+  // Get saved body photo as Base64 string
+  static Future<String?> getSavedBodyPhotoAsBase64() async {
+    try {
+      final String? savedPath = await getSavedBodyPhotoPath();
+      if (savedPath == null) return null;
+
+      final File file = File(savedPath);
+      if (!await file.exists()) return null;
+
+      // Read file as bytes and convert to base64
+      final List<int> imageBytes = await file.readAsBytes();
+      final String base64String = base64Encode(imageBytes);
+      
+      return base64String;
+    } catch (e) {
+      print('Error getting saved body photo as base64: $e');
+      return null;
+    }
+  }
+
+  // Get combined images (face + body) side by side as Base64 string
+  static Future<String?> getCombinedImagesAsBase64() async {
+    try {
+      final String? selfiePath = await getSavedSelfiePath();
+      final String? bodyPath = await getSavedBodyPhotoPath();
+      
+      if (selfiePath == null || bodyPath == null) {
+        print('❌ Missing images - Face: ${selfiePath != null}, Body: ${bodyPath != null}');
+        return null;
+      }
+
+      final File selfieFile = File(selfiePath);
+      final File bodyFile = File(bodyPath);
+
+      if (!await selfieFile.exists() || !await bodyFile.exists()) {
+        print('❌ Image files do not exist - Face: ${await selfieFile.exists()}, Body: ${await bodyFile.exists()}');
+        return null;
+      }
+
+      // Read both images
+      final selfieBytes = await selfieFile.readAsBytes();
+      final bodyBytes = await bodyFile.readAsBytes();
+
+      // Decode images to get their dimensions
+      final selfieImage = await decodeImageFromList(selfieBytes);
+      final bodyImage = await decodeImageFromList(bodyBytes);
+
+      print('📐 Face image: ${selfieImage.width}x${selfieImage.height}');
+      print('📐 Body image: ${bodyImage.width}x${bodyImage.height}');
+
+      // Calculate dimensions for combined image
+      final int targetHeight = 800; // Fixed height for consistency
+      final double selfieAspectRatio = selfieImage.width / selfieImage.height;
+      final double bodyAspectRatio = bodyImage.width / bodyImage.height;
+      
+      final int selfieWidth = (targetHeight * selfieAspectRatio).round();
+      final int bodyWidth = (targetHeight * bodyAspectRatio).round();
+      final int combinedWidth = selfieWidth + bodyWidth;
+
+      print('📐 Combined image will be: ${combinedWidth}x$targetHeight');
+
+      // Create a temporary combined image file
+      final Directory tempDir = await getTemporaryDirectory();
+      final String combinedPath = '${tempDir.path}/combined_${DateTime.now().millisecondsSinceEpoch}.jpg';
+      
+      // Use image package to combine images
+      final img.Image? decodedSelfie = img.decodeImage(selfieBytes);
+      final img.Image? decodedBody = img.decodeImage(bodyBytes);
+      
+      if (decodedSelfie == null || decodedBody == null) {
+        print('❌ Failed to decode images');
+        return null;
+      }
+
+      // Resize images to target height while maintaining aspect ratio
+      final img.Image resizedSelfie = img.copyResize(decodedSelfie, height: targetHeight);
+      final img.Image resizedBody = img.copyResize(decodedBody, height: targetHeight);
+
+      // Create combined image
+      final img.Image combined = img.Image(width: combinedWidth, height: targetHeight);
+      
+      // Fill with white background
+      img.fill(combined, color: img.ColorRgb8(255, 255, 255));
+      
+      // Copy selfie to left side
+      img.compositeImage(combined, resizedSelfie, dstX: 0, dstY: 0);
+      
+      // Copy body image to right side
+      img.compositeImage(combined, resizedBody, dstX: resizedSelfie.width, dstY: 0);
+
+      // Encode combined image as JPEG
+      final List<int> combinedBytes = img.encodeJpg(combined, quality: 85);
+      
+      // Save combined image temporarily
+      final File combinedFile = File(combinedPath);
+      await combinedFile.writeAsBytes(combinedBytes);
+
+      // Convert to base64
+      final String base64String = base64Encode(combinedBytes);
+      
+      // Clean up temporary file
+      try {
+        await combinedFile.delete();
+      } catch (e) {
+        print('Warning: Failed to delete temporary combined image: $e');
+      }
+
+      print('✅ Combined image created successfully (${base64String.length} chars)');
+      return base64String;
+    } catch (e) {
+      print('💥 Error creating combined image: $e');
+      return null;
+    }
+  }
+
   // Get saved selfie file directly
   static Future<File?> getSavedSelfieFile() async {
     try {
@@ -1669,6 +1787,22 @@ class PhotoStorageHelper {
       return file;
     } catch (e) {
       print('Error getting saved selfie file: $e');
+      return null;
+    }
+  }
+
+  // Get saved body photo file directly
+  static Future<File?> getSavedBodyPhotoFile() async {
+    try {
+      final String? savedPath = await getSavedBodyPhotoPath();
+      if (savedPath == null) return null;
+
+      final File file = File(savedPath);
+      if (!await file.exists()) return null;
+
+      return file;
+    } catch (e) {
+      print('Error getting saved body photo file: $e');
       return null;
     }
   }
@@ -1955,12 +2089,15 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
     _faceCheckTimer?.cancel();
 
     if (_faceDetectionWorking && !_faceDetected) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please position your face in the circle first'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Check if widget is still mounted before showing snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Please position your face in the circle first'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       _startPeriodicFaceCheck();
       return;
     }
@@ -1969,6 +2106,9 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
   }
 
   void _showCapturedImage(XFile photo) {
+    // Check if widget is still mounted before showing dialog
+    if (!mounted) return;
+    
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -2032,10 +2172,65 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
     });
 
     try {
+      // Check if widget is still mounted before showing dialog
+      if (!mounted) return;
+      
+      // Show analyzing popup
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFF5D4E75),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Analyzing photo...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF2D2D2D),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
       // Save the photo using PhotoStorageHelper
       final String savedPath = await PhotoStorageHelper.savePhoto(photo);
 
-      Navigator.pop(context); // Close dialog
+      // Check if widget is still mounted before closing dialog
+      if (!mounted) return;
+      
+      // Close analyzing popup
+      Navigator.pop(context);
+      
+      // Close the camera screen dialog
+      Navigator.pop(context);
+
       widget.onPhotoSaved(
         savedPath,
       ); // This will trigger navigation to preference screen
@@ -2044,12 +2239,15 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
         _isSaving = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving photo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Check if widget is still mounted before showing snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -2324,12 +2522,15 @@ class _GallerySelectionScreenState extends State<GallerySelectionScreen> {
         widget.onBack();
       }
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error selecting image: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Check if widget is still mounted before showing snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error selecting image: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
       widget.onBack();
     }
   }
@@ -2354,12 +2555,15 @@ class _GallerySelectionScreenState extends State<GallerySelectionScreen> {
         _isValidating = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Face validation unavailable - accepting image'),
-          backgroundColor: Colors.orange,
-        ),
-      );
+      // Check if widget is still mounted before showing snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Face validation unavailable - accepting image'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+      }
       await _saveAndAcceptPhoto(imageFile);
     }
   }
@@ -2512,8 +2716,120 @@ class _GallerySelectionScreenState extends State<GallerySelectionScreen> {
     });
 
     try {
+      // Show analyzing popup
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(
+                      Color(0xFF5D4E75),
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Text(
+                    'Analyzing photo...',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: Color(0xFF2D2D2D),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
       // Save the photo using PhotoStorageHelper
       final String savedPath = await PhotoStorageHelper.savePhoto(photo);
+
+      // Close analyzing popup
+      Navigator.pop(context);
+      
+      // Short delay for better UX
+      await Future.delayed(Duration(milliseconds: 500));
+
+      // Show photo saved message
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return Dialog(
+            backgroundColor: Colors.transparent,
+            child: Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(15),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 50,
+                  ),
+                  const SizedBox(height: 15),
+                  Text(
+                    'Photo Saved Successfully!',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF2D2D2D),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Text(
+                    'Proceeding to preferences...',
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      );
+
+      // Wait a bit to show the success message
+      await Future.delayed(Duration(milliseconds: 1500));
+
+      // Check if widget is still mounted before navigation
+      if (!mounted) return;
+
+      // Close success dialog
+      Navigator.pop(context);
+
       widget.onPhotoSaved(
         savedPath,
       ); // This will trigger navigation to preference screen
@@ -2522,12 +2838,15 @@ class _GallerySelectionScreenState extends State<GallerySelectionScreen> {
         _isSaving = false;
       });
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error saving photo: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      // Check if widget is still mounted before showing snackbar
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error saving photo: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 

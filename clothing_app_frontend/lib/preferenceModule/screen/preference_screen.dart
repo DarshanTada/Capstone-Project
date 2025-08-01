@@ -1,11 +1,13 @@
+import 'package:clothing_app_frontend/navigation/arguments.dart';
+import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:provider/provider.dart';
 import '../service/ml_preference_service.dart';
 import '../model/preference_model.dart';
 import '../services/user_api_service.dart';
 import '../../authModule/screens/capture_face_screen.dart';
 import '../../authModule/providers/auth_provider.dart';
+import '../../authModule/model/user_model.dart';
 
 void main() => runApp(PreferenceScreenApp());
 
@@ -36,6 +38,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   int height = 176;
   String bodyType = 'Ectomorph';
   String phoneNumber = ''; // Non-editable, populated from user data
+  String? token = ''; // Store auth token
+  String? userId = ''; // Store user ID
+  String? preferenceId = ''; // Store preference ID for updates
 
   int selectedSkin = 2;
   Set<String> selectedStyles = {};
@@ -65,31 +70,42 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
   /// Load user data from SharedPreferences (legacy method - now mainly for fallback)
   Future<void> _loadUserData() async {
     try {
-      // This method is now mainly for fallback if AuthProvider fails
-      final prefs = await SharedPreferences.getInstance();
+      print('📷 Loading minimal capture data...');
 
-      // Only load phone if not already loaded from AuthProvider
-      if (phoneNumber.isEmpty) {
-        final storedPhone =
-            prefs.getString('user_phone') ?? prefs.getString('phone_number');
-        if (storedPhone != null && storedPhone.isNotEmpty) {
-          setState(() {
-            phoneNumber = storedPhone;
-          });
-        }
+      // Load data from AuthProvider and activePreference
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final user = authProvider.user;
+      final activePreference = authProvider.activePreference;
+
+      // Load authentication data (phone number, user ID, token)
+      if (user.phoneNumber != null && user.phoneNumber!.isNotEmpty) {
+        phoneNumber = user.phoneNumber!;
+        print('📱 Phone number loaded: ${phoneNumber.substring(0, 3)}***');
       }
 
-      // Also try to get user info from JWT token if available (fallback)
-      if (phoneNumber.isEmpty) {
-        final token = await UserApiService.getAuthToken();
-        if (token != null) {
-          setState(() {
-            phoneNumber = "+12222222222"; // From the test token (fallback)
-          });
+      if (user.id != null) {
+        userId = user.id!;
+        print('👤 User ID loaded: $userId');
+      }
+
+      if (user.token != null) {
+        token = user.token!;
+        print('🔐 Token loaded: ${token!.substring(0, 10)}***');
+      }
+
+      final dynamic id = activePreference?.id;
+      if (id != null) {
+        preferenceId = id.toString();
+        print('🆔 Preference ID loaded from id: $preferenceId');
+      } else {
+        // Fallback to userId if available
+        if (userId != null && userId!.isNotEmpty) {
+          preferenceId = userId!;
+          print('🆔 Preference ID set from userId: $preferenceId');
         }
       }
     } catch (e) {
-      print('Error loading user data: $e');
+      print('❌ Error loading minimal capture data: $e');
     }
   }
 
@@ -311,12 +327,14 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
     try {
       final userId = await MLPreferenceService.getCurrentUserId();
       if (userId == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('User not found. Please login again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('User not found. Please login again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
         return;
       }
 
@@ -347,29 +365,35 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       if (existingPrefs != null) {
         // Update existing preference (we would need the preference ID for this)
         // For now, just show success message as the backend handles create/update
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Preferences updated successfully!'),
-            backgroundColor: Color(0xFFB8956A),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Preferences updated successfully!'),
+              backgroundColor: Color(0xFFB8956A),
+            ),
+          );
+        }
       } else {
         // New preference will be created by the backend
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Preferences saved successfully!'),
-            backgroundColor: Color(0xFFB8956A),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Preferences saved successfully!'),
+              backgroundColor: Color(0xFFB8956A),
+            ),
+          );
+        }
       }
     } catch (e) {
       print('Error saving preferences: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to save preferences. Please try again.'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Failed to save preferences. Please try again.'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -401,12 +425,14 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       final userId = await MLPreferenceService.getCurrentUserId();
       if (userId == null) {
         print('❌ No user ID found');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('User not found. Please login again.'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('User not found. Please login again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
         return;
       }
       print('✅ User ID found: $userId');
@@ -415,36 +441,42 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       final base64Image = await PhotoStorageHelper.getSavedSelfieAsBase64();
       if (base64Image == null) {
         print('❌ No saved selfie found');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('No saved selfie found. Please capture a new photo.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'No saved selfie found. Please capture a new photo.',
+              ),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
         return;
       }
       print('✅ Base64 image retrieved, length: ${base64Image.length}');
 
       // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(),
-              SizedBox(height: 16),
-              Text('Re-analyzing your preferences...'),
-              SizedBox(height: 8),
-              Text(
-                'This may take 10-30 seconds',
-                style: TextStyle(fontSize: 12, color: Colors.grey),
-              ),
-            ],
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Re-analyzing your preferences...'),
+                SizedBox(height: 8),
+                Text(
+                  'This may take 10-30 seconds',
+                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                ),
+              ],
+            ),
           ),
-        ),
-      );
+        );
+      }
 
       print('🚀 Sending request to ML service...');
 
@@ -455,7 +487,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       );
 
       // Close loading dialog
-      Navigator.pop(context);
+      if (mounted) {
+        Navigator.pop(context);
+      }
 
       if (preferences != null) {
         print('✅ Preferences received successfully');
@@ -468,36 +502,42 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         // Update UI with new preferences
         _populatePreferencesFromModel(preferences);
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Preferences re-analyzed successfully!'),
-            backgroundColor: Color(0xFFB8956A),
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Preferences re-analyzed successfully!'),
+              backgroundColor: Color(0xFFB8956A),
+            ),
+          );
+        }
       } else {
         print('❌ No preferences returned from ML service');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              'Failed to re-analyze preferences. Please try again.',
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                'Failed to re-analyze preferences. Please try again.',
+              ),
+              backgroundColor: Colors.red,
             ),
-            backgroundColor: Colors.red,
-          ),
-        );
+          );
+        }
       }
     } catch (e) {
       // Close loading dialog if open
-      if (Navigator.canPop(context)) {
+      if (mounted && Navigator.canPop(context)) {
         Navigator.pop(context);
       }
 
       print('💥 Error re-analyzing preferences: $e');
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error re-analyzing preferences: $e'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error re-analyzing preferences: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -683,56 +723,102 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
       // Validate fields first
       final validationError = _validateFields();
       if (validationError != null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.warning, color: Colors.white),
-                SizedBox(width: 8),
-                Expanded(child: Text(validationError)),
-              ],
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  Icon(Icons.warning, color: Colors.white),
+                  SizedBox(width: 8),
+                  Expanded(child: Text(validationError)),
+                ],
+              ),
+              backgroundColor: Colors.orange.shade700,
+              duration: Duration(seconds: 4),
             ),
-            backgroundColor: Colors.orange.shade700,
-            duration: Duration(seconds: 4),
-          ),
-        );
+          );
+        }
         return;
       }
 
       // Show loading dialog
-      showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) => AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => AlertDialog(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(
+                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFB8956A)),
+                ),
+                SizedBox(height: 16),
+                Text(
+                  'Updating your preferences...',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'This may take a few seconds',
+                  style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                ),
+              ],
+            ),
           ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFFB8956A)),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Updating your preferences...',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-              ),
-              SizedBox(height: 8),
-              Text(
-                'This may take a few seconds',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
-              ),
-            ],
-          ),
-        ),
-      );
+        );
+      }
 
       print('🚀 Starting profile update...');
+      print('📋 Parameters being sent:');
+      print(
+        '  � Token: ${token?.isNotEmpty == true ? '${token!.substring(0, 10)}***' : 'MISSING'}',
+      );
+      print('  👤 User ID: ${userId?.isNotEmpty == true ? userId : 'MISSING'}');
+      print(
+        '  �📱 Phone Number: ${phoneNumber.isNotEmpty ? phoneNumber : 'null'}',
+      );
+      print('  ✉️ Email: ${email.trim().toLowerCase()}');
+      print('  👤 Role: user');
+      print('  🏷️ Username: ${name.trim()}');
+      print('  ⚧️ Gender: $gender');
+      print('  🎂 Age: $age');
+      print('  📏 Height: $height');
+      print('  🏃 Body Type: $bodyType');
+      print('  🎨 Skin Tone: ${_mapSkinIndexToTone(selectedSkin)}');
+      print('  👔 Styles: ${selectedStyles.toList()}');
+      print('  🎯 Occasions: ${selectedOccasions.toList()}');
+      print('  🎉 Festivals: ${selectedFestivals.toList()}');
+      print(
+        '  🌈 Color Tones: ${mlColorTones.isNotEmpty ? mlColorTones : 'null'}',
+      );
+      print('  📐 Size: M');
+      print('  🎭 Undertone: $selectedUndertone');
+      print('  🖼️ Avatar URL: null');
+      print(
+        '  🆔 Preference ID: ${preferenceId?.isNotEmpty == true ? preferenceId : 'MISSING'}',
+      );
+      print('  ✅ Is Active: true');
 
-      // Call the API
+      // Validate required authentication data
+      if (token == null || token!.isEmpty) {
+        throw Exception('Authentication token is missing. Please login again.');
+      }
+
+      if (userId == null || userId!.isEmpty) {
+        throw Exception('User ID is missing. Please login again.');
+      }
+
+      // Call the API with all required parameters
       final result = await UserApiService.updateUserProfile(
+        token: token ?? '', // Pass token from preference screen variable
+        userId: userId ?? '', // Pass userId from preference screen variable
+        phoneNumber: phoneNumber.isNotEmpty ? phoneNumber : null,
         email: email.trim().toLowerCase(),
+        role: 'user', // Role set to 'user' as requested
         username: name.trim(),
         gender: gender,
         age: age,
@@ -743,99 +829,49 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         occasions: selectedOccasions.toList(),
         festivals: selectedFestivals.toList(),
         colorTones: mlColorTones.isNotEmpty ? mlColorTones : null,
+        size: 'M', // Size set to M as requested
         undertone: selectedUndertone,
-        size: 'L', // Default size - could be made configurable
+        avatarUrl:
+            null, // Can be updated later when avatar functionality is implemented
+        preferenceId: preferenceId,
+        isActive: true, // isActive set to true as requested
       );
 
       // Close loading dialog
-      Navigator.pop(context);
-
-      if (result != null) {
-        print('✅ Profile updated successfully');
-
-        // Show success message
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    'Profile updated successfully! Getting your curated results...',
-                  ),
-                ),
-              ],
-            ),
-            backgroundColor: Color(0xFFB8956A),
-            duration: Duration(seconds: 3),
-          ),
-        );
-
-        // TODO: Navigate to curated results screen or trigger recommendation API
-        // For now, just show another message about curated results
-        Future.delayed(Duration(seconds: 1), () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Row(
-                children: [
-                  Icon(Icons.auto_awesome, color: Colors.white),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text('Your personalized recommendations are ready!'),
-                  ),
-                ],
-              ),
-              backgroundColor: Color(0xFFD2B193),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        });
-      } else {
-        print('❌ Update failed - no result returned');
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Row(
-              children: [
-                Icon(Icons.error, color: Colors.white),
-                SizedBox(width: 8),
-                Expanded(
-                  child: Text('Failed to update profile. Please try again.'),
-                ),
-              ],
-            ),
-            backgroundColor: Colors.red.shade700,
-          ),
-        );
-      }
-    } catch (e) {
-      // Close loading dialog if open
-      if (Navigator.canPop(context)) {
+      if (mounted) {
         Navigator.pop(context);
       }
 
-      print('💥 Error updating profile: $e');
+      if (result != null && result['success'] == true) {
+        print('✅ Profile updated successfully');
 
-      String errorMessage = 'Failed to update profile. Please try again.';
-      if (e.toString().contains('No authentication token')) {
-        errorMessage = 'Please log in again to continue.';
-      } else if (e.toString().contains('email')) {
-        errorMessage = 'Please check your email address and try again.';
+        // Save updated user data to preferences (similar to loginUser method)
+        try {
+          // Create updated user object from API response
+          if (result['data'] != null && token != null) {
+            final userData = User.jsonToUser(result['data'], token: token!);
+
+            // Save to local preferences
+            await userData.saveToPrefs();
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              NamedRoute.bottomNavBarScreen,
+              (route) => false,
+              arguments: BottomNavArgumnets(),
+            );
+            print('💾 User preferences saved to local storage');
+          }
+        } catch (saveError) {
+          print(
+            '⚠️ Warning: Failed to save preferences to local storage: $saveError',
+          );
+          // Continue execution - this is not a critical error
+        }
       }
+    } catch (e) {
+      // Close loading dialog if open
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.error, color: Colors.white),
-              SizedBox(width: 8),
-              Expanded(child: Text(errorMessage)),
-            ],
-          ),
-          backgroundColor: Colors.red.shade700,
-          duration: Duration(seconds: 4),
-        ),
-      );
+      print('💥 Error updating profile: $e');
     }
   }
 
