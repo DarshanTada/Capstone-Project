@@ -9,6 +9,7 @@ class BottomNavArgumnets {
   final int index;
   BottomNavArgumnets({this.index = 0});
 }
+
 class VerifyOtpArguments {
   final String mobileNo;
   // final String verificationId;
@@ -51,11 +52,10 @@ class EditProfileScreenArguments {
   EditProfileScreenArguments({required this.user});
 }
 
-class ProductDetailScreenArguments{
-  ProductDetailScreenArguments({
-  Null
-  });
+class ProductDetailScreenArguments {
+  ProductDetailScreenArguments({Null});
 }
+
 
 class CategoryRelationScreenArguments{
     final String category ;

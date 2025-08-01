@@ -37,9 +37,8 @@ class PreferenceProvider with ChangeNotifier {
         };
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      // Log error instead of showing SnackBar to avoid widget tree issues
+      print('Error in getAllPreferences: $e');
       return {'status': false, 'message': 'Unexpected error occurred'};
     }
   }
@@ -49,13 +48,13 @@ class PreferenceProvider with ChangeNotifier {
     BuildContext context,
     String userId,
   ) async {
-    final String url =
-        '${webApi['domain']}${endPoint['getPrefByUserId']}/$userId';
+    final String url = '${webApi['domain']}${endPoint['getPrefByUserId']}/$userId';
 
     try {
       final response = await RemoteServices.httpRequest(
-        method: 'GET',
+        method: 'POST',  // Changed to POST as per backend API
         url: url,
+        body: {'userId': userId},  // Send userId in body
       );
 
       print('Status code: ${response.statusCode}');
@@ -64,7 +63,13 @@ class PreferenceProvider with ChangeNotifier {
       final responseData = response.body;
 
       if (response.statusCode == 200 && responseData['success'] == true) {
-        return {'status': true, 'data': responseData['data']};
+        // Extract preference from user data structure
+        final data = responseData['data'];
+        if (data != null && data['preference'] != null) {
+          return {'status': true, 'data': data['preference']};
+        } else {
+          return {'status': false, 'message': 'No preferences found'};
+        }
       } else {
         return {
           'status': false,
@@ -72,9 +77,8 @@ class PreferenceProvider with ChangeNotifier {
         };
       }
     } catch (error) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $error')));
+      // Log error instead of showing SnackBar to avoid widget tree issues
+      print('Error in getPreferencesByUserId: $error');
       return {'status': false, 'message': 'Unexpected error occurred'};
     }
   }
@@ -82,22 +86,29 @@ class PreferenceProvider with ChangeNotifier {
   //Update preference
   Future<Map<String, dynamic>> updatePreference({
     required BuildContext context,
-    required String id,
+    required String id,  // This is now userId instead of preferenceId
     required Map<String, dynamic> data,
   }) async {
-    final String url = '${webApi['domain']}${endPoint['updatePreference']}/$id';
+    final String url = '${webApi['domain']}${endPoint['updatePreference']}';  // Removed /$id
 
     try {
       final response = await RemoteServices.httpRequest(
         method: 'PUT',
         url: url,
         body: data,
+        // Note: Add token handling if needed through SharedPreferences or UserApiService
       );
 
       final responseData = response.body;
 
       if (response.statusCode == 200 && responseData['success'] == true) {
-        return {'status': true, 'data': responseData['data']};
+        // Extract preference from updated user data structure
+        final updatedData = responseData['data'];
+        if (updatedData != null && updatedData['preference'] != null) {
+          return {'status': true, 'data': updatedData['preference']};
+        } else {
+          return {'status': true, 'data': updatedData};
+        }
       } else {
         return {
           'status': false,
@@ -105,9 +116,8 @@ class PreferenceProvider with ChangeNotifier {
         };
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      // Log error instead of showing SnackBar to avoid widget tree issues
+      print('Error in updatePreference: $e');
       return {'status': false, 'message': 'Unexpected error occurred'};
     }
   }
@@ -136,9 +146,8 @@ class PreferenceProvider with ChangeNotifier {
         };
       }
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Error: $e')));
+      // Log error instead of showing SnackBar to avoid widget tree issues
+      print('Error in deletePreference: $e');
       return {'status': false, 'message': 'Unexpected error occurred'};
     }
   }

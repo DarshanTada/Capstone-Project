@@ -1,4 +1,5 @@
 import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
+import 'package:clothing_app_frontend/authModule/screens/capture_body_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
 import 'package:clothing_app_frontend/authModule/screens/intro_screen_1.dart';
@@ -22,10 +23,10 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     // Intro/Onboarding Screens
     case NamedRoute.onBoardingScreen1:
       return _getPageRoute(const IntroScreen1());
-    
+
     case NamedRoute.onBoardingScreen2:
       return _getPageRoute(const IntroScreen2());
-    
+
     case NamedRoute.onBoardingScreen3:
       return _getPageRoute(const IntroScreen3());
 
@@ -36,10 +37,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       return _getPageRoute(const SizeChartScreen());
 
     case NamedRoute.preferenceScreen:
+      final args = settings.arguments as PreferenceScreenArguments?;
       return _getPageRoute(PreferenceScreen());
     case NamedRoute.checkoutScreen:
       return _getPageRoute(const CheckoutScreen());
-    
+
     case NamedRoute.addressesScreen:
       return _getPageRoute(const AddressesScreen());
 
@@ -57,6 +59,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case NamedRoute.captureFaceScreen:
       return _getPageRoute(CaptureFaceScreen());
 
+    case NamedRoute.captureBodyScreen:
+      return _getPageRoute(CaptureBodyScreen());
+
     // Home Screen
     case NamedRoute.bottomNavBarScreen:
       return _getPageRoute(
@@ -70,10 +75,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
       );
 
     case NamedRoute.categoryRelationScreen:
-      return _getPageRoute( CategoryRelationScreen(
-        args: settings.arguments as CategoryRelationScreenArguments,
-      ));
-
+      return _getPageRoute(
+        CategoryRelationScreen(
+          args: settings.arguments as CategoryRelationScreenArguments,
+        ),
+      );
 
     // case NamedRoute.walletScreen:
     //   return _getPageRoute(const WalletScreen());
