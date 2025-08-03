@@ -28,15 +28,15 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
     console.log('req.body:', req.body);
     console.log('req.files:', req.files);
 
-    let base64Image: string | undefined;
+    let imageBase64: string | undefined;
 
     if (imageFile && imageFile.buffer) {
-      base64Image = imageFile.buffer.toString('base64');
+      imageBase64 = `data:${imageFile.mimetype};base64,${imageFile.buffer.toString('base64')}`;
     }
 
     const newCategory = new Category({
       name,
-      ...(base64Image && { image: base64Image }),
+      ...(imageBase64 && { image: imageBase64 }),
     });
 
     await newCategory.save();
@@ -48,6 +48,44 @@ export const createCategory = async (req: Request, res: Response): Promise<void>
   }
 };
 
+// Update Category
+export const updateCategory = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { id } = req.params;
+    const { name } = req.body;
+    const files = req.files as Record<string, Express.Multer.File[]> | undefined;
+    const imageFile = files?.['image']?.[0];
+
+    const updateData: any = {};
+
+    if (name !== undefined) updateData.name = name;
+
+    if (imageFile) {
+      const imageBase64 = `data:${imageFile.mimetype};base64,${imageFile.buffer.toString('base64')}`;
+      updateData.image = imageBase64;
+    }
+
+    const updatedCategory = await Category.findByIdAndUpdate(id, updateData, {
+      new: true,
+      runValidators: true
+    });
+
+    if (!updatedCategory) {
+      res.status(404).json({ success: false, message: 'Category not found' });
+      return;
+    }
+
+    res.status(200).json({
+      success: true,
+      message: 'Category updated successfully',
+      data: updatedCategory
+    });
+  } catch (error: any) {
+    console.error('Update Category Error:', error);
+    res.status(500).json({ success: false, message: `Update Category Error: ${error.message}` });
+  }
+};
+
 // Read all Categories
 export const getAllCategories = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -56,7 +94,7 @@ export const getAllCategories = async (req: Request, res: Response): Promise<voi
     const formatted = categories.map((cat) => ({
       _id: cat._id,
       name: cat.name,
-      image: cat.image?.toString('base64') || null,
+      image: cat.image || null,
     }));
 
     res.status(200).json({ success: true, data: formatted });
@@ -213,7 +251,7 @@ export const getProductsByCategoryPost = async (req: Request, res: Response): Pr
         category: categories.map(category => ({
           _id: category._id,
           name: category.name,
-          image: category.image?.toString('base64') || null
+          image: category.image || null
         }))
       }
     ];

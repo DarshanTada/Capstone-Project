@@ -90,15 +90,12 @@ export const createProduct = async (req: Request, res: Response) => {
         const isPrimary = req.body[isPrimaryKey] === 'true' || req.body[isPrimaryKey] === true;
         const sortOrder = parseInt(req.body[sortOrderKey]) || imageIndex + 1;
 
-        // Convert buffer to base64 string
-        const base64String = file.buffer.toString("base64");
+        // Convert buffer to data URL format
+        const imageBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
         await ProductImage.create({
           productObjectId: newProduct._id,
           variantObjectid: savedVariant._id,
-          image: {
-            base64: base64String,
-            contentType: file.mimetype,
-          },
+          image: imageBase64,
           is_primary: isPrimary,
           sort_order: sortOrder
         });
@@ -230,13 +227,10 @@ export const updateProduct = async (req: Request, res: Response): Promise<void> 
         const file = files?.[fileKey]?.[0];
 
         if (file) {
-          const base64String = file.buffer.toString("base64");
+          const imageBase64 = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
 
           await ProductImage.findByIdAndUpdate(imageObj._id, {
-            image: {
-              base64: base64String,
-              contentType: file.mimetype,
-            },
+            image: imageBase64,
           });
         }
       }
