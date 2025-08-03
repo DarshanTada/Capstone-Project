@@ -3,7 +3,7 @@ import {
   CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow, CTableHeaderCell,
   CTableBody, CTableDataCell, CButton, CPagination, CPaginationItem, CFormInput
 } from '@coreui/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ROLE, hasPermission } from 'src/roles/permissions';
 import axios from 'axios';
 
@@ -16,39 +16,46 @@ const ProductList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.get('http://localhost:3001/api/product/getProduct', {
-          params: {
-            page: currentPage,
-            limit: productsPerPage,
-          }
-        });
-        if (res.data.success) {
-          setProducts(res.data.data);
-          setTotalPages(res.data.pagination.totalPages);
-        }
-      } catch (err) {
-        console.error('Failed to fetch products:', err);
-      }
-      setLoading(false);
-    };
-    const fetchCategories = async () => {
-      try {
-        const res = await axios.get('http://localhost:3001/api/category/getCategory');
-        if (res.data.success) {
-          setCategories(res.data.data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch categories:', err);
-      }
-    };
     fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, productsPerPage, location.pathname]);
+
+  useEffect(() => {
     fetchCategories();
-  }, []); // fetch categories only once
+  }, []);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get('http://localhost:3001/api/product/getProduct', {
+        params: {
+          page: currentPage,
+          limit: productsPerPage,
+        }
+      });
+      if (res.data.success) {
+        setProducts(res.data.data);
+        setTotalPages(res.data.pagination.totalPages);
+      }
+    } catch (err) {
+      console.error('Failed to fetch products:', err);
+    }
+    setLoading(false);
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get('http://localhost:3001/api/category/getCategory');
+      if (res.data.success) {
+        setCategories(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+    }
+  };
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
@@ -111,6 +118,7 @@ const ProductList = () => {
               </option>
             ))}
           </select>
+          {/* Refresh button removed: now auto-refreshes on navigation */}
           {(hasPermission('admin', 'manage_products') || hasPermission('super_admin', 'manage_products') || hasPermission('product_manager', 'manage_products')) && (
             <CButton color="primary" className="float-end ms-3" onClick={() => navigate('/products/add')}>
               Add Product

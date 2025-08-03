@@ -146,7 +146,7 @@ const UserList = () => {
                     <CTableHeaderCell className="bg-body-tertiary">Phone Number</CTableHeaderCell>
                     <CTableHeaderCell className="bg-body-tertiary">Email</CTableHeaderCell>
                     <CTableHeaderCell className="bg-body-tertiary">Role</CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary">Relation</CTableHeaderCell>
+                    {/* Relation column removed */}
                     <CTableHeaderCell className="bg-body-tertiary text-center">
                       Actions
                     </CTableHeaderCell>
@@ -196,9 +196,7 @@ const UserList = () => {
                         <CTableDataCell>
                           <div>{user.role || 'user'}</div>
                         </CTableDataCell>
-                        <CTableDataCell>
-                          <div>{user.preference?.body_type || '-'}</div>
-                        </CTableDataCell>
+                        {/* Relation column removed */}
                         <CTableDataCell className="text-center">
                           <CIcon
                             icon={cilTrash}
