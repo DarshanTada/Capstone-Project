@@ -3,6 +3,7 @@ import 'package:clothing_app_frontend/authModule/screens/splash.dart';
 import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
+import 'package:clothing_app_frontend/homeModule/provider/subcategory_provider.dart';
 import 'package:clothing_app_frontend/addressModule/provider/address_provider.dart';
 import 'package:clothing_app_frontend/homeModule/provider/home_provider.dart';
 import 'package:clothing_app_frontend/authModule/providers/logout_provider.dart';
@@ -125,9 +126,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => LogoutProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
-
+        ChangeNotifierProvider(create: (_) => SubCategoryProvider()),
         ChangeNotifierProvider(create: (_) => AddressProvider()),
-
         ChangeNotifierProvider(create: (_) => HomeProvider()),
 
         // ChangeNotifierProvider(create: (_) => CafeProvider()),

@@ -1,5 +1,7 @@
 // var webApi = {'domain': 'http://localhost:3001/'}; // LOCALHOST
-var webApi = {'domain': 'http://localhost:3001/'}; //PC IP ADDRESS
+// var webApi = {'domain': 'http://localhost:3001/'}; //PC IP ADDRESS
+var webApi = {'domain': 'http://10.0.0.213:3001/'}; //Darshan home IP ADDRESS
+
 var mlApi = {'domain': 'https://naturally-giving-chow.ngrok-free.app/'}; //ML NGROK
 
 var endPoint = {
@@ -16,7 +18,7 @@ var endPoint = {
   // Product
   'getProducts': 'api/product/getProduct',
   // SubCategory
-  'getSubCategories': 'api/subCategory/getAll',
+  'getAllSubCategories': 'api/subCategory/getAll',
 
   //Preference (handled by user module)
   'getAllPreferences': 'api/user/users',
