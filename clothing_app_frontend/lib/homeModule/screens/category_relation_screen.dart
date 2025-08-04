@@ -1,3 +1,6 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
@@ -41,162 +44,61 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
   }
 
   void _initializeCategories() {
-    // Set categories based on the selected category from CategoryScreen
-    if (widget.args.category == 'Jeans') {
-      categories = [
-        {
-          'name': 'Baggy',
-          'image': 'assets/products/6_jeans/baggy/product_6_1.png',
-        },
-        {
-          'name': 'Skinny',
-          'image': 'assets/products/6_jeans/skinny_jeans/product_6_1.png',
-        },
-        {
-          'name': 'Ripped',
-          'image': 'assets/products/6_jeans/ripped_jeans/product_6_1.png',
-        },
-        {
-          'name': 'Wide Leg',
-          'image': 'assets/products/6_jeans/wide_leg_jeans/product_6_1.png',
-        },
-        {
-          'name': 'Splatter Loose Fit',
-          'image':
-              'assets/products/6_jeans/splatter_loose_fit_jeans/product_6_1.png',
-        },
-      ];
-    } else if (widget.args.category == 'Shorts') {
-      categories = [
-        {
-          'name': 'Jeans Shorts',
-          'image': 'assets/products/4_shorts/jeans_shorts/product_4_1.png',
-        },
-        {
-          'name': 'Linen Shorts',
-          'image': 'assets/products/4_shorts/linen_shorts/product_4_1.png',
-        },
-      ];
-    } else if (widget.args.category == 'T-Shirts') {
-      categories = [
-        {
-          'name': 'Collar T-Shirts',
-          'image': 'assets/products/8_t-shirts/collar_tshirts/product_8_1.png',
-        },
-        {
-          'name': 'Wide T-Shirts',
-          'image': 'assets/products/8_t-shirts/wide_tshirts/product_8_4.png',
-        },
-        {
-          'name': 'Cotton Shirts',
-          'image': 'assets/products/7_shirts/cotton_shirts/product_7_1.png',
-        },
-        {
-          'name': 'Jeans Shirts',
-          'image': 'assets/products/7_shirts/jeans_shirts/product_7_1.png',
-        },
-      ];
+    // Use only dynamic subcategories data
+    if (widget.args.subcategories != null &&
+        widget.args.subcategories!.isNotEmpty) {
+      categories = widget.args.subcategories!.map((subcat) {
+        final subcatName = subcat['name']?.toString() ?? 'Unknown';
+        final subcatImage = subcat['image']?.toString() ?? '';
+
+        return {
+          'name': subcatName,
+          'image': subcatImage, // This will be base64 encoded image
+          'isBase64': true, // Flag to indicate this is base64 data
+        };
+      }).toList();
     } else {
-      // Default categories for other types
+      // Show empty state when no dynamic data available
       categories = [
         {
-          'name': 'All Items',
-          'image': 'assets/products/6_jeans/baggy/product_6_1.png',
+          'name': 'No Categories',
+          'image': '', // Empty image will show placeholder
+          'isBase64': false,
         },
       ];
     }
   }
 
   void _initializeProducts() {
-    products = List.generate(10, (i) {
-      // Create different product types based on category with actual asset images
-      List<String> imagesToUse = [];
-      List<String> productNames = [];
-
-      if (widget.args.category == 'Jeans') {
-        // Use actual jeans images from different subcategories
-        imagesToUse = [
-          'assets/products/6_jeans/baggy/product_6_1.png',
-          'assets/products/6_jeans/baggy/product_6_2.png',
-          'assets/products/6_jeans/skinny_jeans/product_6_1.png',
-          'assets/products/6_jeans/skinny_jeans/product_6_2.png',
-          'assets/products/6_jeans/ripped_jeans/product_6_1.png',
-          'assets/products/6_jeans/wide_leg_jeans/product_6_1.png',
-          'assets/products/6_jeans/splatter_loose_fit_jeans/product_6_1.png',
-        ];
-        productNames = [
-          'Baggy Denim Jeans',
-          'Premium Baggy Jeans',
-          'Skinny Fit Jeans',
-          'Slim Skinny Jeans',
-          'Ripped Denim Jeans',
-          'Wide Leg Jeans',
-          'Splatter Loose Fit Jeans',
-        ];
-      } else if (widget.args.category == 'Shorts') {
-        // Use actual shorts images
-        imagesToUse = [
-          'assets/products/4_shorts/jeans_shorts/product_4_1.png',
-          'assets/products/4_shorts/jeans_shorts/product_4_2.png',
-          'assets/products/4_shorts/linen_shorts/product_4_1.png',
-          'assets/products/4_shorts/linen_shorts/product_4_2.png',
-        ];
-        productNames = [
-          'Denim Cargo Shorts',
-          'Classic Jeans Shorts',
-          'Summer Linen Shorts',
-          'Casual Linen Shorts',
-        ];
-      } else if (widget.args.category == 'T-Shirts') {
-        // Use actual t-shirts and shirts images
-        imagesToUse = [
-          'assets/products/8_t-shirts/collar_tshirts/product_8_1.png',
-          'assets/products/8_t-shirts/collar_tshirts/product_8_2.png',
-          'assets/products/8_t-shirts/collar_tshirts/product_8_3.png',
-          'assets/products/8_t-shirts/wide_tshirts/product_8_4.png',
-          'assets/products/8_t-shirts/wide_tshirts/product_8_5.png',
-          'assets/products/7_shirts/cotton_shirts/product_7_1.png',
-          'assets/products/7_shirts/cotton_shirts/product_7_2.png',
-          'assets/products/7_shirts/cotton_shirts/product_7_3.png',
-          'assets/products/7_shirts/jeans_shirts/product_7_1.png',
-        ];
-        productNames = [
-          'Classic Collar T-Shirt',
-          'Premium Collar T-Shirt',
-          'Designer Collar T-Shirt',
-          'Wide Fit T-Shirt',
-          'Oversized Wide T-Shirt',
-          'Cotton Casual Shirt',
-          'Premium Cotton Shirt',
-          'Classic Cotton Shirt',
-          'Denim Style Shirt',
-        ];
-      } else {
-        // Default fallback
-        imagesToUse = ['assets/products/6_jeans/baggy/product_6_1.png'];
-        productNames = ['Classic Item'];
-      }
-
-      // Cycle through available images and names
-      String selectedImage = imagesToUse[i % imagesToUse.length];
-      String selectedName = productNames[i % productNames.length];
-
-      return {
-        'name': selectedName,
-        'image': selectedImage,
-        'oldPrice': 60 + (i * 5),
-        'price': 45 + (i * 3),
-        'colors': [
-          Colors.black,
-          Colors.brown,
-          Colors.grey.shade400,
-          Colors.brown.shade200,
-          Colors.blueGrey,
-        ],
-        'sizes': ['S', 'M', 'L', 'XL'],
-        'isFavorite': i % 2 == 0,
-      };
-    });
+    // Use only dynamic products data
+    if (widget.args.products != null && widget.args.products!.isNotEmpty) {
+      products = widget.args.products!.map((product) {
+        return {
+          'name': product['name']?.toString() ?? 'Unknown Product',
+          'image': product['image']?.toString() ?? '',
+          'oldPrice': (product['price'] is num)
+              ? (product['price'] as num).toDouble() + 15
+              : 60.0,
+          'price': (product['price'] is num)
+              ? (product['price'] as num).toDouble()
+              : 45.0,
+          'rating': product['rating'] ?? 4.5,
+          'colors': [
+            Colors.black,
+            Colors.brown,
+            Colors.grey.shade400,
+            Colors.brown.shade200,
+            Colors.blueGrey,
+          ],
+          'sizes': ['S', 'M', 'L', 'XL'],
+          'isFavorite': false,
+          'isBase64': true, // Flag to indicate this is base64 image data
+        };
+      }).toList();
+    } else {
+      // Show empty state when no dynamic data available - don't create fake products
+      products = [];
+    }
   }
 
   fetchData() async {
@@ -229,9 +131,11 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
             TextWidget(title: widget.args.category),
             SizedBox(height: dW * 0.02),
             TextWidget(
-              title: widget.args.category == 'Jeans'
-                  ? '156 items'
-                  : '163 items',
+              title:
+                  widget.args.products != null &&
+                      widget.args.products!.isNotEmpty
+                  ? '${widget.args.products!.length} items'
+                  : '0 items',
             ),
           ],
         ),
@@ -263,6 +167,15 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
                 Expanded(
                   child: Builder(
                     builder: (context) {
+                      // Check if we have real products or just empty state
+                      bool hasRealProducts =
+                          widget.args.products != null &&
+                          widget.args.products!.isNotEmpty;
+
+                      if (!hasRealProducts) {
+                        return _buildEmptyState();
+                      }
+
                       if (viewType == ProductViewType.oneList) {
                         return ProductList(
                           products: products,
@@ -295,6 +208,37 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
             ),
     );
   }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.inventory_2_outlined,
+            size: dW * 0.2,
+            color: Colors.grey[400],
+          ),
+          SizedBox(height: dW * 0.05),
+          Text(
+            'No Products Available',
+            style: customTextTheme.headlineSmall?.copyWith(
+              color: Colors.grey[600],
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+          SizedBox(height: dW * 0.02),
+          Text(
+            'Please check back later or try another category',
+            style: customTextTheme.bodyMedium?.copyWith(
+              color: Colors.grey[500],
+            ),
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
+    );
+  }
 }
 
 class CategoryRow extends StatelessWidget {
@@ -308,6 +252,60 @@ class CategoryRow extends StatelessWidget {
     required this.dW,
     required this.customTextTheme,
   });
+
+  Widget _buildBase64Image(String base64String, double size) {
+    try {
+      if (base64String.isEmpty) {
+        return Container(
+          width: size,
+          height: size,
+          color: Colors.grey[300],
+          child: Icon(
+            Icons.image_not_supported,
+            color: Colors.grey[600],
+            size: 20,
+          ),
+        );
+      }
+
+      // Extract base64 data (remove data:image/...;base64, prefix if present)
+      final base64Data = base64String.contains(',')
+          ? base64String.split(',').last
+          : base64String;
+
+      final Uint8List imageBytes = base64Decode(base64Data);
+
+      return Image.memory(
+        imageBytes,
+        width: size,
+        height: size,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            width: size,
+            height: size,
+            color: Colors.grey[300],
+            child: Icon(
+              Icons.image_not_supported,
+              color: Colors.grey[600],
+              size: 20,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      return Container(
+        width: size,
+        height: size,
+        color: Colors.grey[300],
+        child: Icon(
+          Icons.image_not_supported,
+          color: Colors.grey[600],
+          size: 20,
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -323,6 +321,9 @@ class CategoryRow extends StatelessWidget {
         separatorBuilder: (_, __) => SizedBox(width: dW * 0.03),
         itemBuilder: (context, i) {
           final cat = categories[i];
+          final isBase64 = cat['isBase64'] == true;
+          final imageData = cat['image'] ?? '';
+
           return Column(
             children: [
               Container(
@@ -330,12 +331,22 @@ class CategoryRow extends StatelessWidget {
                 height: dW * 0.18,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  image: DecorationImage(
-                    image: AssetImage(
-                      cat['image'],
-                    ), // Changed from NetworkImage to AssetImage
-                    fit: BoxFit.cover,
-                  ),
+                  color: Colors.grey[200], // Background color for loading
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: isBase64 && imageData.isNotEmpty
+                      ? _buildBase64Image(imageData, dW * 0.18)
+                      : Container(
+                          width: dW * 0.18,
+                          height: dW * 0.18,
+                          color: Colors.grey[300],
+                          child: Icon(
+                            Icons.category,
+                            color: Colors.grey[600],
+                            size: 20,
+                          ),
+                        ),
                 ),
               ),
               SizedBox(height: 4),
@@ -529,6 +540,49 @@ class ProductCard extends StatefulWidget {
 }
 
 class _ProductCardState extends State<ProductCard> {
+  Widget _buildProductImage(String imageData, bool isBase64, double height) {
+    if (isBase64 && imageData.isNotEmpty) {
+      try {
+        // Extract base64 data (remove data:image/...;base64, prefix if present)
+        final base64Data = imageData.contains(',')
+            ? imageData.split(',').last
+            : imageData;
+
+        final Uint8List imageBytes = base64Decode(base64Data);
+
+        return Image.memory(
+          imageBytes,
+          width: double.infinity,
+          height: height,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              width: double.infinity,
+              height: height,
+              color: Colors.grey[300],
+              child: Icon(Icons.image, size: 50, color: Colors.grey[600]),
+            );
+          },
+        );
+      } catch (e) {
+        return Container(
+          width: double.infinity,
+          height: height,
+          color: Colors.grey[300],
+          child: Icon(Icons.image, size: 50, color: Colors.grey[600]),
+        );
+      }
+    } else {
+      // No image data - show placeholder
+      return Container(
+        width: double.infinity,
+        height: height,
+        color: Colors.grey[300],
+        child: Icon(Icons.image, size: 50, color: Colors.grey[600]),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isLiked = widget.product['isFavorite'] ?? false;
@@ -565,23 +619,10 @@ class _ProductCardState extends State<ProductCard> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-                  child: Image.asset(
-                    widget.product['image'],
-                    width: double.infinity,
-                    height: imageHeight,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: double.infinity,
-                        height: imageHeight,
-                        color: Colors.grey[300],
-                        child: Icon(
-                          Icons.image,
-                          size: 50,
-                          color: Colors.grey[600],
-                        ),
-                      );
-                    },
+                  child: _buildProductImage(
+                    widget.product['image'] ?? '',
+                    widget.product['isBase64'] == true,
+                    imageHeight,
                   ),
                 ),
                 Positioned(

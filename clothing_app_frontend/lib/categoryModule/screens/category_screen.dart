@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
@@ -19,8 +20,7 @@ class CategoryScreen extends StatefulWidget {
   CategoryScreenState createState() => CategoryScreenState();
 }
 
-class CategoryScreenState extends State<CategoryScreen>
-    with TickerProviderStateMixin {
+class CategoryScreenState extends State<CategoryScreen> {
   double dH = 0.0;
   double dW = 0.0;
   double tS = 0.0;
@@ -28,13 +28,7 @@ class CategoryScreenState extends State<CategoryScreen>
   Map language = {};
   bool isLoading = false;
 
-  // Animation controllers for enhanced UI
-  late AnimationController _fadeController;
-  late AnimationController _slideController;
-  late AnimationController _scaleController;
-  late Animation<double> _fadeAnimation;
-  late Animation<Offset> _slideAnimation;
-  late Animation<double> _scaleAnimation;
+  late ScrollController _scrollController;
 
   Uint8List decodeBase64Image(String base64String) {
     return base64Decode(base64String.split(',').last);
@@ -86,7 +80,14 @@ class CategoryScreenState extends State<CategoryScreen>
   @override
   void initState() {
     super.initState();
+    _scrollController = ScrollController();
     fetchData();
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
@@ -118,6 +119,7 @@ class CategoryScreenState extends State<CategoryScreen>
                   },
                   color: Color(0xFF76929F),
                   child: SingleChildScrollView(
+                    controller: _scrollController,
                     physics: const BouncingScrollPhysics(),
                     clipBehavior:
                         Clip.hardEdge, // This prevents scrolling beyond bounds
@@ -204,144 +206,86 @@ class CategoryScreenState extends State<CategoryScreen>
                               final rawSubCategories =
                                   subCategoryProvider.rawSubCategories;
 
-                              // Debug: Print all image data we're getting
-                              print('=== CATEGORY IMAGES ===');
-                              for (var category
-                                  in categoryProvider.categories) {
-                                print('Category: ${category.name}');
-                                print(
-                                  'Category Image: ${category.image.isNotEmpty ? "Has base64 image (${category.image.length} chars)" : "No image"}',
-                                );
-                                if (category.decodedImage != null) {
-                                  print(
-                                    'Category Decoded Image: ${category.decodedImage!.length} bytes',
-                                  );
-                                }
-                              }
-
-                              print('=== SUBCATEGORY IMAGES ===');
-                              for (
-                                int i = 0;
-                                i < rawSubCategories.length;
-                                i++
-                              ) {
-                                var subcat = rawSubCategories[i];
-                                print(
-                                  'Subcategory $i: ${subcat['name'] ?? "Unknown"}',
-                                );
-                                print(
-                                  'Subcategory Category: ${subcat['category']?['name'] ?? "Unknown"}',
-                                );
-                                print(
-                                  'Subcategory Image: ${subcat['image']?.toString().isNotEmpty == true ? "Has base64 image (${subcat['image'].toString().length} chars)" : "No image"}',
-                                );
-
-                                // Try to decode and show image info
-                                if (subcat['image']?.toString().isNotEmpty ==
-                                    true) {
-                                  try {
-                                    final base64Part =
-                                        subcat['image'].toString().contains(',')
-                                        ? subcat['image']
-                                              .toString()
-                                              .split(',')
-                                              .last
-                                        : subcat['image'].toString();
-                                    final decoded = base64Decode(base64Part);
-                                    print(
-                                      'Subcategory Decoded Image: ${decoded.length} bytes',
-                                    );
-                                  } catch (e) {
-                                    print('Subcategory Image Decode Error: $e');
-                                  }
-                                }
-                                print('---');
-                              }
-
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  SizedBox(height: dW * 0.05),
-
-                                  // Enhanced banner section with gradient overlay
+                                  // Static Beautiful Page Header with Clothing Theme
                                   Container(
-                                    height: dW * 0.4,
+                                    margin: EdgeInsets.only(bottom: dW * 0.05),
                                     decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          Color(0xFF76929F),
+                                          Color(0xFF8BA5B1),
+                                          Color(0xFF9CB8C4),
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
                                       borderRadius: BorderRadius.circular(20),
                                       boxShadow: [
                                         BoxShadow(
-                                          color: Colors.black.withOpacity(0.1),
+                                          color: Color(
+                                            0xFF76929F,
+                                          ).withOpacity(0.4),
                                           blurRadius: 15,
-                                          offset: Offset(0, 5),
+                                          offset: Offset(0, 8),
                                         ),
                                       ],
                                     ),
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(20),
-                                      child: Stack(
+                                    child: Padding(
+                                      padding: EdgeInsets.all(dW * 0.04),
+                                      child: Row(
                                         children: [
-                                          SingleChildScrollView(
-                                            scrollDirection: Axis.horizontal,
-                                            physics:
-                                                const BouncingScrollPhysics(),
-                                            child: Row(
-                                              children: [
-                                                Stack(
-                                                  children: [
-                                                    Image.asset(
-                                                      "assets/images/b1.png",
-                                                      fit: BoxFit.cover,
-                                                      height: dW * 0.4,
-                                                    ),
-                                                    Container(
-                                                      height: dW * 0.4,
-                                                      width: dW * 0.8,
-                                                      decoration: BoxDecoration(
-                                                        gradient: LinearGradient(
-                                                          colors: [
-                                                            Colors.transparent,
-                                                            Colors.black
-                                                                .withOpacity(
-                                                                  0.3,
-                                                                ),
-                                                          ],
-                                                          begin: Alignment
-                                                              .topCenter,
-                                                          end: Alignment
-                                                              .bottomCenter,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
+                                          Container(
+                                            width: dW * 0.1,
+                                            height: dW * 0.1,
+                                            decoration: BoxDecoration(
+                                              color: Colors.white.withOpacity(
+                                                0.25,
+                                              ),
+                                              borderRadius:
+                                                  BorderRadius.circular(15),
+                                              border: Border.all(
+                                                color: Colors.white.withOpacity(
+                                                  0.4,
                                                 ),
-                                                SizedBox(width: dW * 0.03),
-                                                Stack(
-                                                  children: [
-                                                    Image.asset(
-                                                      "assets/images/b2.png",
-                                                      fit: BoxFit.cover,
-                                                      height: dW * 0.4,
-                                                    ),
-                                                    Container(
-                                                      height: dW * 0.4,
-                                                      width: dW * 0.8,
-                                                      decoration: BoxDecoration(
-                                                        gradient: LinearGradient(
-                                                          colors: [
-                                                            Colors.transparent,
-                                                            Colors.black
-                                                                .withOpacity(
-                                                                  0.3,
-                                                                ),
-                                                          ],
-                                                          begin: Alignment
-                                                              .topCenter,
-                                                          end: Alignment
-                                                              .bottomCenter,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                  ],
+                                                width: 2,
+                                              ),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: Colors.white
+                                                      .withOpacity(0.4),
+                                                  blurRadius: 12,
+                                                  spreadRadius: 2,
+                                                ),
+                                              ],
+                                            ),
+                                            child: Icon(
+                                              Icons.checkroom,
+                                              color: Colors.white,
+                                              size: dW * 0.06,
+                                            ),
+                                          ),
+                                          SizedBox(width: dW * 0.03),
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              children: [
+                                                TextWidget(
+                                                  title: "Fashion Categories",
+                                                  fontSize: 20,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: Colors.white,
+                                                ),
+                                                SizedBox(height: dW * 0.005),
+                                                TextWidget(
+                                                  title:
+                                                      "Discover your perfect style",
+                                                  fontSize: 14,
+                                                  color: Colors.white
+                                                      .withOpacity(0.9),
                                                 ),
                                               ],
                                             ),
@@ -350,37 +294,15 @@ class CategoryScreenState extends State<CategoryScreen>
                                       ),
                                     ),
                                   ),
-                                  SizedBox(height: dW * 0.06),
 
-                                  // Enhanced DEBUG section with glassmorphism effect
-                                  AnimatedContainer(
-                                    duration: Duration(milliseconds: 500),
-                                    padding: EdgeInsets.all(dW * 0.04),
+                                  SizedBox(height: dW * 0.05),
+
+                                  // Dynamic Category sections using raw data
+                                  Container(
+                                    padding: EdgeInsets.all(dW * 0.03),
                                     decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [
-                                          Color(0xFF76929F).withOpacity(0.1),
-                                          Color(0xFF8BA5B1).withOpacity(0.05),
-                                        ],
-                                        begin: Alignment.topLeft,
-                                        end: Alignment.bottomRight,
-                                      ),
-                                      borderRadius: BorderRadius.circular(20),
-                                      border: Border.all(
-                                        color: Color(
-                                          0xFF76929F,
-                                        ).withOpacity(0.2),
-                                        width: 1.5,
-                                      ),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Color(
-                                            0xFF76929F,
-                                          ).withOpacity(0.1),
-                                          blurRadius: 20,
-                                          offset: Offset(0, 10),
-                                        ),
-                                      ],
+                                      color: Colors.white.withOpacity(0.7),
+                                      borderRadius: BorderRadius.circular(15),
                                     ),
                                     child: Column(
                                       crossAxisAlignment:
@@ -388,521 +310,442 @@ class CategoryScreenState extends State<CategoryScreen>
                                       children: [
                                         Row(
                                           children: [
-                                            Container(
-                                              padding: EdgeInsets.all(8),
-                                              decoration: BoxDecoration(
-                                                color: Color(0xFF76929F),
-                                                borderRadius:
-                                                    BorderRadius.circular(10),
-                                              ),
-                                              child: Icon(
-                                                Icons.bug_report,
-                                                color: Colors.white,
-                                                size: 20,
-                                              ),
+                                            Icon(
+                                              Icons.category,
+                                              color: Color(0xFF76929F),
+                                              size: 16,
                                             ),
-                                            SizedBox(width: dW * 0.03),
+                                            SizedBox(width: dW * 0.02),
                                             TextWidget(
-                                              title: "Image Gallery",
-                                              fontSize: 18,
-                                              fontWeight: FontWeight.bold,
+                                              title: "Categories",
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
                                               color: Color(0xFF76929F),
                                             ),
                                           ],
                                         ),
-                                        SizedBox(height: dW * 0.03),
-
-                                        // Enhanced category images section
+                                        SizedBox(height: dW * 0.02),
                                         Container(
-                                          padding: EdgeInsets.all(dW * 0.03),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(
-                                              0.7,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              15,
-                                            ),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.category,
-                                                    color: Color(0xFF76929F),
-                                                    size: 16,
-                                                  ),
-                                                  SizedBox(width: dW * 0.02),
-                                                  TextWidget(
-                                                    title: "Categories",
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Color(0xFF76929F),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: dW * 0.02),
-                                              Container(
-                                                height: dW * 0.35,
-                                                child: SingleChildScrollView(
-                                                  scrollDirection:
-                                                      Axis.horizontal,
-                                                  physics:
-                                                      BouncingScrollPhysics(),
-                                                  child: Row(
-                                                    children: categoryProvider.categories.asMap().entries.map((
-                                                      entry,
-                                                    ) {
-                                                      final index = entry.key;
-                                                      final category =
-                                                          entry.value;
+                                          height: dW * 0.35,
+                                          child: SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            physics: BouncingScrollPhysics(),
+                                            child: Row(
+                                              children: categoryProvider.categories.asMap().entries.map((
+                                                entry,
+                                              ) {
+                                                final category = entry.value;
 
-                                                      return AnimatedContainer(
-                                                        duration: Duration(
-                                                          milliseconds:
-                                                              300 +
-                                                              (index * 100),
-                                                        ),
-                                                        margin: EdgeInsets.only(
-                                                          right: dW * 0.03,
-                                                        ),
-                                                        child: Column(
-                                                          children: [
-                                                            Container(
-                                                              width: dW * 0.25,
-                                                              height: dW * 0.25,
-                                                              decoration: BoxDecoration(
-                                                                gradient: LinearGradient(
-                                                                  colors: [
-                                                                    Color(
-                                                                      0xFF76929F,
-                                                                    ).withOpacity(
-                                                                      0.1,
-                                                                    ),
-                                                                    Color(
-                                                                      0xFF8BA5B1,
-                                                                    ).withOpacity(
-                                                                      0.05,
-                                                                    ),
-                                                                  ],
-                                                                  begin: Alignment
-                                                                      .topLeft,
-                                                                  end: Alignment
-                                                                      .bottomRight,
-                                                                ),
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      15,
-                                                                    ),
-                                                                border: Border.all(
-                                                                  color: Color(
+                                                return Container(
+                                                  margin: EdgeInsets.only(
+                                                    right: dW * 0.03,
+                                                  ),
+                                                  child: Column(
+                                                    children: [
+                                                      Container(
+                                                        width: dW * 0.25,
+                                                        height: dW * 0.25,
+                                                        decoration: BoxDecoration(
+                                                          gradient:
+                                                              LinearGradient(
+                                                                colors: [
+                                                                  Color(
                                                                     0xFF76929F,
-                                                                  ).withOpacity(0.3),
-                                                                  width: 2,
-                                                                ),
-                                                                boxShadow: [
-                                                                  BoxShadow(
-                                                                    color: Colors
-                                                                        .black
-                                                                        .withOpacity(
-                                                                          0.1,
-                                                                        ),
-                                                                    blurRadius:
-                                                                        10,
-                                                                    offset:
-                                                                        Offset(
-                                                                          0,
-                                                                          5,
-                                                                        ),
+                                                                  ).withOpacity(
+                                                                    0.1,
+                                                                  ),
+                                                                  Color(
+                                                                    0xFF8BA5B1,
+                                                                  ).withOpacity(
+                                                                    0.05,
                                                                   ),
                                                                 ],
+                                                                begin: Alignment
+                                                                    .topLeft,
+                                                                end: Alignment
+                                                                    .bottomRight,
                                                               ),
-                                                              child:
-                                                                  category.decodedImage !=
-                                                                      null
-                                                                  ? ClipRRect(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                            13,
-                                                                          ),
-                                                                      child: Image.memory(
-                                                                        category
-                                                                            .decodedImage!,
-                                                                        fit: BoxFit
-                                                                            .cover,
-                                                                        errorBuilder:
-                                                                            (
-                                                                              context,
-                                                                              error,
-                                                                              stackTrace,
-                                                                            ) {
-                                                                              return Container(
-                                                                                decoration: BoxDecoration(
-                                                                                  gradient: LinearGradient(
-                                                                                    colors: [
-                                                                                      Colors.red[100]!,
-                                                                                      Colors.red[50]!,
-                                                                                    ],
-                                                                                  ),
-                                                                                ),
-                                                                                child: Icon(
-                                                                                  Icons.error_outline,
-                                                                                  color: Colors.red[400],
-                                                                                  size: 30,
-                                                                                ),
-                                                                              );
-                                                                            },
-                                                                      ),
-                                                                    )
-                                                                  : Container(
-                                                                      decoration: BoxDecoration(
-                                                                        gradient: LinearGradient(
-                                                                          colors: [
-                                                                            Colors.grey[200]!,
-                                                                            Colors.grey[100]!,
-                                                                          ],
-                                                                        ),
-                                                                      ),
-                                                                      child: Icon(
-                                                                        Icons
-                                                                            .image_not_supported_outlined,
-                                                                        color: Colors
-                                                                            .grey[400],
-                                                                        size:
-                                                                            30,
-                                                                      ),
-                                                                    ),
-                                                            ),
-                                                            SizedBox(
-                                                              height: dW * 0.02,
-                                                            ),
-                                                            Container(
-                                                              width: dW * 0.25,
-                                                              padding:
-                                                                  EdgeInsets.symmetric(
-                                                                    horizontal:
-                                                                        dW *
-                                                                        0.02,
-                                                                    vertical:
-                                                                        dW *
-                                                                        0.01,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                15,
+                                                              ),
+                                                          border: Border.all(
+                                                            color: Color(
+                                                              0xFF76929F,
+                                                            ).withOpacity(0.3),
+                                                            width: 2,
+                                                          ),
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                              color: Colors
+                                                                  .black
+                                                                  .withOpacity(
+                                                                    0.1,
                                                                   ),
-                                                              decoration: BoxDecoration(
-                                                                color: Color(
-                                                                  0xFF76929F,
-                                                                ).withOpacity(0.1),
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      8,
-                                                                    ),
-                                                              ),
-                                                              child: TextWidget(
-                                                                title: category
-                                                                    .name,
-                                                                fontSize: 11,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                textAlign:
-                                                                    TextAlign
-                                                                        .center,
-                                                                maxLines: 2,
-                                                                color: Color(
-                                                                  0xFF76929F,
-                                                                ),
+                                                              blurRadius: 10,
+                                                              offset: Offset(
+                                                                0,
+                                                                5,
                                                               ),
                                                             ),
                                                           ],
                                                         ),
-                                                      );
-                                                    }).toList(),
+                                                        child:
+                                                            category.decodedImage !=
+                                                                null
+                                                            ? ClipRRect(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      13,
+                                                                    ),
+                                                                child: Image.memory(
+                                                                  category
+                                                                      .decodedImage!,
+                                                                  fit: BoxFit
+                                                                      .cover,
+                                                                  errorBuilder:
+                                                                      (
+                                                                        context,
+                                                                        error,
+                                                                        stackTrace,
+                                                                      ) {
+                                                                        return Container(
+                                                                          decoration: BoxDecoration(
+                                                                            gradient: LinearGradient(
+                                                                              colors: [
+                                                                                Colors.red[100]!,
+                                                                                Colors.red[50]!,
+                                                                              ],
+                                                                            ),
+                                                                          ),
+                                                                          child: Icon(
+                                                                            Icons.error_outline,
+                                                                            color:
+                                                                                Colors.red[400],
+                                                                            size:
+                                                                                30,
+                                                                          ),
+                                                                        );
+                                                                      },
+                                                                ),
+                                                              )
+                                                            : Container(
+                                                                decoration: BoxDecoration(
+                                                                  gradient: LinearGradient(
+                                                                    colors: [
+                                                                      Colors
+                                                                          .grey[200]!,
+                                                                      Colors
+                                                                          .grey[100]!,
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                                child: Icon(
+                                                                  Icons
+                                                                      .image_not_supported_outlined,
+                                                                  color: Colors
+                                                                      .grey[400],
+                                                                  size: 30,
+                                                                ),
+                                                              ),
+                                                      ),
+                                                      SizedBox(
+                                                        height: dW * 0.02,
+                                                      ),
+                                                      Container(
+                                                        width: dW * 0.25,
+                                                        padding:
+                                                            EdgeInsets.symmetric(
+                                                              horizontal:
+                                                                  dW * 0.02,
+                                                              vertical:
+                                                                  dW * 0.01,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: Color(
+                                                            0xFF76929F,
+                                                          ).withOpacity(0.1),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
+                                                        child: TextWidget(
+                                                          title: category.name,
+                                                          fontSize: 11,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          maxLines: 2,
+                                                          color: Color(
+                                                            0xFF76929F,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                ),
-                                              ),
-                                            ],
+                                                );
+                                              }).toList(),
+                                            ),
                                           ),
                                         ),
+                                      ],
+                                    ),
+                                  ),
 
-                                        SizedBox(height: dW * 0.03),
+                                  SizedBox(height: dW * 0.03),
 
-                                        // Enhanced subcategory images section
+                                  // Enhanced subcategory images section
+                                  Container(
+                                    padding: EdgeInsets.all(dW * 0.03),
+                                    decoration: BoxDecoration(
+                                      color: Colors.white.withOpacity(0.7),
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Icon(
+                                              Icons.grid_view,
+                                              color: Color(0xFF76929F),
+                                              size: 16,
+                                            ),
+                                            SizedBox(width: dW * 0.02),
+                                            TextWidget(
+                                              title: "Subcategories",
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: Color(0xFF76929F),
+                                            ),
+                                          ],
+                                        ),
+                                        SizedBox(height: dW * 0.02),
                                         Container(
-                                          padding: EdgeInsets.all(dW * 0.03),
-                                          decoration: BoxDecoration(
-                                            color: Colors.white.withOpacity(
-                                              0.7,
-                                            ),
-                                            borderRadius: BorderRadius.circular(
-                                              15,
-                                            ),
-                                          ),
-                                          child: Column(
-                                            crossAxisAlignment:
-                                                CrossAxisAlignment.start,
-                                            children: [
-                                              Row(
-                                                children: [
-                                                  Icon(
-                                                    Icons.grid_view,
-                                                    color: Color(0xFF76929F),
-                                                    size: 16,
-                                                  ),
-                                                  SizedBox(width: dW * 0.02),
-                                                  TextWidget(
-                                                    title: "Subcategories",
-                                                    fontSize: 14,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: Color(0xFF76929F),
-                                                  ),
-                                                ],
-                                              ),
-                                              SizedBox(height: dW * 0.02),
-                                              Container(
-                                                height: dW * 0.4,
-                                                child: SingleChildScrollView(
-                                                  scrollDirection:
-                                                      Axis.horizontal,
-                                                  physics:
-                                                      BouncingScrollPhysics(),
-                                                  child: Row(
-                                                    children: rawSubCategories.asMap().entries.map((
-                                                      entry,
-                                                    ) {
-                                                      final index = entry.key;
-                                                      final subcat =
-                                                          entry.value;
-                                                      final subcatName =
-                                                          subcat['name']
-                                                              ?.toString() ??
-                                                          'Unknown';
-                                                      final subcatImage =
-                                                          subcat['image']
-                                                              ?.toString() ??
-                                                          '';
-                                                      final categoryName =
-                                                          subcat['category']?['name']
-                                                              ?.toString() ??
-                                                          'No category';
+                                          height: dW * 0.4,
+                                          child: SingleChildScrollView(
+                                            scrollDirection: Axis.horizontal,
+                                            physics: BouncingScrollPhysics(),
+                                            child: Row(
+                                              children: rawSubCategories.asMap().entries.map((
+                                                entry,
+                                              ) {
+                                                final subcat = entry.value;
+                                                final subcatName =
+                                                    subcat['name']
+                                                        ?.toString() ??
+                                                    'Unknown';
+                                                final subcatImage =
+                                                    subcat['image']
+                                                        ?.toString() ??
+                                                    '';
+                                                final categoryName =
+                                                    subcat['category']?['name']
+                                                        ?.toString() ??
+                                                    'No category';
 
-                                                      Uint8List? decodedImage;
-                                                      if (subcatImage
-                                                          .isNotEmpty) {
-                                                        try {
-                                                          final base64Part =
-                                                              subcatImage
-                                                                  .contains(',')
-                                                              ? subcatImage
-                                                                    .split(',')
-                                                                    .last
-                                                              : subcatImage;
-                                                          decodedImage =
-                                                              base64Decode(
-                                                                base64Part,
-                                                              );
-                                                        } catch (e) {
-                                                          decodedImage = null;
-                                                        }
-                                                      }
+                                                Uint8List? decodedImage;
+                                                if (subcatImage.isNotEmpty) {
+                                                  try {
+                                                    final base64Part =
+                                                        subcatImage.contains(
+                                                          ',',
+                                                        )
+                                                        ? subcatImage
+                                                              .split(',')
+                                                              .last
+                                                        : subcatImage;
+                                                    decodedImage = base64Decode(
+                                                      base64Part,
+                                                    );
+                                                  } catch (e) {
+                                                    decodedImage = null;
+                                                  }
+                                                }
 
-                                                      return AnimatedContainer(
-                                                        duration: Duration(
-                                                          milliseconds:
-                                                              400 +
-                                                              (index * 50),
-                                                        ),
-                                                        margin: EdgeInsets.only(
-                                                          right: dW * 0.03,
-                                                        ),
-                                                        child: Column(
-                                                          children: [
-                                                            Container(
-                                                              width: dW * 0.25,
-                                                              height: dW * 0.25,
-                                                              decoration: BoxDecoration(
-                                                                gradient: LinearGradient(
-                                                                  colors: [
-                                                                    Color(
-                                                                      0xFF8BA5B1,
-                                                                    ).withOpacity(
-                                                                      0.1,
-                                                                    ),
-                                                                    Color(
-                                                                      0xFF76929F,
-                                                                    ).withOpacity(
-                                                                      0.05,
-                                                                    ),
-                                                                  ],
-                                                                  begin: Alignment
-                                                                      .topLeft,
-                                                                  end: Alignment
-                                                                      .bottomRight,
-                                                                ),
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      15,
-                                                                    ),
-                                                                border: Border.all(
-                                                                  color: Color(
+                                                return Container(
+                                                  margin: EdgeInsets.only(
+                                                    right: dW * 0.03,
+                                                  ),
+                                                  child: Column(
+                                                    children: [
+                                                      Container(
+                                                        width: dW * 0.25,
+                                                        height: dW * 0.25,
+                                                        decoration: BoxDecoration(
+                                                          gradient:
+                                                              LinearGradient(
+                                                                colors: [
+                                                                  Color(
                                                                     0xFF8BA5B1,
-                                                                  ).withOpacity(0.3),
-                                                                  width: 2,
-                                                                ),
-                                                                boxShadow: [
-                                                                  BoxShadow(
-                                                                    color: Colors
-                                                                        .black
-                                                                        .withOpacity(
-                                                                          0.1,
-                                                                        ),
-                                                                    blurRadius:
-                                                                        10,
-                                                                    offset:
-                                                                        Offset(
-                                                                          0,
-                                                                          5,
-                                                                        ),
+                                                                  ).withOpacity(
+                                                                    0.1,
+                                                                  ),
+                                                                  Color(
+                                                                    0xFF76929F,
+                                                                  ).withOpacity(
+                                                                    0.05,
                                                                   ),
                                                                 ],
+                                                                begin: Alignment
+                                                                    .topLeft,
+                                                                end: Alignment
+                                                                    .bottomRight,
                                                               ),
-                                                              child:
-                                                                  decodedImage !=
-                                                                      null
-                                                                  ? ClipRRect(
-                                                                      borderRadius:
-                                                                          BorderRadius.circular(
-                                                                            13,
-                                                                          ),
-                                                                      child: Image.memory(
-                                                                        decodedImage,
-                                                                        fit: BoxFit
-                                                                            .cover,
-                                                                        errorBuilder:
-                                                                            (
-                                                                              context,
-                                                                              error,
-                                                                              stackTrace,
-                                                                            ) {
-                                                                              return Container(
-                                                                                decoration: BoxDecoration(
-                                                                                  gradient: LinearGradient(
-                                                                                    colors: [
-                                                                                      Colors.red[100]!,
-                                                                                      Colors.red[50]!,
-                                                                                    ],
-                                                                                  ),
-                                                                                ),
-                                                                                child: Icon(
-                                                                                  Icons.error_outline,
-                                                                                  color: Colors.red[400],
-                                                                                  size: 30,
-                                                                                ),
-                                                                              );
-                                                                            },
-                                                                      ),
-                                                                    )
-                                                                  : Container(
-                                                                      decoration: BoxDecoration(
-                                                                        gradient: LinearGradient(
-                                                                          colors: [
-                                                                            Colors.grey[200]!,
-                                                                            Colors.grey[100]!,
-                                                                          ],
-                                                                        ),
-                                                                      ),
-                                                                      child: Icon(
-                                                                        Icons
-                                                                            .image_not_supported_outlined,
-                                                                        color: Colors
-                                                                            .grey[400],
-                                                                        size:
-                                                                            30,
-                                                                      ),
-                                                                    ),
-                                                            ),
-                                                            SizedBox(
-                                                              height: dW * 0.01,
-                                                            ),
-                                                            Container(
-                                                              width: dW * 0.25,
-                                                              padding:
-                                                                  EdgeInsets.symmetric(
-                                                                    horizontal:
-                                                                        dW *
-                                                                        0.02,
-                                                                    vertical:
-                                                                        dW *
-                                                                        0.01,
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                15,
+                                                              ),
+                                                          border: Border.all(
+                                                            color: Color(
+                                                              0xFF8BA5B1,
+                                                            ).withOpacity(0.3),
+                                                            width: 2,
+                                                          ),
+                                                          boxShadow: [
+                                                            BoxShadow(
+                                                              color: Colors
+                                                                  .black
+                                                                  .withOpacity(
+                                                                    0.1,
                                                                   ),
-                                                              decoration: BoxDecoration(
-                                                                color: Color(
-                                                                  0xFF8BA5B1,
-                                                                ).withOpacity(0.1),
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      8,
-                                                                    ),
-                                                              ),
-                                                              child: TextWidget(
-                                                                title:
-                                                                    subcatName,
-                                                                fontSize: 10,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                textAlign:
-                                                                    TextAlign
-                                                                        .center,
-                                                                maxLines: 2,
-                                                                color: Color(
-                                                                  0xFF76929F,
-                                                                ),
-                                                              ),
-                                                            ),
-                                                            SizedBox(
-                                                              height:
-                                                                  dW * 0.005,
-                                                            ),
-                                                            Container(
-                                                              width: dW * 0.25,
-                                                              padding:
-                                                                  EdgeInsets.symmetric(
-                                                                    horizontal:
-                                                                        dW *
-                                                                        0.01,
-                                                                    vertical:
-                                                                        dW *
-                                                                        0.005,
-                                                                  ),
-                                                              decoration: BoxDecoration(
-                                                                color: Colors
-                                                                    .grey[100],
-                                                                borderRadius:
-                                                                    BorderRadius.circular(
-                                                                      6,
-                                                                    ),
-                                                              ),
-                                                              child: TextWidget(
-                                                                title:
-                                                                    categoryName,
-                                                                fontSize: 8,
-                                                                textAlign:
-                                                                    TextAlign
-                                                                        .center,
-                                                                color: Colors
-                                                                    .grey[600],
-                                                                maxLines: 1,
+                                                              blurRadius: 10,
+                                                              offset: Offset(
+                                                                0,
+                                                                5,
                                                               ),
                                                             ),
                                                           ],
                                                         ),
-                                                      );
-                                                    }).toList(),
+                                                        child:
+                                                            decodedImage != null
+                                                            ? ClipRRect(
+                                                                borderRadius:
+                                                                    BorderRadius.circular(
+                                                                      13,
+                                                                    ),
+                                                                child: Image.memory(
+                                                                  decodedImage,
+                                                                  fit: BoxFit
+                                                                      .cover,
+                                                                  errorBuilder:
+                                                                      (
+                                                                        context,
+                                                                        error,
+                                                                        stackTrace,
+                                                                      ) {
+                                                                        return Container(
+                                                                          decoration: BoxDecoration(
+                                                                            gradient: LinearGradient(
+                                                                              colors: [
+                                                                                Colors.red[100]!,
+                                                                                Colors.red[50]!,
+                                                                              ],
+                                                                            ),
+                                                                          ),
+                                                                          child: Icon(
+                                                                            Icons.error_outline,
+                                                                            color:
+                                                                                Colors.red[400],
+                                                                            size:
+                                                                                30,
+                                                                          ),
+                                                                        );
+                                                                      },
+                                                                ),
+                                                              )
+                                                            : Container(
+                                                                decoration: BoxDecoration(
+                                                                  gradient: LinearGradient(
+                                                                    colors: [
+                                                                      Colors
+                                                                          .grey[200]!,
+                                                                      Colors
+                                                                          .grey[100]!,
+                                                                    ],
+                                                                  ),
+                                                                ),
+                                                                child: Icon(
+                                                                  Icons
+                                                                      .image_not_supported_outlined,
+                                                                  color: Colors
+                                                                      .grey[400],
+                                                                  size: 30,
+                                                                ),
+                                                              ),
+                                                      ),
+                                                      SizedBox(
+                                                        height: dW * 0.01,
+                                                      ),
+                                                      Container(
+                                                        width: dW * 0.25,
+                                                        padding:
+                                                            EdgeInsets.symmetric(
+                                                              horizontal:
+                                                                  dW * 0.02,
+                                                              vertical:
+                                                                  dW * 0.01,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color: Color(
+                                                            0xFF8BA5B1,
+                                                          ).withOpacity(0.1),
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                8,
+                                                              ),
+                                                        ),
+                                                        child: TextWidget(
+                                                          title: subcatName,
+                                                          fontSize: 10,
+                                                          fontWeight:
+                                                              FontWeight.w600,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          maxLines: 2,
+                                                          color: Color(
+                                                            0xFF76929F,
+                                                          ),
+                                                        ),
+                                                      ),
+                                                      SizedBox(
+                                                        height: dW * 0.005,
+                                                      ),
+                                                      Container(
+                                                        width: dW * 0.25,
+                                                        padding:
+                                                            EdgeInsets.symmetric(
+                                                              horizontal:
+                                                                  dW * 0.01,
+                                                              vertical:
+                                                                  dW * 0.005,
+                                                            ),
+                                                        decoration: BoxDecoration(
+                                                          color:
+                                                              Colors.grey[100],
+                                                          borderRadius:
+                                                              BorderRadius.circular(
+                                                                6,
+                                                              ),
+                                                        ),
+                                                        child: TextWidget(
+                                                          title: categoryName,
+                                                          fontSize: 8,
+                                                          textAlign:
+                                                              TextAlign.center,
+                                                          color:
+                                                              Colors.grey[600],
+                                                          maxLines: 1,
+                                                        ),
+                                                      ),
+                                                    ],
                                                   ),
-                                                ),
-                                              ),
-                                            ],
+                                                );
+                                              }).toList(),
+                                            ),
                                           ),
                                         ),
                                       ],
@@ -951,15 +794,45 @@ class CategoryScreenState extends State<CategoryScreen>
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
-                                                    builder: (context) =>
-                                                        CategoryRelationScreen(
-                                                          args:
-                                                              CategoryRelationScreenArguments(
-                                                                category:
+                                                    builder: (context) => CategoryRelationScreen(
+                                                      args: CategoryRelationScreenArguments(
+                                                        category: category.name,
+                                                        subcategories:
+                                                            categorySubcategories
+                                                                .cast<
+                                                                  Map<
+                                                                    String,
+                                                                    dynamic
+                                                                  >
+                                                                >(),
+                                                        products: categoryProvider
+                                                            .categoryProducts
+                                                            .map(
+                                                              (product) => {
+                                                                'product_id':
+                                                                    product
+                                                                        .productId,
+                                                                'name': product
+                                                                    .productName,
+                                                                'image': product
+                                                                    .productImage,
+                                                                'price': product
+                                                                    .productPrice,
+                                                                'rating': double.parse(
+                                                                  product
+                                                                      .productRating
+                                                                      .toStringAsFixed(
+                                                                        1,
+                                                                      ),
+                                                                ),
+                                                                'category':
                                                                     category
                                                                         .name,
-                                                              ),
-                                                        ),
+                                                              },
+                                                            )
+                                                            .toList(),
+                                                      ),
+                                                    ),
                                                   ),
                                                 );
                                               },
@@ -987,14 +860,44 @@ class CategoryScreenState extends State<CategoryScreen>
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) =>
-                                                    CategoryRelationScreen(
-                                                      args:
-                                                          CategoryRelationScreenArguments(
-                                                            category:
+                                                builder: (context) => CategoryRelationScreen(
+                                                  args: CategoryRelationScreenArguments(
+                                                    category: category.name,
+                                                    subcategories:
+                                                        categorySubcategories
+                                                            .cast<
+                                                              Map<
+                                                                String,
+                                                                dynamic
+                                                              >
+                                                            >(),
+                                                    products: categoryProvider
+                                                        .categoryProducts
+                                                        .map(
+                                                          (product) => {
+                                                            'product_id':
+                                                                product
+                                                                    .productId,
+                                                            'name': product
+                                                                .productName,
+                                                            'image': product
+                                                                .productImage,
+                                                            'price': product
+                                                                .productPrice,
+                                                            'rating': double.parse(
+                                                              product
+                                                                  .productRating
+                                                                  .toStringAsFixed(
+                                                                    1,
+                                                                  ),
+                                                            ),
+                                                            'category':
                                                                 category.name,
-                                                          ),
-                                                    ),
+                                                          },
+                                                        )
+                                                        .toList(),
+                                                  ),
+                                                ),
                                               ),
                                             );
                                           },
@@ -1083,9 +986,11 @@ class CategoryScreenState extends State<CategoryScreen>
                                           Row(
                                             mainAxisAlignment:
                                                 MainAxisAlignment.spaceEvenly,
-                                            children: categorySubcategories.take(3).map((
-                                              subcat,
+                                            children: categorySubcategories.take(3).toList().asMap().entries.map((
+                                              entry,
                                             ) {
+                                              final subcat = entry.value;
+
                                               // Extract data from raw subcategory
                                               final subcatName =
                                                   subcat['name']?.toString() ??
@@ -1127,11 +1032,13 @@ class CategoryScreenState extends State<CategoryScreen>
                                                     imageBytes: decodedImage,
                                                     price:
                                                         '${(50 + (subcatId.hashCode % 100))}',
-                                                    rating:
-                                                        4.0 +
-                                                        (subcatId.hashCode %
-                                                                10) /
-                                                            10,
+                                                    rating: double.parse(
+                                                      (4.0 +
+                                                              (subcatId.hashCode %
+                                                                      10) /
+                                                                  10)
+                                                          .toStringAsFixed(1),
+                                                    ),
                                                     onTap: () {
                                                       Navigator.push(
                                                         context,
@@ -1212,11 +1119,15 @@ class CategoryScreenState extends State<CategoryScreen>
                                                                 decodedImage,
                                                             price:
                                                                 '${(60 + (subcatId.hashCode % 80))}',
-                                                            rating:
-                                                                4.2 +
-                                                                (subcatId.hashCode %
-                                                                        8) /
-                                                                    10,
+                                                            rating: double.parse(
+                                                              (4.2 +
+                                                                      (subcatId.hashCode %
+                                                                              8) /
+                                                                          10)
+                                                                  .toStringAsFixed(
+                                                                    1,
+                                                                  ),
+                                                            ),
                                                             onTap: () {
                                                               Navigator.push(
                                                                 context,
@@ -1266,11 +1177,13 @@ class CategoryScreenState extends State<CategoryScreen>
                                                         category.decodedImage,
                                                     price:
                                                         '${(100 + (category.id.hashCode % 50))}',
-                                                    rating:
-                                                        4.5 +
-                                                        (category.id.hashCode %
-                                                                5) /
-                                                            10,
+                                                    rating: double.parse(
+                                                      (4.5 +
+                                                              (category.id.hashCode %
+                                                                      5) /
+                                                                  10)
+                                                          .toStringAsFixed(1),
+                                                    ),
                                                     onTap: () {
                                                       Navigator.push(
                                                         context,
@@ -1326,28 +1239,6 @@ class CategoryScreenState extends State<CategoryScreen>
                                       ],
                                     );
                                   }).toList(),
-
-                                  // Additional static banners section at the end
-                                  SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.start,
-                                      children: [
-                                        SizedBox(
-                                          child: Image.asset(
-                                            "assets/images/b3.png",
-                                            fit: BoxFit.cover,
-                                          ),
-                                        ),
-                                        SizedBox(width: dW * 0.02),
-                                        Image.asset("assets/images/b4.png"),
-                                        SizedBox(width: dW * 0.02),
-                                        Image.asset("assets/images/b5.png"),
-                                      ],
-                                    ),
-                                  ),
-                                  SizedBox(height: dW * 0.05),
                                 ],
                               );
                             },
@@ -1363,5 +1254,56 @@ class CategoryScreenState extends State<CategoryScreen>
         ),
       ),
     );
+  }
+}
+
+// Custom Painter for the background pattern with animation
+class ClothingPatternPainter extends CustomPainter {
+  final double animationValue;
+
+  ClothingPatternPainter({this.animationValue = 0});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = Colors.white.withOpacity(
+        0.1 + 0.05 * math.sin(animationValue * math.pi),
+      )
+      ..strokeWidth = 1.0
+      ..style = PaintingStyle.stroke;
+
+    // Draw animated pattern lines
+    for (int i = 0; i < 5; i++) {
+      final offset = animationValue * 20;
+      canvas.drawLine(
+        Offset(size.width * 0.1 * i + offset, 0),
+        Offset(size.width * 0.1 * (i + 1) + offset, size.height),
+        paint,
+      );
+    }
+
+    // Add some animated dots
+    final dotPaint = Paint()
+      ..color = Colors.white.withOpacity(
+        0.2 + 0.1 * math.sin(animationValue * 2 * math.pi),
+      )
+      ..style = PaintingStyle.fill;
+
+    for (int i = 0; i < 3; i++) {
+      for (int j = 0; j < 2; j++) {
+        final x =
+            size.width * (0.2 + i * 0.3) +
+            10 * math.sin(animationValue * math.pi + i);
+        final y =
+            size.height * (0.3 + j * 0.4) +
+            5 * math.cos(animationValue * math.pi + j);
+        canvas.drawCircle(Offset(x, y), 2, dotPaint);
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(ClothingPatternPainter oldDelegate) {
+    return oldDelegate.animationValue != animationValue;
   }
 }

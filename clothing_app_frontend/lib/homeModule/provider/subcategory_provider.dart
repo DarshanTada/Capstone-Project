@@ -3,10 +3,10 @@ import 'package:flutter/material.dart';
 import '../../api.dart';
 
 class SubCategoryProvider extends ChangeNotifier {
-  List<dynamic> _rawSubCategories = []; // Store only raw API response
+  List<dynamic> _rawSubCategories = []; 
   bool _isLoading = false;
 
-  List<dynamic> get rawSubCategories => _rawSubCategories; // Getter for raw data
+  List<dynamic> get rawSubCategories => _rawSubCategories; 
   bool get isLoading => _isLoading;
 
   Future<Map<String, dynamic>> fetchAllSubCategories() async {
@@ -23,8 +23,7 @@ class SubCategoryProvider extends ChangeNotifier {
       if (response['success'] == true && response['data'] is List) {
         _rawSubCategories = response['data'] as List; // Store only raw data
         
-        // Debug print to see the raw data structure
-        print('Raw subcategories data: $_rawSubCategories');
+      
       } else {
         _rawSubCategories = []; // Clear raw data on failure
       }
