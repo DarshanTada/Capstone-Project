@@ -92,10 +92,32 @@ class PreferenceProvider with ChangeNotifier {
     final String url = '${webApi['domain']}${endPoint['updatePreference']}';  // Removed /$id
 
     try {
+      // Process the data to convert arrays with bracket strings to comma-separated values
+      Map<String, dynamic> processedData = Map.from(data);
+      
+      // Fields that need to be processed
+      List<String> fieldsToProcess = ['style', 'occasion', 'festivals', 'color_tones'];
+      
+      for (String field in fieldsToProcess) {
+        if (processedData.containsKey(field) && processedData[field] is List) {
+          List fieldArray = processedData[field];
+          if (fieldArray.isNotEmpty && fieldArray[0] is String) {
+            String bracketedString = fieldArray[0];
+            // Remove the outer brackets and extract content
+            if (bracketedString.startsWith('[') && bracketedString.endsWith(']')) {
+              String content = bracketedString.substring(1, bracketedString.length - 1);
+              // For color_tones, keep as is since it's already comma-separated
+              // For others, it should be single values
+              processedData[field] = content;
+            }
+          }
+        }
+      }
+
       final response = await RemoteServices.httpRequest(
         method: 'PUT',
         url: url,
-        body: data,
+        body: processedData,
         // Note: Add token handling if needed through SharedPreferences or UserApiService
       );
 
