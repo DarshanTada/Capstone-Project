@@ -53,8 +53,12 @@ const getHomeData = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const bodyType = req.query.bodyType;
         const banners = yield banner_model_1.default.find({});
         const seasonalBanners = yield banner_model_1.default.find({ type: 'seasonal' });
-        const popularCategories = yield category_model_1.default.find({ is_popular: true });
-        const chicSubcategories = yield subCategory_model_1.default.find({ is_curated: true });
+        const popularCategories = yield category_model_1.default.find();
+        const chicSubcategoriesRaw = yield subCategory_model_1.default.find({});
+        const chicSubcategories = {
+            title: "Chic Starts Here",
+            subcategories: chicSubcategoriesRaw
+        };
         const discountedVariants = yield productVariant_model_1.default.find({ discount: { $gt: 0 } });
         const discountedProductIds = discountedVariants.map(v => v.productObjectId);
         const discountedProductsRaw = yield product_model_1.default.find({ _id: { $in: discountedProductIds } });

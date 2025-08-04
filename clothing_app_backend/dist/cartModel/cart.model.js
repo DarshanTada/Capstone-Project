@@ -27,7 +27,8 @@ const cartItemSchema = new mongoose_1.default.Schema({
     price: {
         type: Number,
         required: true,
-    }
+    },
+    image: { type: String, required: true }
 }, {
     _id: true,
     timestamps: true,
