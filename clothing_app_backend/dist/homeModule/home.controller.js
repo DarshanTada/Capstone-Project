@@ -18,6 +18,29 @@ const category_model_1 = __importDefault(require("../categoryModule/category.mod
 const subCategory_model_1 = __importDefault(require("../subCategoryModule/subCategory.model"));
 const product_model_1 = __importDefault(require("../productModule/product.model"));
 const productVariant_model_1 = __importDefault(require("../productModule/productVariant.model"));
+const productImage_model_1 = __importDefault(require("../productModule/productImage.model"));
+const attachVariantsAndImages = (products) => __awaiter(void 0, void 0, void 0, function* () {
+    if (products.length === 0)
+        return [];
+    const productIds = products.map(p => p._id);
+    const variants = yield productVariant_model_1.default.find({ productObjectId: { $in: productIds } });
+    const variantIds = variants.map(v => v._id);
+    const images = yield productImage_model_1.default.find({
+        $or: [
+            { productObjectId: { $in: productIds } },
+            { variantObjectid: { $in: variantIds } }
+        ]
+    });
+    return products.map(product => {
+        const productVariants = variants.filter(v => v.productObjectId && v.productObjectId.toString() === product._id.toString());
+        const productImages = images.filter(img => img.productObjectId && img.productObjectId.toString() === product._id.toString());
+        const variantsWithImages = productVariants.map(variant => {
+            const variantImages = images.filter(img => img.variantObjectid && img.variantObjectid.toString() === variant._id.toString());
+            return Object.assign(Object.assign({}, variant.toObject()), { images: variantImages });
+        });
+        return Object.assign(Object.assign({}, product.toObject()), { variants: variantsWithImages, images: productImages });
+    });
+});
 const getHomeData = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const page = Number(req.query.page) || 1;
@@ -34,16 +57,20 @@ const getHomeData = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
         const chicSubcategories = yield subCategory_model_1.default.find({ is_curated: true });
         const discountedVariants = yield productVariant_model_1.default.find({ discount: { $gt: 0 } });
         const discountedProductIds = discountedVariants.map(v => v.productObjectId);
-        const discountedProducts = yield product_model_1.default.find({ _id: { $in: discountedProductIds } });
+        const discountedProductsRaw = yield product_model_1.default.find({ _id: { $in: discountedProductIds } });
+        const discountedProducts = yield attachVariantsAndImages(discountedProductsRaw);
         const newVariants = yield productVariant_model_1.default.find().sort({ createdAt: -1 }).limit(20);
         const newProductIds = newVariants.map(v => v.productObjectId);
-        const newArrivals = yield product_model_1.default.find({ _id: { $in: newProductIds } });
+        const newArrivalsRaw = yield product_model_1.default.find({ _id: { $in: newProductIds } });
+        const newArrivals = yield attachVariantsAndImages(newArrivalsRaw);
         const bestSellerVariants = yield productVariant_model_1.default.find().sort({ sales: -1 }).limit(20);
         const bestSellerProductIds = bestSellerVariants.map(v => v.productObjectId);
-        const bestSellers = yield product_model_1.default.find({ _id: { $in: bestSellerProductIds } });
+        const bestSellersRaw = yield product_model_1.default.find({ _id: { $in: bestSellerProductIds } });
+        const bestSellers = yield attachVariantsAndImages(bestSellersRaw);
         const clearanceVariants = yield productVariant_model_1.default.find({ is_clearance: true });
         const clearanceProductIds = clearanceVariants.map(v => v.productObjectId);
-        const clearanceProducts = yield product_model_1.default.find({ _id: { $in: clearanceProductIds } });
+        const clearanceProductsRaw = yield product_model_1.default.find({ _id: { $in: clearanceProductIds } });
+        const clearanceProducts = yield attachVariantsAndImages(clearanceProductsRaw);
         let productQuery = {};
         if (category)
             productQuery.categoryObjectId = category;

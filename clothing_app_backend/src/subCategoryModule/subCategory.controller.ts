@@ -48,10 +48,10 @@ export const createSubCategory = async (req: Request, res: Response): Promise<vo
     console.log('req.body:', req.body);
     console.log('req.files:', req.files);
 
-    let base64Image: string | undefined;
+    let imageBase64: string | undefined;
 
     if (imageFile && imageFile.buffer) {
-      base64Image = imageFile.buffer.toString('base64');
+      imageBase64 = `data:${imageFile.mimetype};base64,${imageFile.buffer.toString('base64')}`;
     }
 
     const newSubCategory = new SubCategory({
@@ -59,12 +59,12 @@ export const createSubCategory = async (req: Request, res: Response): Promise<vo
       gender,
       body_type,
       category,
-      ...(base64Image && { image: base64Image }),
+      ...(imageBase64 && { image: imageBase64 }),
     });
 
     await newSubCategory.save();
 
-    res.status(201).json({ success: true, data: newSubCategory });
+    res.status(200).json({ success: true, data: newSubCategory });
   } catch (error: any) {
     console.error('Create SubCategory Error:', error);
     res.status(500).json({ success: false, message: `Create SubCategory Error: ${error.message}` });
@@ -82,7 +82,7 @@ export const getAllSubCategories = async (req: Request, res: Response): Promise<
       gender: subCat.gender,
       body_type: subCat.body_type,
       category: subCat.category,
-      image: subCat.image?.toString('base64') || null,
+      image: subCat.image || null,
       createdAt: subCat.createdAt,
       updatedAt: subCat.updatedAt,
     }));
@@ -115,7 +115,7 @@ export const getSubCategoriesByCategory = async (req: Request, res: Response): P
       gender: subCat.gender,
       body_type: subCat.body_type,
       category: subCat.category,
-      image: subCat.image?.toString('base64') || null,
+      image: subCat.image || null,
       createdAt: subCat.createdAt,
       updatedAt: subCat.updatedAt,
     }));
@@ -136,14 +136,18 @@ export const updateSubCategory = async (req: Request, res: Response): Promise<vo
     const { name, gender, body_type, category } = req.body;
 
     const files = req.files as Record<string, Express.Multer.File[]> | undefined;
-    const imageBuffer = files?.['image']?.[0]?.buffer;
+    const imageFile = files?.['image']?.[0];
 
     const updateData: any = {};
     if (name) updateData.name = name;
     if (gender) updateData.gender = gender;
     if (body_type) updateData.body_type = body_type;
     if (category) updateData.category = category;
-    if (imageBuffer) updateData.image = imageBuffer;
+    
+    if (imageFile) {
+      const imageBase64 = `data:${imageFile.mimetype};base64,${imageFile.buffer.toString('base64')}`;
+      updateData.image = imageBase64;
+    }
 
     console.log('Updating SubCategory with ID:', id);
     console.log('Update data:', updateData);

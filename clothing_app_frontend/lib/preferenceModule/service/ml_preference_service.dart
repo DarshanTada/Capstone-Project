@@ -4,9 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../api.dart';
 import '../model/preference_model.dart';
 import '../services/user_api_service.dart';
+import '../../authModule/model/user_model.dart';
 
 class MLPreferenceService {
-  
   /// Analyze user preferences from base64 image
   static Future<Map<String, dynamic>?> analyzeUserPreferences({
     required String userId,
@@ -14,22 +14,27 @@ class MLPreferenceService {
   }) async {
     const int maxRetries = 3;
     int attempt = 0;
-    
+
     while (attempt < maxRetries) {
       attempt++;
-      
-      final url = Uri.parse('${mlApi['domain']}${endPoint['mlAnalyzePreferences']}');
+
+      final url = Uri.parse(
+        '${mlApi['domain']}${endPoint['mlAnalyzePreferences']}',
+      );
       print('🌐 Request URL: $url');
-      
+
       final requestBody = {
         'user_id': userId,
         'image_base64': imageBase64,
         'analysis_mode': 'ACTUAL_IMAGE_ANALYSIS',
-        'instruction': 'ANALYZE THE REAL PERSON IN THE PROVIDED IMAGE - DO NOT USE DEFAULT VALUES',
+        'instruction':
+            'ANALYZE THE REAL PERSON IN THE PROVIDED IMAGE - DO NOT USE DEFAULT VALUES',
         'temperature': 0.7, // Add randomness to avoid default responses
         'max_tokens': 500,
-        'question': 'Analyze the ACTUAL PERSON in this image. Detect: gender, age (18-65), height (150-200cm), body type, skin tone, and undertone. Based on the detected SKIN TONE and UNDERTONE, provide 5-10 complementary hex color codes using CSV color theory data. Colors must match the person\'s complexion, not random selections.',
-        'system_prompt': '''You are a professional fashion and style analysis expert. You MUST analyze the ACTUAL PERSON in the provided image.
+        'question':
+            'Analyze the ACTUAL PERSON in this image. Detect: gender, age (18-65), height (150-200cm), body type, skin tone, and undertone. Based on the detected SKIN TONE and UNDERTONE, provide 5-10 complementary hex color codes using CSV color theory data. Colors must match the person\'s complexion, not random selections.',
+        'system_prompt':
+            '''You are a professional fashion and style analysis expert. You MUST analyze the ACTUAL PERSON in the provided image.
         CRITICAL INSTRUCTIONS: 
         - LOOK AT THE IMAGE and analyze the real person
         - DO NOT return default/example values
@@ -81,7 +86,7 @@ class MLPreferenceService {
         USE ACTUAL HEX CODES - NOT DESCRIPTIVE NAMES!
         Return ONLY valid JSON, no explanations.''',
       };
-      
+
       print('📤 Sending request to backend...');
       final response = await http.post(
         url,
@@ -93,27 +98,38 @@ class MLPreferenceService {
       );
 
       print('📥 Response status: ${response.statusCode}');
-      print('📥 Response body preview: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}...');
+      print(
+        '📥 Response body preview: ${response.body.substring(0, response.body.length > 200 ? 200 : response.body.length)}...',
+      );
 
       if (response.statusCode == 200 || response.statusCode == 201) {
         final responseData = jsonDecode(response.body);
         print('✅ Analysis successful');
-        
+
         // Check if the response contains default values and warn
         if (responseData.containsKey('response')) {
           final responseText = responseData['response'] as String;
-          
+
           // Check for default values
-          if (responseText.contains('"age": 25') || responseText.contains('"height": 170') ||
-              responseText.contains('#F4C2C2') || responseText.contains('#E6E6FA') || responseText.contains('#AFDBF5')) {
-            print('⚠️ WARNING: ML model returned default values instead of analyzing the image!');
-            print('🔍 Response contains: age=25, height=170, or example colors');
+          if (responseText.contains('"age": 25') ||
+              responseText.contains('"height": 170') ||
+              responseText.contains('#F4C2C2') ||
+              responseText.contains('#E6E6FA') ||
+              responseText.contains('#AFDBF5')) {
+            print(
+              '⚠️ WARNING: ML model returned default values instead of analyzing the image!',
+            );
+            print(
+              '🔍 Response contains: age=25, height=170, or example colors',
+            );
             print('📄 Full response: $responseText');
           } else {
-            print('✅ ML analysis appears to contain custom values (not defaults)');
+            print(
+              '✅ ML analysis appears to contain custom values (not defaults)',
+            );
           }
         }
-        
+
         return responseData;
       } else {
         print('❌ Failed to analyze preferences: ${response.statusCode}');
@@ -121,7 +137,7 @@ class MLPreferenceService {
         return null;
       }
     }
-    
+
     print('❌ All $maxRetries attempts failed');
     return null;
   }
@@ -129,15 +145,18 @@ class MLPreferenceService {
   /// Get user preferences by user ID
   static Future<Preference?> getUserPreferences(String userId) async {
     try {
-      final url = Uri.parse('${webApi['domain']}${endPoint['getPrefByUserId']}/$userId');
-      
-      final response = await http.post(  // Changed to POST as per backend
+      final url = Uri.parse(
+        '${webApi['domain']}${endPoint['getPrefByUserId']}/$userId',
+      );
+
+      final response = await http.post(
+        // Changed to POST as per backend
         url,
         headers: {
           'ngrok-skip-browser-warning': 'true',
           'Content-Type': 'application/json',
         },
-        body: jsonEncode({'userId': userId}),  // Send userId in body
+        body: jsonEncode({'userId': userId}), // Send userId in body
       );
 
       if (response.statusCode == 200) {
@@ -162,19 +181,21 @@ class MLPreferenceService {
 
   /// Update user preferences
   static Future<bool> updateUserPreferences({
-    required String userId,  // Changed from preferenceId to userId
+    required String userId, // Changed from preferenceId to userId
     required Preference preferences,
   }) async {
     try {
-      final url = Uri.parse('${webApi['domain']}${endPoint['updatePreference']}');
-      
+      final url = Uri.parse(
+        '${webApi['domain']}${endPoint['updatePreference']}',
+      );
+
       // Get auth token for the request
       final token = await UserApiService.getAuthToken();
       if (token == null) {
         print('No auth token available for preference update');
         return false;
       }
-      
+
       // Convert preference data to user API format
       final requestBody = {
         if (preferences.gender != null) 'gender': preferences.gender,
@@ -185,10 +206,11 @@ class MLPreferenceService {
         if (preferences.style != null) 'style': preferences.style,
         if (preferences.occasion != null) 'occasion': preferences.occasion,
         if (preferences.festivals != null) 'festivals': preferences.festivals,
-        if (preferences.colorTones != null) 'color_tones': preferences.colorTones,
+        if (preferences.colorTones != null)
+          'color_tones': preferences.colorTones,
         if (preferences.undertone != null) 'undertone': preferences.undertone,
       };
-      
+
       final response = await http.put(
         url,
         headers: {
@@ -220,7 +242,7 @@ class MLPreferenceService {
   }) async {
     try {
       print('🚀 Starting complete preference analysis flow...');
-      
+
       // Step 1: Analyze the image to extract preferences
       print('📸 Step 1: Analyzing user image...');
       final analysisResult = await analyzeUserPreferences(
@@ -243,26 +265,40 @@ class MLPreferenceService {
       // Step 2: Get the updated preferences from the database
       print('📥 Step 2: Fetching updated preferences...');
       final preferences = await getUserPreferences(userId);
-      
+
       if (preferences != null) {
         print('✅ Step 2 completed: Preferences fetched successfully');
-        print('👤 Final preferences: Gender=${preferences.gender}, Age=${preferences.age}, Skin=${preferences.skinTone}');
+        print(
+          '👤 Final preferences: Gender=${preferences.gender}, Age=${preferences.age}, Skin=${preferences.skinTone}',
+        );
         return preferences;
       } else {
-        print('⚠️ Step 2 info: Could not fetch updated preferences (likely due to ngrok routing)');
-        print('✅ Analysis completed successfully - preferences should be saved in backend');
-        
+        print(
+          '⚠️ Step 2 info: Could not fetch updated preferences (likely due to ngrok routing)',
+        );
+        print(
+          '✅ Analysis completed successfully - preferences should be saved in backend',
+        );
+
         // Return a mock preference object based on the analysis result
         // This allows the user to proceed to the preference screen
         try {
           if (analysisResult.containsKey('response')) {
             final responseText = analysisResult['response'] as String;
-            print('🔍 Checking response text: ${responseText.substring(0, responseText.length > 100 ? 100 : responseText.length)}...');
-            
+            print(
+              '🔍 Checking response text: ${responseText.substring(0, responseText.length > 100 ? 100 : responseText.length)}...',
+            );
+
             // Check if response contains control characters or corrupted data
-            if (responseText.contains('\u001a') || responseText.contains('<unk>') || responseText.codeUnits.any((unit) => unit < 32 && unit != 10 && unit != 13)) {
-              print('⚠️ LLaVA response appears corrupted, using default preferences');
-              
+            if (responseText.contains('\u001a') ||
+                responseText.contains('<unk>') ||
+                responseText.codeUnits.any(
+                  (unit) => unit < 32 && unit != 10 && unit != 13,
+                )) {
+              print(
+                '⚠️ LLaVA response appears corrupted, using default preferences',
+              );
+
               // Create default preference object when LLaVA response is corrupted
               final defaultPreference = Preference(
                 userObjectId: int.tryParse(userId) ?? 0,
@@ -272,52 +308,64 @@ class MLPreferenceService {
                 bodyType: 'ectomorph',
                 skinTone: 'medium',
                 style: ['casual'],
-                colorTones: ['#D2B48C', '#8B4513', '#4682B4', '#228B22', '#CD853F', '#DDA0DD', '#F0E68C', '#CD5C5C'],
+                colorTones: [
+                  '#D2B48C',
+                  '#8B4513',
+                  '#4682B4',
+                  '#228B22',
+                  '#CD853F',
+                  '#DDA0DD',
+                  '#F0E68C',
+                  '#CD5C5C',
+                ],
                 undertone: 'neutral',
               );
-              
-              print('✅ Created default preference object due to corrupted ML response');
+
+              print(
+                '✅ Created default preference object due to corrupted ML response',
+              );
               return defaultPreference;
             }
-            
+
             // Try to extract JSON from the response
             final regex = RegExp(r'\{[\s\S]*\}');
             final jsonMatch = regex.firstMatch(responseText);
             if (jsonMatch != null) {
               var jsonString = jsonMatch.group(0)!;
-              
+
               // Fix common JSON formatting issues from ML model
               print('🔧 Raw JSON before cleaning: $jsonString');
-              
+
               // Fix height format issues:
               // Case 1: "height": 170cm, -> "height": 170,
               jsonString = jsonString.replaceAllMapped(
-                RegExp(r'"height":\s*(\d+)cm([,}])'), 
-                (match) => '"height": ${match.group(1)}${match.group(2)}'
+                RegExp(r'"height":\s*(\d+)cm([,}])'),
+                (match) => '"height": ${match.group(1)}${match.group(2)}',
               );
-              
+
               // Case 2: "height": "170cm", -> "height": 170,
               jsonString = jsonString.replaceAllMapped(
-                RegExp(r'"height":\s*"(\d+)cm"([,}])'), 
-                (match) => '"height": ${match.group(1)}${match.group(2)}'
+                RegExp(r'"height":\s*"(\d+)cm"([,}])'),
+                (match) => '"height": ${match.group(1)}${match.group(2)}',
               );
-              
+
               // Fix other number+unit patterns that should be integers (weight, etc.)
               jsonString = jsonString.replaceAllMapped(
-                RegExp(r'"(weight)":\s*(\d+)(kg|lbs)([,}])'), 
-                (match) => '"${match.group(1)}": ${match.group(2)}${match.group(4)}'
+                RegExp(r'"(weight)":\s*(\d+)(kg|lbs)([,}])'),
+                (match) =>
+                    '"${match.group(1)}": ${match.group(2)}${match.group(4)}',
               );
-              
+
               // Fix bare numbers that should remain as numbers (age, etc.)
               jsonString = jsonString.replaceAllMapped(
-                RegExp(r'"(age)":\s*"(\d+)"'), 
-                (match) => '"${match.group(1)}": ${match.group(2)}'
+                RegExp(r'"(age)":\s*"(\d+)"'),
+                (match) => '"${match.group(1)}": ${match.group(2)}',
               );
-              
+
               print('🔧 Cleaned JSON: $jsonString');
-              
+
               final parsedData = jsonDecode(jsonString);
-              
+
               // Parse height value properly (handle both integer and string formats)
               int heightValue = 170; // default
               if (parsedData['height'] != null) {
@@ -331,13 +379,15 @@ class MLPreferenceService {
                   final heightMatch = RegExp(r'(\d+)').firstMatch(heightData);
                   if (heightMatch != null) {
                     heightValue = int.tryParse(heightMatch.group(1)!) ?? 170;
-                    print('📏 Parsed height from string "$heightData": ${heightValue}cm');
+                    print(
+                      '📏 Parsed height from string "$heightData": ${heightValue}cm',
+                    );
                   }
                 } else {
                   print('⚠️ Unknown height format: $heightData, using default');
                 }
               }
-              
+
               // Parse age value properly (handle ranges like "25-35" or strings)
               int ageValue = 25; // default
               if (parsedData['age'] != null) {
@@ -348,7 +398,9 @@ class MLPreferenceService {
                   final startAge = int.tryParse(rangeMatch.group(1)!) ?? 25;
                   final endAge = int.tryParse(rangeMatch.group(2)!) ?? 35;
                   ageValue = ((startAge + endAge) / 2).round();
-                  print('🔢 Parsed age range "$ageStr" as middle value: $ageValue');
+                  print(
+                    '🔢 Parsed age range "$ageStr" as middle value: $ageValue',
+                  );
                 } else {
                   // Try to parse as a single number
                   final singleMatch = RegExp(r'(\d+)').firstMatch(ageStr);
@@ -357,46 +409,85 @@ class MLPreferenceService {
                   }
                 }
               }
-              
+
               // Parse color tones and fix incomplete hex codes
-              List<String> processedColorTones = ['#D2B48C', '#8B4513', '#4682B4', '#228B22', '#CD853F']; // diverse default colors
+              List<String> processedColorTones = [
+                '#D2B48C',
+                '#8B4513',
+                '#4682B4',
+                '#228B22',
+                '#CD853F',
+              ]; // diverse default colors
               if (parsedData['color_tones'] != null) {
                 try {
-                  final rawColors = List<String>.from(parsedData['color_tones']);
-                  
-                  // Check if ML returned descriptive names instead of hex codes
-                  bool hasDescriptiveNames = rawColors.any((color) => 
-                    !color.startsWith('#') || 
-                    color.contains('Tone') || 
-                    color.contains('Brown') || 
-                    color.contains('Blue') || 
-                    color.contains('Green') || 
-                    color.contains('Color') || 
-                    color.contains('Cream') || 
-                    color.contains('Navy') || 
-                    color.contains('Pink')
+                  final rawColors = List<String>.from(
+                    parsedData['color_tones'],
                   );
-                  
+
+                  // Check if ML returned descriptive names instead of hex codes
+                  bool hasDescriptiveNames = rawColors.any(
+                    (color) =>
+                        !color.startsWith('#') ||
+                        color.contains('Tone') ||
+                        color.contains('Brown') ||
+                        color.contains('Blue') ||
+                        color.contains('Green') ||
+                        color.contains('Color') ||
+                        color.contains('Cream') ||
+                        color.contains('Navy') ||
+                        color.contains('Pink'),
+                  );
+
                   if (hasDescriptiveNames) {
-                    print('⚠️ WARNING: ML returned descriptive color names instead of hex codes');
+                    print(
+                      '⚠️ WARNING: ML returned descriptive color names instead of hex codes',
+                    );
                     print('🔍 Raw colors: $rawColors');
                     print('🎨 Using diverse default colors instead');
-                    processedColorTones = ['#D2B48C', '#8B4513', '#4682B4', '#228B22', '#CD853F', '#DDA0DD', '#F0E68C', '#CD5C5C'];
+                    processedColorTones = [
+                      '#D2B48C',
+                      '#8B4513',
+                      '#4682B4',
+                      '#228B22',
+                      '#CD853F',
+                      '#DDA0DD',
+                      '#F0E68C',
+                      '#CD5C5C',
+                    ];
                   } else {
                     processedColorTones = _fixHexColorCodes(rawColors);
                     print('🎨 Raw colors from ML: $rawColors');
                     print('🎨 Processed colors: $processedColorTones');
-                    
+
                     // Check if ML returned monochromatic grays and warn
                     if (_isMonochromaticGray(processedColorTones)) {
-                      print('⚠️ WARNING: ML returned monochromatic gray palette, using diverse defaults');
-                      processedColorTones = ['#D2B48C', '#8B4513', '#4682B4', '#228B22', '#CD853F', '#DDA0DD', '#F0E68C', '#CD5C5C'];
+                      print(
+                        '⚠️ WARNING: ML returned monochromatic gray palette, using diverse defaults',
+                      );
+                      processedColorTones = [
+                        '#D2B48C',
+                        '#8B4513',
+                        '#4682B4',
+                        '#228B22',
+                        '#CD853F',
+                        '#DDA0DD',
+                        '#F0E68C',
+                        '#CD5C5C',
+                      ];
                     }
-                    
+
                     // Ensure we have at least 5 colors
                     if (processedColorTones.length < 5) {
-                      print('⚠️ ML returned only ${processedColorTones.length} colors, padding with diverse colors');
-                      final diverseColors = ['#D2B48C', '#8B4513', '#4682B4', '#228B22', '#CD853F'];
+                      print(
+                        '⚠️ ML returned only ${processedColorTones.length} colors, padding with diverse colors',
+                      );
+                      final diverseColors = [
+                        '#D2B48C',
+                        '#8B4513',
+                        '#4682B4',
+                        '#228B22',
+                        '#CD853F',
+                      ];
                       for (int i = processedColorTones.length; i < 5; i++) {
                         if (i < diverseColors.length) {
                           processedColorTones.add(diverseColors[i]);
@@ -405,11 +496,19 @@ class MLPreferenceService {
                     }
                   }
                 } catch (e) {
-                  print('⚠️ Error processing color tones: $e, using diverse default set');
-                  processedColorTones = ['#D2B48C', '#8B4513', '#4682B4', '#228B22', '#CD853F']; // fallback to diverse colors
+                  print(
+                    '⚠️ Error processing color tones: $e, using diverse default set',
+                  );
+                  processedColorTones = [
+                    '#D2B48C',
+                    '#8B4513',
+                    '#4682B4',
+                    '#228B22',
+                    '#CD853F',
+                  ]; // fallback to diverse colors
                 }
               }
-              
+
               // Create a preference object from the analysis
               final mockPreference = Preference(
                 userObjectId: int.tryParse(userId) ?? 0,
@@ -422,13 +521,19 @@ class MLPreferenceService {
                 colorTones: processedColorTones,
                 undertone: parsedData['undertone'] ?? 'neutral',
               );
-              
-              print('✅ Created preference object from ML analysis with cleaned JSON');
-              print('📊 Parsed values: Gender=${mockPreference.gender}, Age=${mockPreference.age}, Height=${mockPreference.height}cm, BodyType=${mockPreference.bodyType}');
+
+              print(
+                '✅ Created preference object from ML analysis with cleaned JSON',
+              );
+              print(
+                '📊 Parsed values: Gender=${mockPreference.gender}, Age=${mockPreference.age}, Height=${mockPreference.height}cm, BodyType=${mockPreference.bodyType}',
+              );
               return mockPreference;
             } else {
-              print('⚠️ No valid JSON found in response, using default preferences');
-              
+              print(
+                '⚠️ No valid JSON found in response, using default preferences',
+              );
+
               // Create default preference object when no valid JSON is found
               final defaultPreference = Preference(
                 userObjectId: int.tryParse(userId) ?? 0,
@@ -438,17 +543,26 @@ class MLPreferenceService {
                 bodyType: 'ectomorph',
                 skinTone: 'medium',
                 style: ['casual'],
-                colorTones: ['#D2B48C', '#8B4513', '#4682B4', '#228B22', '#CD853F', '#DDA0DD', '#F0E68C', '#CD5C5C'],
+                colorTones: [
+                  '#D2B48C',
+                  '#8B4513',
+                  '#4682B4',
+                  '#228B22',
+                  '#CD853F',
+                  '#DDA0DD',
+                  '#F0E68C',
+                  '#CD5C5C',
+                ],
                 undertone: 'neutral',
               );
-              
+
               print('✅ Created default preference object due to invalid JSON');
               return defaultPreference;
             }
           }
         } catch (e) {
           print('Could not create preference object from analysis: $e');
-          
+
           // Create default preference object as fallback
           final defaultPreference = Preference(
             userObjectId: int.tryParse(userId) ?? 0,
@@ -458,14 +572,23 @@ class MLPreferenceService {
             bodyType: 'ectomorph',
             skinTone: 'medium',
             style: ['casual'],
-            colorTones: ['#D2B48C', '#8B4513', '#4682B4', '#228B22', '#CD853F', '#DDA0DD', '#F0E68C', '#CD5C5C'],
+            colorTones: [
+              '#D2B48C',
+              '#8B4513',
+              '#4682B4',
+              '#228B22',
+              '#CD853F',
+              '#DDA0DD',
+              '#F0E68C',
+              '#CD5C5C',
+            ],
             undertone: 'neutral',
           );
-          
+
           print('✅ Created default preference object as fallback');
           return defaultPreference;
         }
-        
+
         return null;
       }
     } catch (e) {
@@ -480,12 +603,12 @@ class MLPreferenceService {
       // Use the UserApiService to get the actual logged in user ID
       print('🆔 Getting current user ID from storage...');
       final userId = await UserApiService.getUserId();
-      
+
       if (userId != null && userId.isNotEmpty) {
         print('✅ Found user ID: $userId');
-        return userId; 
+        return userId;
       }
-      
+
       // Fallback: try to get from SharedPreferences directly
       final prefs = await SharedPreferences.getInstance();
       final storedUserId = prefs.getString('user_id');
@@ -493,11 +616,10 @@ class MLPreferenceService {
         print('✅ Found user ID from prefs: $storedUserId');
         return storedUserId;
       }
-      
+
       // Last resort: use static ID for testing
       print('⚠️ No user ID found in storage, using test ID');
       return "68659717fde8b5c9994263e3";
-      
     } catch (e) {
       print('Error getting current user ID: $e');
       // Fallback to static ID
@@ -510,17 +632,18 @@ class MLPreferenceService {
   static Future<String?> getCurrentUserPhone() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      
+
       // Try multiple possible keys for phone number
-      String? phone = prefs.getString('user_phone') ?? 
-                     prefs.getString('phone_number') ??
-                     prefs.getString('phoneNumber');
-      
+      String? phone =
+          prefs.getString('user_phone') ??
+          prefs.getString('phone_number') ??
+          prefs.getString('phoneNumber');
+
       if (phone != null && phone.isNotEmpty) {
         print('📱 Found user phone: $phone');
         return phone;
       }
-      
+
       print('⚠️ No phone number found in storage');
       return null;
     } catch (e) {
@@ -529,7 +652,7 @@ class MLPreferenceService {
     }
   }
 
-  /// Get current auth token from storage  
+  /// Get current auth token from storage
   static Future<String?> getCurrentAuthToken() async {
     try {
       final token = await UserApiService.getAuthToken();
@@ -537,7 +660,7 @@ class MLPreferenceService {
         print('🔐 Found auth token');
         return token;
       }
-      
+
       print('⚠️ No auth token found');
       return null;
     } catch (e) {
@@ -554,31 +677,33 @@ class MLPreferenceService {
   }) async {
     try {
       print('🔄 Starting preference update flow...');
-      
+
       // Get user authentication data
       final userId = await getCurrentUserId();
       final phone = await getCurrentUserPhone();
       final token = await getCurrentAuthToken();
-      
+
       if (userId == null) {
         final error = 'User ID not found. Please login again.';
         print('❌ $error');
         if (onError != null) onError(error);
         return false;
       }
-      
+
       if (token == null) {
         final error = 'Authentication token not found. Please login again.';
         print('❌ $error');
         if (onError != null) onError(error);
         return false;
       }
-      
+
       print('👤 Using user ID: $userId');
       if (phone != null) print('📱 User phone: $phone');
-      
+
       // Call the updateUser API with the preference data
       final result = await UserApiService.updateUserProfile(
+        token: token, // Pass token as required parameter
+        userId: userId, // Pass userId as required parameter
         phoneNumber: phone,
         email: preferenceData['email'],
         username: preferenceData['username'],
@@ -594,9 +719,27 @@ class MLPreferenceService {
         size: preferenceData['size'],
         undertone: preferenceData['undertone'],
       );
-      
+
       if (result != null && result['success'] == true) {
         print('✅ Preferences updated successfully!');
+
+        // Save updated user data to preferences (similar to loginUser method)
+        try {
+          // Create updated user object from API response
+          if (result['data'] != null) {
+            final userData = User.jsonToUser(result['data'], token: token);
+
+            // Save to local preferences
+            await userData.saveToPrefs();
+            print('💾 User preferences saved to local storage');
+          }
+        } catch (saveError) {
+          print(
+            '⚠️ Warning: Failed to save preferences to local storage: $saveError',
+          );
+          // Continue execution - this is not a critical error
+        }
+
         if (onSuccess != null) onSuccess();
         return true;
       } else {
@@ -605,7 +748,6 @@ class MLPreferenceService {
         if (onError != null) onError(error);
         return false;
       }
-      
     } catch (e) {
       final error = 'Error updating preferences: $e';
       print('💥 $error');
@@ -618,14 +760,14 @@ class MLPreferenceService {
   static List<String> _fixHexColorCodes(List<String> rawColors) {
     return rawColors.map((color) {
       if (color.isEmpty) return '#808080'; // default gray for empty strings
-      
+
       String cleanColor = color.trim();
-      
+
       // Remove # if present
       if (cleanColor.startsWith('#')) {
         cleanColor = cleanColor.substring(1);
       }
-      
+
       // Handle different lengths
       if (cleanColor.length == 3) {
         // 3-digit hex: #f5f -> #f5f5f5
@@ -643,13 +785,13 @@ class MLPreferenceService {
         // Too short: pad with zeros
         cleanColor = cleanColor.padRight(6, '0');
       }
-      
+
       // Validate hex characters
       if (!RegExp(r'^[0-9A-Fa-f]{6}$').hasMatch(cleanColor)) {
         print('⚠️ Invalid hex color "$color", using default gray');
         return '#808080'; // default gray
       }
-      
+
       final result = '#' + cleanColor.toUpperCase();
       print('🔧 Fixed color: "$color" -> "$result"');
       return result;
@@ -659,19 +801,19 @@ class MLPreferenceService {
   /// Check if color palette is monochromatic gray (common ML model issue)
   static bool _isMonochromaticGray(List<String> colors) {
     if (colors.isEmpty) return false;
-    
+
     // Convert hex colors to RGB and check if they're all grayscale
     int grayCount = 0;
-    
+
     for (String color in colors) {
       if (color.length != 7 || !color.startsWith('#')) continue;
-      
+
       try {
         String hex = color.substring(1);
         int r = int.parse(hex.substring(0, 2), radix: 16);
         int g = int.parse(hex.substring(2, 4), radix: 16);
         int b = int.parse(hex.substring(4, 6), radix: 16);
-        
+
         // Check if it's grayscale (R=G=B within small tolerance)
         if ((r - g).abs() <= 5 && (g - b).abs() <= 5 && (r - b).abs() <= 5) {
           grayCount++;
@@ -681,15 +823,17 @@ class MLPreferenceService {
         continue;
       }
     }
-    
+
     // If more than 70% are grayscale, consider it monochromatic
     double grayRatio = grayCount / colors.length;
     bool isMonochromatic = grayRatio > 0.7;
-    
+
     if (isMonochromatic) {
-      print('🔍 Detected monochromatic gray palette: $grayCount/${colors.length} colors are grayscale (${(grayRatio * 100).toStringAsFixed(1)}%)');
+      print(
+        '🔍 Detected monochromatic gray palette: $grayCount/${colors.length} colors are grayscale (${(grayRatio * 100).toStringAsFixed(1)}%)',
+      );
     }
-    
+
     return isMonochromatic;
   }
 }

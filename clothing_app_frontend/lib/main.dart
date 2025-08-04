@@ -1,9 +1,20 @@
 import 'dart:io';
+import 'package:clothing_app_frontend/authModule/screens/splash.dart';
 import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
 import 'package:clothing_app_frontend/addressModule/provider/address_provider.dart';
 import 'package:clothing_app_frontend/homeModule/provider/home_provider.dart';
+import 'package:clothing_app_frontend/authModule/providers/logout_provider.dart';
+
+// import 'package:clothing_app_frontend/homeModule/screens/category_provider.dart';
+import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
+import 'package:clothing_app_frontend/profileModule/screens/profile_screen.dart';
+// import 'package:clothing_app_frontend/cartModule/screens/cart_screen.dart';
+// import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
+// import 'package:clothing_app_frontend/homeModule/widgets/size_chart_screen.dart';
+// import 'package:clothing_app_frontend/preferenceModule/screen/preference_screen.dart';
+// import 'package:clothing_app_frontend/checkoutModule/screens/checkout_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:face_camera/face_camera.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -112,12 +123,12 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => LogoutProvider()),
         ChangeNotifierProvider(create: (_) => CategoryProvider()),
 
         ChangeNotifierProvider(create: (_) => AddressProvider()),
 
         ChangeNotifierProvider(create: (_) => HomeProvider()),
-
 
         // ChangeNotifierProvider(create: (_) => CafeProvider()),
         // ChangeNotifierProvider(create: (_) => CartProvider()),
@@ -128,7 +139,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           navigatorKey: navigatorKey,
           builder: (context, child) {
             return MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(1.0)),
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(1.0)),
               child: child!,
             );
           },
@@ -138,7 +151,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           initialRoute: '/',
           onGenerateRoute: generateRoute,
           routes: {
-            '/': (BuildContext context) => const ChatbotScreen(),
+            '/': (BuildContext context) => const SplashScreenMain(),
             // LoginScreen(),
             // PreferenceScreen(),
 

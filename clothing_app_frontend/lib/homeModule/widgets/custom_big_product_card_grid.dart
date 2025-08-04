@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:flutter/material.dart';
@@ -6,7 +8,9 @@ import 'package:provider/provider.dart';
 import './size_chart_screen.dart';
 
 class CustomBigProductCardGridWidget extends StatefulWidget {
-  final String imageUrl;
+  final String? imageUrl;
+  final Uint8List? imageBytes; // Optional for base64
+
   final VoidCallback onTap;
   final String price;
   final double rating;
@@ -14,8 +18,9 @@ class CustomBigProductCardGridWidget extends StatefulWidget {
 
   const CustomBigProductCardGridWidget({
     super.key,
-    required this.imageUrl,
+    this.imageUrl,
     required this.price,
+    this.imageBytes,
     required this.rating,
     required this.onTap,
     required this.productName,
@@ -78,7 +83,30 @@ class CustomBigProductCardGridWidgetState
                     colors: [Colors.grey.shade200, Colors.grey.shade100],
                   ),
                 ),
-                child: _buildProductImage(),
+
+                child: widget.imageUrl != null
+                    ? Image.asset(
+                        widget.imageUrl!,
+                        fit: BoxFit.cover,
+                        width: dW * 0.55,
+                        height: dW * 0.605,
+                        errorBuilder: (context, error, stackTrace) {
+                          return Container(
+                            color: Colors.grey.shade200,
+                            child: Icon(
+                              Icons.image_not_supported_outlined,
+                              color: Colors.grey.shade400,
+                              size: 40,
+                            ),
+                          );
+                        },
+                      )
+                    : Image.memory(
+                        widget.imageBytes!,
+                        fit: BoxFit.cover,
+                        width: dW * 0.55,
+                        height: dW * 0.605,
+                      ),
               ),
 
               // Top gradient overlay with product name and favorite
@@ -328,55 +356,5 @@ class CustomBigProductCardGridWidgetState
         ),
       ),
     );
-  }
-
-  Widget _buildProductImage() {
-    return widget.imageUrl.startsWith('http')
-        ? Image.network(
-            widget.imageUrl,
-            fit: BoxFit.cover,
-            width: dW * 0.55,
-            height: dW * 0.605,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                color: Colors.grey.shade200,
-                child: Icon(
-                  Icons.image_not_supported_outlined,
-                  color: Colors.grey.shade400,
-                  size: 40,
-                ),
-              );
-            },
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return Container(
-                color: Colors.grey[300],
-                child: Center(
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Colors.grey[600]!,
-                    ),
-                  ),
-                ),
-              );
-            },
-          )
-        : Image.asset(
-            widget.imageUrl,
-            fit: BoxFit.cover,
-            width: dW * 0.55,
-            height: dW * 0.605,
-            errorBuilder: (context, error, stackTrace) {
-              return Container(
-                color: Colors.grey.shade200,
-                child: Icon(
-                  Icons.image_not_supported_outlined,
-                  color: Colors.grey.shade400,
-                  size: 40,
-                ),
-              );
-            },
-          );
   }
 }

@@ -17,7 +17,7 @@ const axios_1 = __importDefault(require("axios"));
 const fs_1 = __importDefault(require("fs"));
 const form_data_1 = __importDefault(require("form-data"));
 const mongoose_1 = __importDefault(require("mongoose"));
-const preference_model_1 = __importDefault(require("../preferenceModule/preference.model"));
+const preference_model_1 = __importDefault(require("../userModule/preference.model"));
 const ml_model_1 = require("./ml.model");
 const baseURL = process.env.PYTHON_SERVER_URL || "http://localhost:8000";
 const checkPythonServerHealth = (req, res) => __awaiter(void 0, void 0, void 0, function* () {

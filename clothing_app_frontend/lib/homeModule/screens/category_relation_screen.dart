@@ -1,7 +1,6 @@
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
-import 'package:clothing_app_frontend/common_widgets/custom_app_bar.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
 import 'package:clothing_app_frontend/navigation/navigators.dart';
@@ -27,37 +26,177 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
   bool isLoading = false;
   ProductViewType viewType = ProductViewType.threeGrid;
 
-  List<Map<String, dynamic>> categories = [
-    {'name': 'Baggy', 'image': 'https://i.imgur.com/8Km9tLL.jpg'},
-    {'name': 'Straight Fit', 'image': 'https://i.imgur.com/5tj6S7Ol.jpg'},
-    {'name': 'Carpenter', 'image': 'https://i.imgur.com/3y5b2.jpg'},
-  ];
-  List<Map<String, dynamic>> products = List.generate(10, (i) {
-    return {
-      'name': 'Charcoal Fade Jeans',
-      'image': [
-        'https://i.imgur.com/5tj6S7Ol.jpg',
-        'https://i.imgur.com/5tj6S7Ol.jpg',
-        'https://i.imgur.com/3y5b2.jpg',
-      ][i % 3],
-      'oldPrice': 60 + i,
-      'price': 50,
-      'colors': [
-        Colors.black,
-        Colors.brown,
-        Colors.grey.shade400,
-        Colors.brown.shade200,
-        Colors.blueGrey,
-      ],
-      'sizes': ['S', 'M', 'L', 'XL'],
-      'isFavorite': i % 2 == 0,
-    };
-  });
+  // Updated categories with actual asset images based on selected category
+  List<Map<String, dynamic>> categories = [];
+
+  // Change from getter to regular list variable
+  List<Map<String, dynamic>> products = [];
 
   @override
   void initState() {
     super.initState();
+    _initializeCategories();
+    _initializeProducts();
     fetchData();
+  }
+
+  void _initializeCategories() {
+    // Set categories based on the selected category from CategoryScreen
+    if (widget.args.category == 'Jeans') {
+      categories = [
+        {
+          'name': 'Baggy',
+          'image': 'assets/products/6_jeans/baggy/product_6_1.png',
+        },
+        {
+          'name': 'Skinny',
+          'image': 'assets/products/6_jeans/skinny_jeans/product_6_1.png',
+        },
+        {
+          'name': 'Ripped',
+          'image': 'assets/products/6_jeans/ripped_jeans/product_6_1.png',
+        },
+        {
+          'name': 'Wide Leg',
+          'image': 'assets/products/6_jeans/wide_leg_jeans/product_6_1.png',
+        },
+        {
+          'name': 'Splatter Loose Fit',
+          'image':
+              'assets/products/6_jeans/splatter_loose_fit_jeans/product_6_1.png',
+        },
+      ];
+    } else if (widget.args.category == 'Shorts') {
+      categories = [
+        {
+          'name': 'Jeans Shorts',
+          'image': 'assets/products/4_shorts/jeans_shorts/product_4_1.png',
+        },
+        {
+          'name': 'Linen Shorts',
+          'image': 'assets/products/4_shorts/linen_shorts/product_4_1.png',
+        },
+      ];
+    } else if (widget.args.category == 'T-Shirts') {
+      categories = [
+        {
+          'name': 'Collar T-Shirts',
+          'image': 'assets/products/8_t-shirts/collar_tshirts/product_8_1.png',
+        },
+        {
+          'name': 'Wide T-Shirts',
+          'image': 'assets/products/8_t-shirts/wide_tshirts/product_8_4.png',
+        },
+        {
+          'name': 'Cotton Shirts',
+          'image': 'assets/products/7_shirts/cotton_shirts/product_7_1.png',
+        },
+        {
+          'name': 'Jeans Shirts',
+          'image': 'assets/products/7_shirts/jeans_shirts/product_7_1.png',
+        },
+      ];
+    } else {
+      // Default categories for other types
+      categories = [
+        {
+          'name': 'All Items',
+          'image': 'assets/products/6_jeans/baggy/product_6_1.png',
+        },
+      ];
+    }
+  }
+
+  void _initializeProducts() {
+    products = List.generate(10, (i) {
+      // Create different product types based on category with actual asset images
+      List<String> imagesToUse = [];
+      List<String> productNames = [];
+
+      if (widget.args.category == 'Jeans') {
+        // Use actual jeans images from different subcategories
+        imagesToUse = [
+          'assets/products/6_jeans/baggy/product_6_1.png',
+          'assets/products/6_jeans/baggy/product_6_2.png',
+          'assets/products/6_jeans/skinny_jeans/product_6_1.png',
+          'assets/products/6_jeans/skinny_jeans/product_6_2.png',
+          'assets/products/6_jeans/ripped_jeans/product_6_1.png',
+          'assets/products/6_jeans/wide_leg_jeans/product_6_1.png',
+          'assets/products/6_jeans/splatter_loose_fit_jeans/product_6_1.png',
+        ];
+        productNames = [
+          'Baggy Denim Jeans',
+          'Premium Baggy Jeans',
+          'Skinny Fit Jeans',
+          'Slim Skinny Jeans',
+          'Ripped Denim Jeans',
+          'Wide Leg Jeans',
+          'Splatter Loose Fit Jeans',
+        ];
+      } else if (widget.args.category == 'Shorts') {
+        // Use actual shorts images
+        imagesToUse = [
+          'assets/products/4_shorts/jeans_shorts/product_4_1.png',
+          'assets/products/4_shorts/jeans_shorts/product_4_2.png',
+          'assets/products/4_shorts/linen_shorts/product_4_1.png',
+          'assets/products/4_shorts/linen_shorts/product_4_2.png',
+        ];
+        productNames = [
+          'Denim Cargo Shorts',
+          'Classic Jeans Shorts',
+          'Summer Linen Shorts',
+          'Casual Linen Shorts',
+        ];
+      } else if (widget.args.category == 'T-Shirts') {
+        // Use actual t-shirts and shirts images
+        imagesToUse = [
+          'assets/products/8_t-shirts/collar_tshirts/product_8_1.png',
+          'assets/products/8_t-shirts/collar_tshirts/product_8_2.png',
+          'assets/products/8_t-shirts/collar_tshirts/product_8_3.png',
+          'assets/products/8_t-shirts/wide_tshirts/product_8_4.png',
+          'assets/products/8_t-shirts/wide_tshirts/product_8_5.png',
+          'assets/products/7_shirts/cotton_shirts/product_7_1.png',
+          'assets/products/7_shirts/cotton_shirts/product_7_2.png',
+          'assets/products/7_shirts/cotton_shirts/product_7_3.png',
+          'assets/products/7_shirts/jeans_shirts/product_7_1.png',
+        ];
+        productNames = [
+          'Classic Collar T-Shirt',
+          'Premium Collar T-Shirt',
+          'Designer Collar T-Shirt',
+          'Wide Fit T-Shirt',
+          'Oversized Wide T-Shirt',
+          'Cotton Casual Shirt',
+          'Premium Cotton Shirt',
+          'Classic Cotton Shirt',
+          'Denim Style Shirt',
+        ];
+      } else {
+        // Default fallback
+        imagesToUse = ['assets/products/6_jeans/baggy/product_6_1.png'];
+        productNames = ['Classic Item'];
+      }
+
+      // Cycle through available images and names
+      String selectedImage = imagesToUse[i % imagesToUse.length];
+      String selectedName = productNames[i % productNames.length];
+
+      return {
+        'name': selectedName,
+        'image': selectedImage,
+        'oldPrice': 60 + (i * 5),
+        'price': 45 + (i * 3),
+        'colors': [
+          Colors.black,
+          Colors.brown,
+          Colors.grey.shade400,
+          Colors.brown.shade200,
+          Colors.blueGrey,
+        ],
+        'sizes': ['S', 'M', 'L', 'XL'],
+        'isFavorite': i % 2 == 0,
+      };
+    });
   }
 
   fetchData() async {
@@ -84,12 +223,16 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
         centerTitle: true,
         elevation: 3,
         backgroundColor: Colors.white,
-        
-                title: Column(
+
+        title: Column(
           children: [
-            TextWidget(title: 'Vintage jeans'),
+            TextWidget(title: widget.args.category),
             SizedBox(height: dW * 0.02),
-            TextWidget(title: '1256 items'),
+            TextWidget(
+              title: widget.args.category == 'Jeans'
+                  ? '156 items'
+                  : '163 items',
+            ),
           ],
         ),
       ),
@@ -124,7 +267,11 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
                         return ProductList(
                           products: products,
                           dW: dW,
-                          onUpdate: setState, // <-- Pass setState
+                          onLikeToggle: (index, liked) {
+                            setState(() {
+                              products[index]['isFavorite'] = liked;
+                            });
+                          },
                         );
                       } else {
                         int crossAxisCount = viewType == ProductViewType.twoGrid
@@ -134,7 +281,11 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
                           products: products,
                           dW: dW,
                           crossAxisCount: crossAxisCount,
-                          onUpdate: setState, // <-- Pass setState
+                          onLikeToggle: (index, liked) {
+                            setState(() {
+                              products[index]['isFavorite'] = liked;
+                            });
+                          },
                         );
                       }
                     },
@@ -180,7 +331,9 @@ class CategoryRow extends StatelessWidget {
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
                   image: DecorationImage(
-                    image: NetworkImage(cat['image']),
+                    image: AssetImage(
+                      cat['image'],
+                    ), // Changed from NetworkImage to AssetImage
                     fit: BoxFit.cover,
                   ),
                 ),
@@ -280,26 +433,28 @@ class ProductViewToggle extends StatelessWidget {
   }
 }
 
+// Update ProductGrid to use the new callback signature
 class ProductGrid extends StatelessWidget {
   final List<Map<String, dynamic>> products;
   final double dW;
   final int crossAxisCount;
-  final void Function(void Function()) onUpdate; // <-- Add this
+  final Function(int index, bool liked) onLikeToggle;
 
   const ProductGrid({
     super.key,
     required this.products,
     required this.dW,
     required this.crossAxisCount,
-    required this.onUpdate,
+    required this.onLikeToggle,
   });
 
   @override
   Widget build(BuildContext context) {
-    // Lower aspect ratio for more height and no overflow
+    // Further reduced aspect ratio to give more height
     double aspectRatio = crossAxisCount == 3
-        ? 0.65
-        : 0.75; // <-- Tweak these values
+        ? 0.60 // Reduced from 0.62 to 0.60
+        : 0.72;
+
     return GridView.builder(
       padding: EdgeInsets.symmetric(horizontal: dW * 0.01, vertical: dW * 0.01),
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -314,24 +469,24 @@ class ProductGrid extends StatelessWidget {
         dW: dW,
         isThreeGrid: crossAxisCount == 3,
         onLikeToggle: (liked) {
-          products[i]['isFavorite'] = liked;
-          onUpdate(() {}); // <-- Call setState from parent
+          onLikeToggle(i, liked);
         },
       ),
     );
   }
 }
 
+// Update ProductList to use the new callback signature
 class ProductList extends StatelessWidget {
   final List<Map<String, dynamic>> products;
   final double dW;
-  final void Function(void Function()) onUpdate; // <-- Add this
+  final Function(int index, bool liked) onLikeToggle;
 
   const ProductList({
     super.key,
     required this.products,
     required this.dW,
-    required this.onUpdate,
+    required this.onLikeToggle,
   });
 
   @override
@@ -345,27 +500,27 @@ class ProductList extends StatelessWidget {
         dW: dW,
         isFull: true,
         onLikeToggle: (liked) {
-          products[i]['isFavorite'] = liked;
-          onUpdate(() {}); // <-- Call setState from parent
+          onLikeToggle(i, liked); // Pass index and liked state
         },
       ),
     );
   }
 }
 
+// ProductCard remains the same
 class ProductCard extends StatefulWidget {
   final Map<String, dynamic> product;
   final double dW;
   final bool isFull;
   final bool isThreeGrid;
-  final ValueChanged<bool>? onLikeToggle; // <-- Add this
+  final ValueChanged<bool>? onLikeToggle;
 
   const ProductCard({
     required this.product,
     required this.dW,
     this.isFull = false,
     this.isThreeGrid = false,
-    this.onLikeToggle, // <-- Add this
+    this.onLikeToggle,
     super.key,
   });
 
@@ -410,11 +565,23 @@ class _ProductCardState extends State<ProductCard> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-                  child: Image.network(
+                  child: Image.asset(
                     widget.product['image'],
                     width: double.infinity,
                     height: imageHeight,
                     fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: double.infinity,
+                        height: imageHeight,
+                        color: Colors.grey[300],
+                        child: Icon(
+                          Icons.image,
+                          size: 50,
+                          color: Colors.grey[600],
+                        ),
+                      );
+                    },
                   ),
                 ),
                 Positioned(
@@ -424,10 +591,17 @@ class _ProductCardState extends State<ProductCard> {
                     onTap: () {
                       widget.onLikeToggle?.call(!isLiked);
                     },
-                    child: Icon(
-                      isLiked ? Icons.favorite : Icons.favorite_border,
-                      color: isLiked ? Colors.red : Colors.white,
-                      size: widget.isThreeGrid ? 22 : 26,
+                    child: Container(
+                      padding: EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.8),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Icon(
+                        isLiked ? Icons.favorite : Icons.favorite_border,
+                        color: isLiked ? Colors.red : Colors.grey[600],
+                        size: widget.isThreeGrid ? 18 : 22,
+                      ),
                     ),
                   ),
                 ),
@@ -486,24 +660,37 @@ class _ProductCardState extends State<ProductCard> {
             padding: EdgeInsets.fromLTRB(12, 4, 12, 0),
             child: Row(
               children: [
-                ...widget.product['colors'].map<Widget>(
-                  (c) => Container(
-                    margin: EdgeInsets.only(right: 4),
-                    width: widget.isThreeGrid ? 12 : 16,
-                    height: widget.isThreeGrid ? 12 : 16,
-                    decoration: BoxDecoration(
-                      color: c,
-                      borderRadius: BorderRadius.circular(4),
-                      border: Border.all(color: Colors.black12, width: 1),
+                ...widget.product['colors']
+                    .take(4)
+                    .map<Widget>(
+                      (c) => Container(
+                        margin: EdgeInsets.only(right: 4),
+                        width: widget.isThreeGrid ? 12 : 16,
+                        height: widget.isThreeGrid ? 12 : 16,
+                        decoration: BoxDecoration(
+                          color: c,
+                          borderRadius: BorderRadius.circular(4),
+                          border: Border.all(color: Colors.black12, width: 1),
+                        ),
+                      ),
+                    ),
+                if (widget.product['colors'].length > 4)
+                  Container(
+                    margin: EdgeInsets.only(left: 4),
+                    child: Text(
+                      '+${widget.product['colors'].length - 4}',
+                      style: TextStyle(
+                        fontSize: widget.isThreeGrid ? 10 : 12,
+                        color: Colors.grey[600],
+                      ),
                     ),
                   ),
-                ),
               ],
             ),
           ),
           // Sizes row
           Padding(
-            padding: EdgeInsets.fromLTRB(12, 0, 12, 0),
+            padding: EdgeInsets.fromLTRB(12, 4, 12, 12),
             child: Text(
               widget.product['sizes'].join(' '),
               style: TextStyle(
