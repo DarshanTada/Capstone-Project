@@ -38,11 +38,11 @@ dependencies:
   provider: ^6.1.1
   carousel_slider: ^4.2.1
   intl: ^0.18.1
-  firebase_messaging: ^14.7.6
+  firebase_messaging: ^15.0.3
   # flutter_local_notifications: ^16.3.2
-  firebase_core: ^2.27.0
-  firebase_crashlytics: ^3.5.7
-  firebase_analytics: ^10.10.7
+  firebase_core: ^3.2.0
+  firebase_crashlytics: ^4.3.7
+  firebase_analytics: ^11.2.0
   image_picker: ^1.0.7
   email_validator: ^2.1.17
   url_launcher: ^6.2.6
@@ -58,7 +58,10 @@ dependencies:
   app_settings: ^5.1.1
   shimmer: ^3.0.0
   device_info_plus: ^11.4.0
+  google_mlkit_face_detection: ^0.12.0
   cupertino_icons: ^1.0.8
+  face_camera: ^0.1.4
+  # speech_to_text: ^6.3.0
   # pin_code_fields: 
   # flutter_svg: 
   # localstorage:
@@ -84,7 +87,9 @@ dependencies:
   video_player: ^2.4.5
   country_flags: ^3.3.0
   flutterfire_cli: ^1.2.0
-  firebase_auth: ^4.16.0
+  firebase_auth: ^5.1.2
+  webview_flutter: ^4.13.0
+  image: ^4.5.4
   # # chewie: ^1.2.2
   # # share: ^2.0.4
   # # firebase_dynamic_links: 
@@ -123,9 +128,31 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/images/jeans/
+    - assets/images/tops/
+    - assets/products/2_tops/bodyfit_tops/
+    - assets/products/2_tops/wide_tops/
+    - assets/products/4_shorts/jeans_shorts/
+    - assets/products/4_shorts/linen_shorts/
+    - assets/products/5_skirts/glitter_skirt/
+    - assets/products/5_skirts/woolen_skirt/
+
+    - assets/products/6_jeans/baggy/
+    - assets/products/6_jeans/ripped_jeans/
+    - assets/products/6_jeans/skinny_jeans/
+    - assets/products/6_jeans/splatter_loose_fit_jeans/
+    - assets/products/6_jeans/wide_leg_jeans/
+    - assets/products/7_shirts/cotton_shirts/
+    - assets/products/7_shirts/jeans_shirts/
+    - assets/products/8_t-shirts/collar_tshirts/
+    - assets/products/8_t-shirts/wide_tshirts/
+
+    - assets/images/corousel/
+    - assets/svgIcons/
     - assets/videos/
-    - assets/fonts/
-    - assets/icons/
+    - assets/iframe.html
+    - assets/viewer.html
+    # - assets/placeholders/
     - assets/
 
 

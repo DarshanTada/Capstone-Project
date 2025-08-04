@@ -1,59 +1,36 @@
-// var webApi = {'domain': 'https://api.iteeha.co'}; //PROD
-var webApi = {'domain': 'https://iteehaapi.nextlabsonline.com'}; //DEV PROD
-// var webApi = {'domain': 'http://13.201.94.45:3060'}; // DEV PROD IP
-// var webApi = {'domain': 'http://192.168.1.37:3060'}; // Atharv Home
-// var webApi = {'domain': 'http://192.168.0.5:3060'}; // Atharv Work
-// var webApi = {'domain': 'http://172.20.10.5:3060'}; // Atharv Hotspot
-// var webApi = {'domain': 'http://192.168.227.72:3060'}; // Salman
-// var webApi = {'domain': 'http://192.168.1.2:3060'}; // Darshan wifi
-// var webApi = {'domain': 'http://192.168.95.161:3060'}; // Darshan hotspot2
-// var webApi = {'domain': 'http://192.168.77.161:3060'}; // Darshan hotspot
+// var webApi = {'domain': 'http://localhost:3001/'}; // LOCALHOST
+var webApi = {'domain': 'http://localhost:3001/'}; //PC IP ADDRESS
+var mlApi = {'domain': 'https://naturally-giving-chow.ngrok-free.app/'}; //ML NGROK
 
 var endPoint = {
-  // App Config
-  'searchLocationFromGoogle': '/api/appConfig/searchLocationFromGoogle',
-  'fetchCommonAppConfig': '/api/appConfig/fetchCommonAppConfig',
-  'getAppConfigs': '/api/appConfig/getAppConfigs',
-
-  // Banner
-  'fetchBanners': '/api/banner/fetchBanners',
-
   // Authentication
-  'sendOTPtoUser': '/api/auth/sendOTPtoUser',
-  'verifyOTPofUser': '/api/auth/verifyOTPofUser',
-  'resendOTPtoUser': '/api/auth/resendOTPtoUser',
-  'login': '/api/user/login',
-  'register': '/api/user/register',
-  'editProfile': '/api/user/editProfile',
-  'deleteFCMToken': '/api/user/deleteFCMToken',
-  'updateAddress': '/api/user/updateAddress',
-  'deleteAccount': '/api/user/deleteAccount',
-  'refreshUser': '/api/user/refreshUser',
+  'login': 'api/user/loginOrRegisterUser',
+  'updateUser': 'api/user/updateUser',
+  'getUserById': 'api/user/getUserById',
+  'logout': 'api/user/logout',
 
-  // Notifications
-  'fetchNotifications': '/api/notification/fetchNotifications',
-  'updateViewState': '/api/notification/updateViewState',
+  // Home
+  'getHomeData': 'api/home/home',
+  'getCategory': 'api/category/getCategory',
+  'getProductsByCategory': 'api/category/getProductsByCategory',
+  // Product
+  'getProducts': 'api/product/getProduct',
+  // SubCategory
+  'getSubCategories': 'api/subCategory/getAll',
 
-  // Cafe
-  'fetchCafe': '/api/cafe/fetchCafe',
-  'fetchSingleCafeById': '/api/cafe/fetchSingleCafeById',
+  //Preference (handled by user module)
+  'getAllPreferences': 'api/user/users',
+  'getPrefByUserId': 'api/user/getUserById',
+  'updatePreference': 'api/user/updateUser',
+  'deletePreference': 'api/user/updateUser', // Use updateUser to clear preference data
 
-  // Like Unlike
-  'likeUnlike': '/api/like/likeUnlike',
+  // Address
+  'addAddress': 'api/address/addAddress',
+  'getAddressesByUserId': 'api/address/getAddressesByUserId',
+  'updateAddress': 'api/address/updateAddress',
+  'deleteAddress': 'api/address/deleteAddress',
 
-  // LoyaltyLevel
-  'fetchLoyaltyLevels': '/api/loyalty/fetchLoyaltyLevels',
-  'fetchTransactionCountsForLoyalty':
-      '/api/loyalty/fetchTransactionCountsForLoyalty',
-
-  // Offers
-  'fetchOffers': '/api/offers/fetchOffers',
-
-  // Transaction
-  'fetchTransactions': '/api/transaction/fetchTransactions',
-  'walletRecharge': '/api/transaction/walletRecharge',
-
-  // More Screen
-  'fetchFaqs': '/api/faq/fetchFaqs',
-  'fetchFaqTopics': '/api/faqTopic/fetchFaqTopics',
+  // ML Services (use ngrok for ML only)
+  'mlAsk': 'ask/',
+  'mlAnalyzePreferences': 'ask/',
 };

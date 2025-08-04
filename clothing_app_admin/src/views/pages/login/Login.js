@@ -1,6 +1,6 @@
 /* eslint-disable prettier/prettier */
 import React, { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   CButton,
   CCard,
@@ -20,18 +20,70 @@ import { cilLockLocked, cilUser } from '@coreui/icons'
 import { useDispatch } from 'react-redux'
 
 const Login = () => {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
-  const dispatch = useDispatch()
+  const [isProcessing, setIsProcessing] = useState(false)
 
-  const handleLogin = (e) => {
+  const dispatch = useDispatch()
+  const navigate = useNavigate()
+
+  const handleLogin = async (e) => {
     e.preventDefault()
-    if (username === 'yolochic.admin@gmail.com' && password === 'admin') {
-      dispatch({ type: 'LOGIN_SUCCESS' })
-      window.location.hash = '#/dashboard'
-    } else {
-      setError('Invalid credentials')
+    setError('')
+
+    // Validate input fields
+    if (email.trim() === '') {
+      setError('Email is required')
+      return
+    }
+
+    const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    if (!emailPattern.test(email)) {
+      setError('Please enter a valid email address')
+      return
+    }
+
+    if (password.trim() === '') {
+      setError('Password is required')
+      return
+    }
+
+    if (password.length < 4) {
+      setError('Password must be at least 4 characters')
+      return
+    }
+
+    setIsProcessing(true)
+
+    try {
+      const response = await fetch('/api/user/loginAdmin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        localStorage.setItem('token', data.token || data.accessToken)
+        localStorage.setItem('user', JSON.stringify(data.user))
+        localStorage.setItem('role', data.user.role)
+
+        dispatch({ type: 'LOGIN_SUCCESS', payload: data.user }) // optional
+        navigate('/dashboard')
+      } else {
+        if (data.message && data.message.toLowerCase().includes('not found')) {
+          setError('User is not registered. Please sign up first.')
+        } else {
+          setError(data.message || 'Invalid email or password')
+        }
+      }
+    } catch (error) {
+      console.error('Error logging in:', error)
+      setError('Server error. Please try again later.')
+    } finally {
+      setIsProcessing(false)
     }
   }
 
@@ -52,10 +104,11 @@ const Login = () => {
                         <CIcon icon={cilUser} />
                       </CInputGroupText>
                       <CFormInput
+                        type="email"
                         placeholder="Email"
-                        autoComplete="username"
-                        value={username}
-                        onChange={(e) => setUsername(e.target.value)}
+                        autoComplete="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
                       />
                     </CInputGroup>
                     <CInputGroup className="mb-4">
@@ -72,8 +125,8 @@ const Login = () => {
                     </CInputGroup>
                     <CRow>
                       <CCol xs={12}>
-                        <CButton color="primary" className="px-4" type="submit" block>
-                          Login
+                        <CButton color="primary" className="px-4" type="submit" block disabled={isProcessing}>
+                          {isProcessing ? 'Logging in...' : 'Login'}
                         </CButton>
                       </CCol>
                     </CRow>
@@ -85,8 +138,7 @@ const Login = () => {
                   <div>
                     <h2>Sign up</h2>
                     <p>
-                      Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                      tempor incididunt ut labore et dolore magna aliqua.
+                      Don't have an admin account yet? Register now to get access to the admin dashboard and manage your store efficiently.
                     </p>
                     <Link to="/register">
                       <CButton color="primary" className="mt-3" active tabIndex={-1}>

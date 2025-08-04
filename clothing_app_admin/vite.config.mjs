@@ -1,3 +1,4 @@
+/* eslint-disable prettier/prettier */
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
@@ -11,9 +12,7 @@ export default defineConfig(() => {
     },
     css: {
       postcss: {
-        plugins: [
-          autoprefixer({}), // add options if needed
-        ],
+        plugins: [autoprefixer()],
       },
     },
     esbuild: {
@@ -41,8 +40,21 @@ export default defineConfig(() => {
     },
     server: {
       port: 3000,
+      host: true,
+      allowedHosts: [
+        'localhost',
+        '127.0.0.1',
+        'profound-hyena-horribly.ngrok-free.app',
+        'naturally-giving-chow.ngrok-free.app',
+        '.ngrok-free.app',
+        '.ngrok.io'
+      ],
       proxy: {
-        // https://vitejs.dev/config/server-options.html
+        '/api': {
+          target: 'http://localhost:3001',
+          changeOrigin: true,
+          rewrite: (path) => path.replace(/^\/api/, '/api'), // Optional if prefix matches
+        },
       },
     },
   }

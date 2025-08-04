@@ -10,7 +10,7 @@ import '../navigation/navigators.dart';
 
 class LoadingScreen extends StatefulWidget {
   final LoadingScreenArguments args;
-  const LoadingScreen({Key? key, required this.args}) : super(key: key);
+  const LoadingScreen({super.key, required this.args});
 
   @override
   LoadingScreenState createState() => LoadingScreenState();

@@ -1,26 +1,29 @@
-// ignore_for_file: depend_on_referenced_packages
-
 import 'dart:io';
-
-import 'package:clothing_app_frontend/authModule/screens/intro_screen_1.dart';
-import 'package:clothing_app_frontend/authModule/screens/login.dart';
 import 'package:clothing_app_frontend/authModule/screens/splash.dart';
-import 'package:clothing_app_frontend/categoryModule/screens/category.dart';
+import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
+import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
+import 'package:clothing_app_frontend/addressModule/provider/address_provider.dart';
+import 'package:clothing_app_frontend/homeModule/provider/home_provider.dart';
+import 'package:clothing_app_frontend/authModule/providers/logout_provider.dart';
+
+// import 'package:clothing_app_frontend/homeModule/screens/category_provider.dart';
+import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
+import 'package:clothing_app_frontend/profileModule/screens/profile_screen.dart';
+// import 'package:clothing_app_frontend/cartModule/screens/cart_screen.dart';
+// import 'package:clothing_app_frontend/chatbotModule/screens/chatbot_screen.dart';
+// import 'package:clothing_app_frontend/homeModule/widgets/size_chart_screen.dart';
+// import 'package:clothing_app_frontend/preferenceModule/screen/preference_screen.dart';
+// import 'package:clothing_app_frontend/checkoutModule/screens/checkout_screen.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:face_camera/face_camera.dart';
 import 'package:firebase_core/firebase_core.dart';
-// import 'package:firebase_dynamic_links/firebase_dynamic_links.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-
 import 'package:localstorage/localstorage.dart';
 import 'package:provider/provider.dart';
-
 import 'authModule/providers/auth_provider.dart';
-import 'authModule/screens/splash_screen.dart';
 import 'navigation/navigation_service.dart';
-import 'theme_manager.dart';
-import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 
 final LocalStorage storage = LocalStorage('re_household');
@@ -43,6 +46,7 @@ awaitStorageReady() async {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await FaceCamera.initialize();
   if (Platform.isAndroid) {
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
@@ -62,7 +66,7 @@ Future<void> main() async {
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({Key? key}) : super(key: key);
+  const MyApp({super.key});
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -117,13 +121,27 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
-      providers: [ChangeNotifierProvider(create: (_) => AuthProvider())],
+      providers: [
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => LogoutProvider()),
+        ChangeNotifierProvider(create: (_) => CategoryProvider()),
+
+        ChangeNotifierProvider(create: (_) => AddressProvider()),
+
+        ChangeNotifierProvider(create: (_) => HomeProvider()),
+
+        // ChangeNotifierProvider(create: (_) => CafeProvider()),
+        // ChangeNotifierProvider(create: (_) => CartProvider()),
+        // ChangeNotifierProvider(create: (_) => OrderProvider()),
+      ],
       child: Consumer(
         builder: (context, theme, _) => MaterialApp(
           navigatorKey: navigatorKey,
           builder: (context, child) {
             return MediaQuery(
-              data: MediaQuery.of(context).copyWith(textScaleFactor: 1.0),
+              data: MediaQuery.of(
+                context,
+              ).copyWith(textScaler: TextScaler.linear(1.0)),
               child: child!,
             );
           },
@@ -133,8 +151,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
           initialRoute: '/',
           onGenerateRoute: generateRoute,
           routes: {
-            '/': (BuildContext context) =>  SplashScreenMain()
+            '/': (BuildContext context) => const SplashScreenMain(),
             // LoginScreen(),
+            // PreferenceScreen(),
 
             // '/': (BuildContext context) =>
             //     HomeScreen(args: HomeScreenArguments()),

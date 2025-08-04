@@ -1,17 +1,20 @@
-
 import express from 'express';
 import {
-  createCategory,
-  getAllCategories,
-  updateCategory,
   uploadCategoryImage,
-  uploadUpdateCategoryImage
+  createCategory,
+  updateCategory,
+  getAllCategories,
+  getProductsByCategoryPost,
+  deleteCategory
 } from './category.controller';
+import { upload } from '../utils/common/multer';
 
-export const CategoryRouter = express.Router();
+export const CategoryRoute = express.Router();
 
-CategoryRouter.post('/createcategory',uploadCategoryImage,  createCategory);
-CategoryRouter.get('/getcategory', getAllCategories);
-CategoryRouter.put('/updateCategory/:id',uploadUpdateCategoryImage, updateCategory);
+CategoryRoute.post('/createCategory', uploadCategoryImage, createCategory);
+CategoryRoute.put('/updateCategory/:id', uploadCategoryImage, updateCategory);
+CategoryRoute.get('/getCategory', getAllCategories);
+CategoryRoute.post('/getProductsByCategory', upload.none(), getProductsByCategoryPost);
+CategoryRoute.delete('/deleteCategory/:id', deleteCategory);
 
-export default CategoryRouter;
+export default CategoryRoute;

@@ -1,5 +1,5 @@
 import express, { Router } from "express";
-import { verifyJwtToken } from "../../../utils/middleware/verify-jwt-token";
+// import { verifyJwtToken } from "../../../utils/middleware/verify-jwt-token"; // Commented out since not used
 export const AuthRoutes: Router = express.Router();
 
 import {

@@ -12,8 +12,9 @@ class BottomNavArgumnets {
 
 class VerifyOtpArguments {
   final String mobileNo;
-  final String verificationId;
-  VerifyOtpArguments({required this.mobileNo, required this.verificationId});
+  // final String verificationId;
+  // , required this.verificationId
+  VerifyOtpArguments({required this.mobileNo});
 }
 
 class RegistrationArguments {
@@ -49,6 +50,18 @@ class MenuImageArguments {
 class EditProfileScreenArguments {
   final User user;
   EditProfileScreenArguments({required this.user});
+}
+
+class ProductDetailScreenArguments {
+  ProductDetailScreenArguments({Null});
+}
+
+
+class CategoryRelationScreenArguments{
+    final String category ;
+ CategoryRelationScreenArguments ({
+required this.category
+  });
 }
 
 class PaymentScreenArguments {

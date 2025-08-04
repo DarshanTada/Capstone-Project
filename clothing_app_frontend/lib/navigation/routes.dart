@@ -3,14 +3,20 @@ class NamedRoute {
   static const String loadingScreen = '/loadingScreen';
 
   // Auth Module
-  static const String onBoardingScreen = '/onboardScreen';
-  static const String onBoardingScreen1 = '/onboardScreen1';
-  static const String mobileNumberScreen = '/mobileNumberScreen';
+  static const String onBoardingScreen1 = '/IntroScreen1';
+  static const String onBoardingScreen2 = '/IntroScreen2';
+  static const String onBoardingScreen3 = '/IntroScreen3';
+  static const String phoneNumberScreen = '/phoneNumberScreen';
   static const String locationScreen = '/locationScreen';
+  static const String preferenceScreen= '/preferenceScreen';
+
   static const String privacyPolicyAndTcScreen = '/privacyPolicyAndTcScreen';
   // static const String termsOfServicesScreen = '/termsOfServicesScreen';
 
   static const String addAddressManually = '/addAddressManually';
+  static const String captureFaceScreen = '/captureFaceScreen';
+  static const String captureBodyScreen = '/captureBodyScreen';
+
   static const String searchCafeScreen = '/searchCafeScreen';
   static const String loginScreen = '/loginScreen';
   static const String verifyOtpScreen = "/verifyOtpScreen";
@@ -18,6 +24,14 @@ class NamedRoute {
 
   // Home Module
   static const String bottomNavBarScreen = "/bottomNavBarScreen";
+  static const String sizeChartScreen = "/sizeChartScreen";
+  static const String productDetailScreen = "/productDetailScreen";
+  static const String categoryRelationScreen = "/categoryRelationScreen";
+  static const String checkoutScreen = "/checkoutScreen";
+  static const String addressesScreen = "/addressesScreen";
+  static const String myCartScreen = "/myCartScreen";
+  static const String orderHistoryScreen = "/orderHistoryScreen";
+
   static const String homeScreen = "/homeScreen";
   static const String walletScreen = "/walletScreen";
   static const String allTransactionScreen = "/allTransactionScreen";

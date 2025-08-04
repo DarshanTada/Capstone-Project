@@ -9,11 +9,16 @@ import './scss/style.scss'
 import './scss/examples.scss'
 
 // Containers
-const MainLayout = React.lazy(() => import('./layout/MainLayout'))
+const MainLayout = React.lazy(() => import('./layout/MainLayout'))// ...existing imports...
+
 
 // Pages
 const Login = React.lazy(() => import('./views/pages/login/Login'))
 const Page404 = React.lazy(() => import('./views/pages/page404/Page404'))
+const AddProduct = React.lazy(() => import('./views/pages/products/AddProduct'))
+const CategoryManagement = React.lazy(() => import('./views/pages/category/CategoryManagement'))
+const SubcategoryManagement = React.lazy(() => import('./views/pages/subcategory/SubcategoryManagement'))
+
 
 const App = () => {
   const { isColorModeSet, setColorMode } = useColorModes('coreui-free-react-admin-template-theme')
@@ -38,8 +43,20 @@ const App = () => {
           <Route path="/login" element={isLoggedIn ? <Navigate to="/" replace /> : <Login />} />
           <Route
             path="/*"
-            element={isLoggedIn ? <MainLayout /> : <Navigate to="/login" replace />}
-          />
+            element={
+              isLoggedIn ? (
+                <MainLayout />
+              ) : (
+                <Navigate to="/login" replace />
+              )
+            }
+          >
+            {/* Nested routes inside MainLayout */}
+            <Route path="products/add" element={<AddProduct />} />
+            <Route path="categories" element={<CategoryManagement />} />
+            <Route path="subcategories" element={<SubcategoryManagement />} />
+            {/* You can add more nested routes here if needed */}
+          </Route>
           <Route path="*" element={<Page404 />} />
         </Routes>
       </Suspense>

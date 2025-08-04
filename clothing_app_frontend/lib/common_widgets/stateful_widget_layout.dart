@@ -1,14 +1,17 @@
+import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
+import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
 import 'package:clothing_app_frontend/common_widgets/custom_app_bar.dart';
+import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../authModule/providers/auth_provider.dart';
-import '../common_functions.dart';
+
 class ScreenLayout extends StatefulWidget {
-  const ScreenLayout({Key? key}) : super(key: key);
+  const ScreenLayout({super.key});
   @override
   ScreenLayoutState createState() => ScreenLayoutState();
 }
+
 class ScreenLayoutState extends State<ScreenLayout> {
   double dH = 0.0;
   double dW = 0.0;
@@ -22,6 +25,7 @@ class ScreenLayoutState extends State<ScreenLayout> {
     super.initState();
     fetchData();
   }
+
   @override
   Widget build(BuildContext context) {
     dH = MediaQuery.of(context).size.height;
@@ -34,6 +38,7 @@ class ScreenLayoutState extends State<ScreenLayout> {
       body: iOSCondition(dH) ? screenBody() : SafeArea(child: screenBody()),
     );
   }
+
   screenBody() {
     return SizedBox(
       height: dH,
@@ -47,10 +52,10 @@ class ScreenLayoutState extends State<ScreenLayout> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SizedBox(height: dW * 0.05),
+                  TextWidget(title: ''),
                 ],
               ),
             ),
     );
   }
 }
-

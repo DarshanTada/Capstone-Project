@@ -1,13 +1,11 @@
 // ignore_for_file: deprecated_member_use
 
-import 'dart:ffi';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../colors.dart';
 import 'text_widget.dart';
-import '../common_functions.dart';
 
 class CustomTextFieldWithLabel extends StatelessWidget {
   final String label;
@@ -38,6 +36,7 @@ class CustomTextFieldWithLabel extends StatelessWidget {
   final BoxConstraints? prefixIconConstraints;
   final bool optional;
   final Color labelColor;
+  final Color? backgroundColor;
   final Color hintColor;
   final double border;
   final Color? borderColor;
@@ -51,6 +50,7 @@ class CustomTextFieldWithLabel extends StatelessWidget {
     super.key,
     required this.label,
     this.autovalidateMode,
+    this.backgroundColor,
     this.controller,
     this.focusNode,
     this.minLines,
@@ -122,6 +122,7 @@ class CustomTextFieldWithLabel extends StatelessWidget {
         ),
         if (label != '') SizedBox(height: dW * 0.025),
         TextFormField(
+          
           controller: controller,
           initialValue: initValue,
           focusNode: focusNode,
@@ -138,6 +139,8 @@ class CustomTextFieldWithLabel extends StatelessWidget {
           ),
           cursorColor: themeColor,
           decoration: InputDecoration(
+          filled: true,
+            fillColor: backgroundColor ?? Colors.transparent,
             hintText: hintText,
             hintStyle: TextStyle(
               fontSize: tS * hintFS,

@@ -4,11 +4,9 @@ import 'dart:io';
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
-import 'package:clothing_app_frontend/authModule/widgets/single_response_dialog_box.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:clothing_app_frontend/authModule/model/user_model.dart';
 // import 'package:clothing_app_frontend/homeModule/models/cafe_model.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -19,7 +17,6 @@ import 'colors.dart';
 
 import 'common_widgets/asset_svg_icon.dart';
 import 'common_widgets/text_widget.dart';
-import 'main.dart';
 // import 'navigation/navigators.dart';
 
 String networkDummy =
@@ -52,7 +49,7 @@ hideKeyBoard() =>
 double horizontalPaddingFactor = 0.06;
 
 navigateTo(LatLng coords) async {
-  var uri;
+  Uri uri;
   if (Platform.isIOS) {
     uri = Uri.parse(
       'comgooglemaps://?saddr=&daddr=${coords.latitude},${coords.longitude}&directionsmode=driving',
@@ -82,8 +79,9 @@ handlePermissionsFunction() async {
           statuses.containsValue(PermissionStatus.denied)) {
         // showSnackbar('Please enable location', Colors.red);
         return false;
-      } else
+      } else {
         return true;
+      }
     } else {
       statuses = await [Permission.location].request();
 
@@ -92,8 +90,9 @@ handlePermissionsFunction() async {
               PermissionStatus.permanentlyDenied)) {
         // showSnackbar('Please enable location', Colors.red);
         return false;
-      } else
+      } else {
         return true;
+      }
     }
   } catch (e) {
     return false;
@@ -178,7 +177,7 @@ String amountText(double amount) {
 
   if (amountString.split('.')[1][1] == '0') {
     amountString =
-        amountString.split('.')[0] + '.' + amountString.split('.')[1][0];
+        '${amountString.split('.')[0]}.${amountString.split('.')[1][0]}';
     if (amountString.split('.')[1][0] == '0') {
       amountString = amountString.split('.')[0];
     }
@@ -188,35 +187,35 @@ String amountText(double amount) {
 
 BorderSide get dividerBorder => const BorderSide(color: dividerColor, width: 1);
 
-String convertAmountString(double amount) {
-  var strToReturn;
-  String aS = amount.round().toStringAsFixed(0);
-  // if (amount < 100000) {
-  //   return regExpText(aS);
-  // }
-  final list = aS.split('.');
-  aS = list[0];
-  final length = aS.length;
-  if (length < 6) {
-    strToReturn = amountText(amount);
-  } else if (length == 6) {
-    String trail = aS.substring(length - 5, length);
-    String lead = aS.substring(0, length - 5);
-    if (trail[0] != '0') lead = lead + '.${trail[0]}';
-    strToReturn = lead + 'L';
-  } else if (length == 7) {
-    String trail = aS.substring(length - 6, length);
-    String lead = aS.substring(0, length - 6) + '0';
-    if (trail[0] != '0') lead = lead + '.${trail[0]}';
-    strToReturn = lead + 'L';
-  } else if (length > 7) {
-    String trail = aS.substring(length - 7, length);
-    String lead = aS.substring(0, length - 7);
-    if (trail[0] != '0') lead = lead + '.${trail[0]}';
-    strToReturn = lead + 'Cr';
-  }
-  return strToReturn;
-}
+// String convertAmountString(double amount) {
+//   String strToReturn;
+//   String aS = amount.round().toStringAsFixed(0);
+//   // if (amount < 100000) {
+//   //   return regExpText(aS);
+//   // }
+//   final list = aS.split('.');
+//   aS = list[0];
+//   final length = aS.length;
+//   if (length < 6) {
+//     strToReturn = amountText(amount);
+//   } else if (length == 6) {
+//     String trail = aS.substring(length - 5, length);
+//     String lead = aS.substring(0, length - 5);
+//     if (trail[0] != '0') lead = '$lead.${trail[0]}';
+//     strToReturn = '${lead}L';
+//   } else if (length == 7) {
+//     String trail = aS.substring(length - 6, length);
+//     String lead = '${aS.substring(0, length - 6)}0';
+//     if (trail[0] != '0') lead = '$lead.${trail[0]}';
+//     strToReturn = '${lead}L';
+//   } else if (length > 7) {
+//     String trail = aS.substring(length - 7, length);
+//     String lead = aS.substring(0, length - 7);
+//     if (trail[0] != '0') lead = '$lead.${trail[0]}';
+//     strToReturn = '${lead}Cr';
+//   }
+//   return strToReturn;
+// }
 
 pickImage(ImageSource source) async {
   try {
@@ -232,11 +231,6 @@ pickImage(ImageSource source) async {
 void showSnackbar(String msg, [Color color = Colors.red, int duration = 2]) {
   // final context = navigatorKey.currentContext;
   final context = navigatorKey.currentContext!;
-
-  if (context == null) {
-    debugPrint("⚠️ Cannot show snackbar: navigatorKey.currentContext is null");
-    return;
-  }
 
   final textTheme = Theme.of(context).textTheme;
   final mediaQuery = MediaQuery.of(context);

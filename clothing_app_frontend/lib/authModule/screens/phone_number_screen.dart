@@ -1,18 +1,14 @@
-import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen.dart';
-import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
+import 'package:clothing_app_frontend/authModule/providers/auth_service_firebase.dart';
 import 'package:clothing_app_frontend/colors.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/custom_text_field.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
-import 'package:clothing_app_frontend/navigation/arguments.dart';
 import 'package:country_flags/country_flags.dart';
 import 'package:firebase_analytics/firebase_analytics.dart';
-import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:video_player/video_player.dart';
-import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 
 class PhoneNumberScreen extends StatefulWidget {
   const PhoneNumberScreen({super.key});
@@ -27,6 +23,7 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
   final TextEditingController _phoneController = TextEditingController();
   final FirebaseAnalytics analytic = FirebaseAnalytics.instance;
   bool _termsAccepted = false;
+  bool isgettingOTP = false;
 
   Map language = {};
   double dW = 0.0;
@@ -62,6 +59,20 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  void getOTP() {
+    String phoneNumber = _phoneController.text;
+    if (RegExp(r'^[0-9]{10}$').hasMatch(phoneNumber)) {
+      setState(() {
+        isgettingOTP = true;
+      });
+      AuthRepo.verifyPhoneNumber(context, phoneNumber);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter a valid phone number")),
+      );
+    }
   }
 
   @override
@@ -106,43 +117,45 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                   : Container(color: Colors.black),
             ),
 
-            Column(
-              children: [
-                Expanded(
-                  child: Column(
-                    children: [
-                      const Spacer(flex: 2),
-                      Center(
-                        child: Column(
-                          children: [
-                            TextWidget(
-                              title: "YOLO",
-                              color: Colors.white70,
-                              fontSize: tS * 51,
-                            ),
-                            TextWidget(
-                              title: "chic",
-                              color: Colors.white70,
-                              fontSize: tS * 34,
-                            ),
-                            SizedBox(height: dH * 0.02),
-                            TextWidget(
-                              title: "Styling Made Simple",
-                              color: Colors.white70,
-                              fontSize: tS * 12,
-                            ),
-                          ],
+            SingleChildScrollView(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: MediaQuery.of(context).size.height,
+                ),
+                child: Column(
+                  children: [
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.15), // Top spacing
+                    Center(
+                      child: Column(
+                        children: [
+                          TextWidget(
+                            title: "YOLO",
+                            color: Colors.white70,
+                            fontSize: tS * 51,
+                          ),
+                          TextWidget(
+                            title: "chic",
+                            color: Colors.white70,
+                            fontSize: tS * 34,
+                          ),
+                          SizedBox(height: dH * 0.02),
+                          TextWidget(
+                            title: "Styling Made Simple",
+                            color: Colors.white70,
+                            fontSize: tS * 12,
+                          ),
+                        ],
+                      ),
+                    ),
+                    SizedBox(height: MediaQuery.of(context).size.height * 0.1), // Spacing before form
+                    Container(
+                      padding: EdgeInsets.fromLTRB(30, 45, 30, 0), // Removed bottom padding
+                      decoration: const BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(40),
                         ),
                       ),
-                      const Spacer(flex: 1),
-                      Container(
-                        padding: EdgeInsets.fromLTRB(30, 45, 30, 20),
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          borderRadius: BorderRadius.vertical(
-                            top: Radius.circular(40),
-                          ),
-                        ),
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.center,
                           mainAxisSize: MainAxisSize.min,
@@ -205,6 +218,8 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                                   onChanged: (val) => setState(
                                     () => _termsAccepted = val ?? false,
                                   ),
+                                  activeColor: Colors.brown, // Brown background when checked
+                                  checkColor: Colors.white, // White check mark
                                 ),
                                 TextWidget(
                                   title: "I accept the ",
@@ -221,56 +236,10 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                             ),
                             SizedBox(height: dW * 0.075),
                             ElevatedButton(
-                              onPressed: _termsAccepted
-                                  ?() {
-                                      Navigator.push(
-                                                  context,
-                                                  MaterialPageRoute(
-                                                    builder: (context) =>
-                                                       VerifyOtpScreen2()
-                                                  ),
-                                                );
-  }
-                                  //  () async {
-                                  //     // Send OTP logic
-                                  //     if (_phoneController.text != "") {
-                                  //       await FirebaseAuth.instance.verifyPhoneNumber(
-                                  //         phoneNumber: _phoneController.text,
-                                  //         verificationCompleted:
-                                  //             (phoneAuthCredential) {},
-                                  //         verificationFailed: (error) {},
-                                  //         codeSent:
-                                  //             (
-                                  //               verificationId,
-                                  //               forceResendingToken,
-                                  //             ) {
-                                  //               setState(() {});
-                                  //               Navigator.push(
-                                  //                 context,
-                                  //                 MaterialPageRoute(
-                                  //                   builder: (context) =>
-                                  //                       VerifyOtpScreen(
-                                  //                         args: VerifyOtpArguments(
-                                  //                           mobileNo:
-                                  //                               _phoneController
-                                  //                                   .text,
-                                  //                           verificationId:
-                                  //                               verificationId,
-                                  //                         ),
-                                  //                       ),
-                                  //                 ),
-                                  //               );
-                                  //             },
-                                  //         codeAutoRetrievalTimeout:
-                                  //             (verificationId) {},
-                                  //       );
-                                  //     } else {
-                                  //       //Set alert message
-                                  //     }
-                                  //   }
-                                  : null,
+                              onPressed: _termsAccepted ? getOTP : null,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.black,
+                                foregroundColor: Colors.white, // Ensures text stays white
                                 padding: const EdgeInsets.symmetric(
                                   vertical: 14,
                                 ),
@@ -283,10 +252,16 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                                 children: [
                                   Text(
                                     "Send OTP",
-                                    style: TextStyle(fontSize: 16),
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.white, // Explicit white color
+                                    ),
                                   ),
                                   SizedBox(width: 10),
-                                  Icon(Icons.arrow_forward),
+                                  Icon(
+                                    Icons.arrow_forward,
+                                    color: Colors.white, // Explicit white color for icon
+                                  ),
                                 ],
                               ),
                             ),
@@ -307,21 +282,23 @@ class PhoneNumberScreenState extends State<PhoneNumberScreen> {
                               ),
                             ),
                             const SizedBox(height: 10),
-                            const Text(
-                              "Privacy Policy",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                fontSize: 12,
-                                color: Colors.grey,
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 20), // Add bottom padding here
+                              child: Text(
+                                "Privacy Policy",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey,
+                                ),
                               ),
                             ),
                           ],
                         ),
                       ),
-                    ],
-                  ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),

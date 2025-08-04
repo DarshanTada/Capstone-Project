@@ -1,0 +1,23 @@
+# LangChain ecosystem
+langchain
+langchain-community
+langchain-huggingface
+
+# Vector DB & embeddings
+faiss-cpu
+sentence-transformers
+
+# File loaders and format support
+unstructured==0.12.5
+pypdf==4.2.0
+python-docx==1.1.0
+docx2txt==0.8
+pandas==2.2.2
+
+# FastAPI server
+fastapi==0.111.0
+uvicorn==0.29.0
+python-multipart==0.0.9
+
+# Networking
+requests==2.31.0
