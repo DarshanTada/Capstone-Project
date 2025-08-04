@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.deleteCategory = exports.getProductsByCategoryPost = exports.getAllCategories = exports.createCategory = exports.uploadCategoryImage = void 0;
+exports.deleteCategory = exports.getProductsByCategoryPost = exports.getAllCategories = exports.updateCategory = exports.createCategory = exports.uploadCategoryImage = void 0;
 const category_model_1 = __importDefault(require("./category.model"));
 const product_model_1 = __importDefault(require("../productModule/product.model"));
 const productVariant_model_1 = __importDefault(require("../productModule/productVariant.model"));
@@ -37,11 +37,11 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
         }
         console.log('req.body:', req.body);
         console.log('req.files:', req.files);
-        let base64Image;
+        let imageBase64;
         if (imageFile && imageFile.buffer) {
-            base64Image = imageFile.buffer.toString('base64');
+            imageBase64 = `data:${imageFile.mimetype};base64,${imageFile.buffer.toString('base64')}`;
         }
-        const newCategory = new category_model_1.default(Object.assign({ name }, (base64Image && { image: base64Image })));
+        const newCategory = new category_model_1.default(Object.assign({ name }, (imageBase64 && { image: imageBase64 })));
         yield newCategory.save();
         res.status(200).json({ success: true, data: newCategory });
     }
@@ -51,17 +51,48 @@ const createCategory = (req, res) => __awaiter(void 0, void 0, void 0, function*
     }
 });
 exports.createCategory = createCategory;
+const updateCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    var _a;
+    try {
+        const { id } = req.params;
+        const { name } = req.body;
+        const files = req.files;
+        const imageFile = (_a = files === null || files === void 0 ? void 0 : files['image']) === null || _a === void 0 ? void 0 : _a[0];
+        const updateData = {};
+        if (name !== undefined)
+            updateData.name = name;
+        if (imageFile) {
+            const imageBase64 = `data:${imageFile.mimetype};base64,${imageFile.buffer.toString('base64')}`;
+            updateData.image = imageBase64;
+        }
+        const updatedCategory = yield category_model_1.default.findByIdAndUpdate(id, updateData, {
+            new: true,
+            runValidators: true
+        });
+        if (!updatedCategory) {
+            res.status(404).json({ success: false, message: 'Category not found' });
+            return;
+        }
+        res.status(200).json({
+            success: true,
+            message: 'Category updated successfully',
+            data: updatedCategory
+        });
+    }
+    catch (error) {
+        console.error('Update Category Error:', error);
+        res.status(500).json({ success: false, message: `Update Category Error: ${error.message}` });
+    }
+});
+exports.updateCategory = updateCategory;
 const getAllCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const categories = yield category_model_1.default.find();
-        const formatted = categories.map((cat) => {
-            var _a;
-            return ({
-                _id: cat._id,
-                name: cat.name,
-                image: ((_a = cat.image) === null || _a === void 0 ? void 0 : _a.toString('base64')) || null,
-            });
-        });
+        const formatted = categories.map((cat) => ({
+            _id: cat._id,
+            name: cat.name,
+            image: cat.image || null,
+        }));
         res.status(200).json({ success: true, data: formatted });
     }
     catch (error) {
@@ -173,14 +204,11 @@ const getProductsByCategoryPost = (req, res) => __awaiter(void 0, void 0, void 0
                 banners: banners
             },
             {
-                category: categories.map(category => {
-                    var _a;
-                    return ({
-                        _id: category._id,
-                        name: category.name,
-                        image: ((_a = category.image) === null || _a === void 0 ? void 0 : _a.toString('base64')) || null
-                    });
-                })
+                category: categories.map(category => ({
+                    _id: category._id,
+                    name: category.name,
+                    image: category.image || null
+                }))
             }
         ];
         res.status(200).json({

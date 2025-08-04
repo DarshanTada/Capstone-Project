@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../model/address_model.dart';
 import '../provider/address_provider.dart';
+import '../../authModule/providers/auth_provider.dart';
 
 class AddEditAddressScreen extends StatefulWidget {
   final Address? address; // Null for add, populated for edit
@@ -85,9 +86,9 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
               // Address Type Selection
               _buildSectionTitle('Address Type'),
               _buildTypeSelector(),
-              
+
               const SizedBox(height: 24),
-              
+
               // Personal Information
               _buildSectionTitle('Personal Information'),
               _buildTextField(
@@ -102,9 +103,9 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 24),
-              
+
               // Address Information
               _buildSectionTitle('Address Information'),
               _buildTextField(
@@ -119,9 +120,9 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               _buildTextField(
                 controller: _addressController,
                 label: 'Street Address',
@@ -135,9 +136,9 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                   return null;
                 },
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               Row(
                 children: [
                   Expanded(
@@ -167,7 +168,9 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                           return 'Required';
                         }
                         // Basic Canadian postal code validation
-                        final postalRegex = RegExp(r'^[A-Za-z]\d[A-Za-z] ?\d[A-Za-z]\d$');
+                        final postalRegex = RegExp(
+                          r'^[A-Za-z]\d[A-Za-z] ?\d[A-Za-z]\d$',
+                        );
                         if (!postalRegex.hasMatch(value.trim())) {
                           return 'Invalid format';
                         }
@@ -177,13 +180,13 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                   ),
                 ],
               ),
-              
+
               const SizedBox(height: 16),
-              
+
               _buildProvinceSelector(),
-              
+
               const SizedBox(height: 32),
-              
+
               // Save Button
               SizedBox(
                 width: double.infinity,
@@ -204,7 +207,9 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                           width: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Colors.white,
+                            ),
                           ),
                         )
                       : Text(
@@ -277,15 +282,20 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                       AddressConstants.getTypeDisplayName(type),
                       style: TextStyle(
                         fontSize: 16,
-                        fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
-                        color: isSelected ? Colors.brown.shade700 : Colors.black87,
+                        fontWeight: isSelected
+                            ? FontWeight.w600
+                            : FontWeight.normal,
+                        color: isSelected
+                            ? Colors.brown.shade700
+                            : Colors.black87,
                       ),
                     ),
                   ),
                   Radio<String>(
                     value: type,
                     groupValue: _selectedType,
-                    onChanged: (value) => setState(() => _selectedType = value!),
+                    onChanged: (value) =>
+                        setState(() => _selectedType = value!),
                     activeColor: Colors.brown.shade300,
                   ),
                 ],
@@ -331,7 +341,10 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
         ),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
     );
   }
@@ -356,13 +369,13 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
         ),
         filled: true,
         fillColor: Colors.white,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
       ),
       items: AddressConstants.provinces.map((province) {
-        return DropdownMenuItem(
-          value: province,
-          child: Text(province),
-        );
+        return DropdownMenuItem(value: province, child: Text(province));
       }).toList(),
       onChanged: (value) => setState(() => _selectedProvince = value!),
       validator: (value) {
@@ -397,10 +410,29 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final addressProvider = Provider.of<AddressProvider>(context, listen: false);
-      
-      // TODO: Get actual user ID from authentication/storage
-      const String userId = "68659717fde8b5c9994263e3"; // Replace with actual user ID
+      final addressProvider = Provider.of<AddressProvider>(
+        context,
+        listen: false,
+      );
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+      // Get user ID from AuthProvider
+      final user = authProvider.user;
+      if (user.id == null || user.id!.isEmpty) {
+        setState(() => _isLoading = false);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please login to save address'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      final userId = user.id!;
+      print('👤 Saving address for user ID: $userId');
 
       final address = Address(
         id: isEditMode ? widget.address!.id : null,
@@ -415,7 +447,7 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
       );
 
       Map<String, dynamic> result;
-      
+
       if (isEditMode) {
         result = await addressProvider.updateAddress(
           context: context,
@@ -435,10 +467,7 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
     } catch (error) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $error'),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text('Error: $error'), backgroundColor: Colors.red),
         );
       }
     } finally {

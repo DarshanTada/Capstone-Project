@@ -15,5 +15,6 @@ exports.UserRoutes.post('/loginOrRegisterUser', user_controller_1.loginOrRegiste
 exports.UserRoutes.put('/updateUser', user_controller_1.updateUser);
 exports.UserRoutes.post("/registerAdmin", user_controller_1.registerAdmin);
 exports.UserRoutes.post('/loginAdmin', user_controller_1.loginAdmin);
+exports.UserRoutes.post('/logout', user_controller_1.logoutUser);
 exports.UserRoutes.post('/userById', multer_1.upload.none(), user_controller_1.getUserById);
 exports.UserRoutes.post('/users', user_controller_1.getAllUsers);

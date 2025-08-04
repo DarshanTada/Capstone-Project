@@ -108,6 +108,18 @@ export const addToCart = async (req: Request, res: Response): Promise<void> => {
     console.log(`Checking for existing variant: VariantId ${variantId}`);
     console.log(`Existing item index: ${existingItemIndex}`);
 
+    // Get primary image for this variant
+    const images = await ProductImage.find({
+      variantObjectid: variantId
+    }).sort({ sort_order: 1 });
+
+    // Filter images that have actual image data
+    const validImages = images.filter(img => img.image && img.image.trim() !== '');
+
+    // Get the primary image or first valid image
+    const primaryImage = validImages.find(img => img.is_primary) || validImages[0];
+    const imageData = primaryImage ? primaryImage.image : null;
+
     if (existingItemIndex > -1) {
       // Update existing item quantity (exact same variant)
       const newQuantity = cart.items[existingItemIndex].quantity + parsedQuantity;
@@ -125,6 +137,7 @@ export const addToCart = async (req: Request, res: Response): Promise<void> => {
 
       cart.items[existingItemIndex].quantity = newQuantity;
       cart.items[existingItemIndex].price = variantPrice * newQuantity;
+      cart.items[existingItemIndex].image = imageData || '';
     } else {
       // Add new item to cart (different variant)
       console.log(`Adding new variant: VariantId ${variantId}, Product ${variant.productObjectId}, Size ${variant.size}, Quantity ${parsedQuantity}`);
@@ -133,7 +146,8 @@ export const addToCart = async (req: Request, res: Response): Promise<void> => {
         variantId: variantId,
         size: variant.size.toLowerCase(),
         quantity: parsedQuantity,
-        price: variantPrice * parsedQuantity
+        price: variantPrice * parsedQuantity,
+        image: imageData || ''
       });
     }
 
@@ -147,29 +161,15 @@ export const addToCart = async (req: Request, res: Response): Promise<void> => {
       .populate('items.product', 'name description')
       .populate('user', 'name email');
 
-    // Get product images for each cart item
-    const cartWithImages = await Promise.all(
+    // Get variant details for each cart item
+    const cartWithVariants = await Promise.all(
       (populatedCart as any).items.map(async (item: any) => {
         // Get variant using the stored variantId
         const itemVariant = await ProductVariant.findById(item.variantId);
 
-        // Get images for this variant
-        const images = await ProductImage.find({
-          variantObjectid: item.variantId
-        }).sort({ sort_order: 1 });
-
-        // Get the primary image or first image
-        const primaryImage = images.find(img => img.is_primary) || images[0];
-
         return {
           ...item.toObject(),
-          variant: itemVariant,
-          image: primaryImage ? {
-            _id: primaryImage._id,
-            image: primaryImage.image,
-            is_primary: primaryImage.is_primary,
-            sort_order: primaryImage.sort_order
-          } : null
+          variant: itemVariant
         };
       })
     );
@@ -179,7 +179,7 @@ export const addToCart = async (req: Request, res: Response): Promise<void> => {
       message: "Product added to cart successfully",
       data: {
         user: (populatedCart as any).user,
-        items: cartWithImages,
+        items: cartWithVariants,
         subTotalAmount: (populatedCart as any).subTotalAmount
       }
     });
@@ -291,9 +291,22 @@ export const updateCartQuantity = async (req: Request, res: Response): Promise<v
       return;
     }
 
+    // Get primary image for this variant
+    const images = await ProductImage.find({
+      variantObjectid: variantId
+    }).sort({ sort_order: 1 });
+
+    // Filter images that have actual image data
+    const validImages = images.filter(img => img.image && img.image.trim() !== '');
+
+    // Get the primary image or first valid image
+    const primaryImage = validImages.find(img => img.is_primary) || validImages[0];
+    const imageData = primaryImage ? primaryImage.image : null;
+
     // Update item quantity and price
     cart.items[itemIndex].quantity = parsedQuantity;
     cart.items[itemIndex].price = variantPrice * parsedQuantity;
+    cart.items[itemIndex].image = imageData || '';
 
     // Recalculate subtotal
     cart.subTotalAmount = cart.items.reduce((total: number, item: any) => total + item.price, 0);
@@ -305,29 +318,15 @@ export const updateCartQuantity = async (req: Request, res: Response): Promise<v
       .populate('items.product', 'name description')
       .populate('user', 'name email');
 
-    // Get product images for each cart item
-    const cartWithImages = await Promise.all(
+    // Get variant details for each cart item
+    const cartWithVariants = await Promise.all(
       (populatedCart as any).items.map(async (item: any) => {
         // Get variant using the stored variantId
         const itemVariant = await ProductVariant.findById(item.variantId);
 
-        // Get images for this variant
-        const images = await ProductImage.find({
-          variantObjectid: item.variantId
-        }).sort({ sort_order: 1 });
-
-        // Get the primary image or first image
-        const primaryImage = images.find(img => img.is_primary) || images[0];
-
         return {
           ...item.toObject(),
-          variant: itemVariant,
-          image: primaryImage ? {
-            _id: primaryImage._id,
-            image: primaryImage.image,
-            is_primary: primaryImage.is_primary,
-            sort_order: primaryImage.sort_order
-          } : null
+          variant: itemVariant
         };
       })
     );
@@ -337,7 +336,7 @@ export const updateCartQuantity = async (req: Request, res: Response): Promise<v
       message: "Cart quantity updated successfully",
       data: {
         user: (populatedCart as any).user,
-        items: cartWithImages,
+        items: cartWithVariants,
         subTotalAmount: (populatedCart as any).subTotalAmount
       }
     });
@@ -473,28 +472,14 @@ export const getCart = async (req: Request, res: Response): Promise<void> => {
     }
 
     // Get product images for each cart item
-    const cartWithImages = await Promise.all(
+    const cartWithVariants = await Promise.all(
       (cart as any).items.map(async (item: any) => {
         // Get variant using the stored variantId
         const itemVariant = await ProductVariant.findById(item.variantId);
 
-        // Get images for this variant
-        const images = await ProductImage.find({
-          variantObjectid: item.variantId
-        }).sort({ sort_order: 1 });
-
-        // Get the primary image or first image
-        const primaryImage = images.find(img => img.is_primary) || images[0];
-
         return {
           ...item.toObject(),
-          variant: itemVariant,
-          image: primaryImage ? {
-            _id: primaryImage._id,
-            image: primaryImage.image,
-            is_primary: primaryImage.is_primary,
-            sort_order: primaryImage.sort_order
-          } : null
+          variant: itemVariant
         };
       })
     );
@@ -504,7 +489,7 @@ export const getCart = async (req: Request, res: Response): Promise<void> => {
       message: "Cart retrieved successfully",
       data: {
         user: (cart as any).user,
-        items: cartWithImages,
+        items: cartWithVariants,
         subTotalAmount: (cart as any).subTotalAmount
       }
     });

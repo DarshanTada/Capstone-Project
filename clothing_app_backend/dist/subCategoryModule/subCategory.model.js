@@ -10,9 +10,7 @@ const subCategorySchema = new mongoose_1.default.Schema({
         type: String,
         required: true,
     },
-    image: {
-        type: Buffer,
-    },
+    image: { type: String, required: false },
     gender: {
         type: String,
         enum: Object.values(product_model_1.GENDER),
