@@ -54,16 +54,16 @@ const createSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
         }
         console.log('req.body:', req.body);
         console.log('req.files:', req.files);
-        let base64Image;
+        let imageBase64;
         if (imageFile && imageFile.buffer) {
-            base64Image = imageFile.buffer.toString('base64');
+            imageBase64 = `data:${imageFile.mimetype};base64,${imageFile.buffer.toString('base64')}`;
         }
         const newSubCategory = new subCategory_model_1.default(Object.assign({ name,
             gender,
             body_type,
-            category }, (base64Image && { image: base64Image })));
+            category }, (imageBase64 && { image: imageBase64 })));
         yield newSubCategory.save();
-        res.status(201).json({ success: true, data: newSubCategory });
+        res.status(200).json({ success: true, data: newSubCategory });
     }
     catch (error) {
         console.error('Create SubCategory Error:', error);
@@ -74,19 +74,16 @@ exports.createSubCategory = createSubCategory;
 const getAllSubCategories = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const subCategories = yield subCategory_model_1.default.find().populate('category');
-        const formatted = subCategories.map((subCat) => {
-            var _a;
-            return ({
-                _id: subCat._id,
-                name: subCat.name,
-                gender: subCat.gender,
-                body_type: subCat.body_type,
-                category: subCat.category,
-                image: ((_a = subCat.image) === null || _a === void 0 ? void 0 : _a.toString('base64')) || null,
-                createdAt: subCat.createdAt,
-                updatedAt: subCat.updatedAt,
-            });
-        });
+        const formatted = subCategories.map((subCat) => ({
+            _id: subCat._id,
+            name: subCat.name,
+            gender: subCat.gender,
+            body_type: subCat.body_type,
+            category: subCat.category,
+            image: subCat.image || null,
+            createdAt: subCat.createdAt,
+            updatedAt: subCat.updatedAt,
+        }));
         res.status(200).json({ success: true, data: formatted });
     }
     catch (error) {
@@ -106,19 +103,16 @@ const getSubCategoriesByCategory = (req, res) => __awaiter(void 0, void 0, void 
             return;
         }
         const subCategories = yield subCategory_model_1.default.find({ category: categoryId }).populate('category');
-        const formatted = subCategories.map((subCat) => {
-            var _a;
-            return ({
-                _id: subCat._id,
-                name: subCat.name,
-                gender: subCat.gender,
-                body_type: subCat.body_type,
-                category: subCat.category,
-                image: ((_a = subCat.image) === null || _a === void 0 ? void 0 : _a.toString('base64')) || null,
-                createdAt: subCat.createdAt,
-                updatedAt: subCat.updatedAt,
-            });
-        });
+        const formatted = subCategories.map((subCat) => ({
+            _id: subCat._id,
+            name: subCat.name,
+            gender: subCat.gender,
+            body_type: subCat.body_type,
+            category: subCat.category,
+            image: subCat.image || null,
+            createdAt: subCat.createdAt,
+            updatedAt: subCat.updatedAt,
+        }));
         res.status(200).json({ success: true, data: formatted });
     }
     catch (error) {
@@ -129,12 +123,12 @@ const getSubCategoriesByCategory = (req, res) => __awaiter(void 0, void 0, void 
 exports.getSubCategoriesByCategory = getSubCategoriesByCategory;
 exports.uploadUpdateSubCategoryImage = multer_1.upload.fields([{ name: 'image', maxCount: 1 }]);
 const updateSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
-    var _a, _b;
+    var _a;
     try {
         const { id } = req.params;
         const { name, gender, body_type, category } = req.body;
         const files = req.files;
-        const imageBuffer = (_b = (_a = files === null || files === void 0 ? void 0 : files['image']) === null || _a === void 0 ? void 0 : _a[0]) === null || _b === void 0 ? void 0 : _b.buffer;
+        const imageFile = (_a = files === null || files === void 0 ? void 0 : files['image']) === null || _a === void 0 ? void 0 : _a[0];
         const updateData = {};
         if (name)
             updateData.name = name;
@@ -144,8 +138,10 @@ const updateSubCategory = (req, res) => __awaiter(void 0, void 0, void 0, functi
             updateData.body_type = body_type;
         if (category)
             updateData.category = category;
-        if (imageBuffer)
-            updateData.image = imageBuffer;
+        if (imageFile) {
+            const imageBase64 = `data:${imageFile.mimetype};base64,${imageFile.buffer.toString('base64')}`;
+            updateData.image = imageBase64;
+        }
         console.log('Updating SubCategory with ID:', id);
         console.log('Update data:', updateData);
         const updatedSubCategory = yield subCategory_model_1.default.findByIdAndUpdate(id, updateData, {

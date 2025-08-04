@@ -6,6 +6,7 @@ import ProductVariant from '../productModule/productVariant.model';
 import ProductImage from '../productModule/productImage.model';
 import Address from '../addressModule/address.model';
 import Preference from '../userModule/preference.model';
+import Cart from '../cartModel/cart.model';
 import mongoose from 'mongoose';
 import { sendMail } from '../utils/sendMail';
 
@@ -198,13 +199,26 @@ export const createOrder = async (req: Request, res: Response): Promise<void> =>
         price: itemPrice
       });
 
-      // Update stock quantity
-      if (variant.stock_qty) {
+      // Update stock quantity and availability status
+      const originalStock = variant.stock_qty || 0;
+      console.log(`📦 Updating stock for ${(product as any).name} (Size: ${variant.size})`);
+      console.log(`   - Original stock: ${originalStock}`);
+      console.log(`   - Quantity ordered: ${parsedQuantity}`);
+      
+      if (variant.stock_qty !== undefined && variant.stock_qty !== null) {
         variant.stock_qty -= parsedQuantity;
+        console.log(`   - New stock: ${variant.stock_qty}`);
+        
+        // Update availability status based on stock
         if (variant.stock_qty <= 0) {
           variant.available_status = 'out_of_stock';
+          console.log(`   - Status updated to: out_of_stock`);
         }
+        
         await variant.save();
+        console.log(`   ✅ Stock updated successfully`);
+      } else {
+        console.log(`   ⚠️ Stock quantity not defined for this variant`);
       }
     }
 
@@ -283,6 +297,34 @@ Your Shopping Team`
     } catch (emailError) {
       console.error('Failed to send order confirmation email:', emailError);
       // Don't fail the order creation if email fails
+    }
+
+    // Clear the user's cart after successful order creation
+    try {
+      const cartClearResult = await Cart.findOneAndUpdate(
+        { user: user },
+        { 
+          items: [],
+          subTotalAmount: 0,
+          updatedAt: new Date()
+        },
+        { new: true }
+      );
+      
+      if (cartClearResult) {
+        console.log(`🛒 Cart cleared for user ${user} after order creation`);
+      } else {
+        console.log(`🛒 No cart found for user ${user}, creating empty cart`);
+        // Create an empty cart if none exists
+        await Cart.create({
+          user: user,
+          items: [],
+          subTotalAmount: 0
+        });
+      }
+    } catch (cartError) {
+      console.error('Failed to clear cart after order creation:', cartError);
+      // Don't fail the order creation if cart clearing fails
     }
 
     res.status(200).json({
@@ -807,6 +849,104 @@ export const getOrdersByUserId = async (req: Request, res: Response): Promise<vo
   }
 };
 
+// Get Orders by User ID (URL Params) - New API
+// export const getOrdersByUserId = async (req: Request, res: Response): Promise<void> => {
+//   try {
+//     const { userId } = req.params;
+//     const { page, limit, status } = req.query;
+
+//     // Validate userId
+//     if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+//       res.status(400).json({ success: false, message: "Valid user ID is required" });
+//       return;
+//     }
+
+//     console.log(`📋 Getting orders for user ID: ${userId}`);
+
+//     const parsedPage = parseInt(page as string) || 1;
+//     const parsedLimit = parseInt(limit as string) || 10;
+//     const skip = (parsedPage - 1) * parsedLimit;
+
+//     // Build filter condition
+//     let filterCondition: any = { user: userId };
+
+//     // Add status filtering if provided
+//     if (status && status !== 'all') {
+//       // For individual product status filtering, we would need aggregation
+//       // For now, keeping it simple without status filtering
+//       console.log(`Status filter: ${status} (not implemented for individual products)`);
+//     }
+
+//     // Get total count
+//     const total = await Order.countDocuments(filterCondition);
+
+//     // Get user orders
+//     const orders = await Order.find(filterCondition)
+//       .populate('products.product', 'name images price')
+//       .populate('address')
+//       .sort({ createdAt: -1 })
+//       .skip(skip)
+//       .limit(parsedLimit);
+
+//     console.log(`📊 Found ${orders.length} orders for user ${userId} (Total: ${total})`);
+
+//     // Add images to each order's products (similar to cart API)
+//     const ordersWithImages = await Promise.all(
+//       orders.map(async (order: any) => {
+//         const productsWithImages = await Promise.all(
+//           order.products.map(async (item: any) => {
+//             // Get images for this variant using variantId
+//             const images = await ProductImage.find({
+//               variantObjectid: item.variantId
+//             }).sort({ sort_order: 1 });
+
+//             // Get the primary image or first image
+//             const primaryImage = images.find(img => img.is_primary) || images[0];
+
+//             return {
+//               ...item.toObject(),
+//               image: primaryImage ? {
+//                 _id: primaryImage._id,
+//                 image: primaryImage.image,
+//                 is_primary: primaryImage.is_primary,
+//                 sort_order: primaryImage.sort_order
+//               } : null
+//             };
+//           })
+//         );
+
+//         return {
+//           ...order.toObject(),
+//           products: productsWithImages
+//         };
+//       })
+//     );
+
+//     res.status(200).json({
+//       success: true,
+//       message: `Retrieved ${ordersWithImages.length} orders for user`,
+//       data: ordersWithImages,
+//       pagination: {
+//         total,
+//         currentPage: parsedPage,
+//         totalPages: Math.ceil(total / parsedLimit),
+//         limit: parsedLimit,
+//       },
+//       filters: {
+//         status: status || 'all'
+//       }
+//     });
+
+//   } catch (error) {
+//     console.error("Error fetching user orders:", error);
+//     res.status(500).json({
+//       success: false,
+//       message: "Something went wrong",
+//       error: (error as Error).message,
+//     });
+//   }
+// };
+
 // Get Single Order by ID
 export const getOrderById = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -864,6 +1004,92 @@ export const getOrderById = async (req: Request, res: Response): Promise<void> =
 
   } catch (error) {
     console.error("Error fetching order:", error);
+    res.status(500).json({
+      success: false,
+      message: "Something went wrong",
+      error: (error as Error).message,
+    });
+  }
+};
+
+// Get Orders by User ID (REST endpoint with URL params)
+export const getOrdersByUserIdParams = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { userId } = req.params;
+    const { page, limit, status } = req.query;
+
+    // Validate userId
+    if (!userId || !mongoose.Types.ObjectId.isValid(userId)) {
+      res.status(400).json({ success: false, message: "Valid user ID is required" });
+      return;
+    }
+
+    const parsedPage = parseInt(page as string) || 1;
+    const parsedLimit = parseInt(limit as string) || 10;
+    const skip = (parsedPage - 1) * parsedLimit;
+
+    // Build filter condition
+    let filterCondition: any = { user: userId };
+
+    // Note: Status filtering removed as overallStatus field no longer exists
+    // Individual product status filtering can be implemented if needed
+
+    // Get total count
+    const total = await Order.countDocuments(filterCondition);
+
+    // Get user orders
+    const orders = await Order.find(filterCondition)
+      .populate('products.product', 'name images price')
+      .populate('address')
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(parsedLimit);
+
+    // Add images to each order's products (similar to cart API)
+    const ordersWithImages = await Promise.all(
+      orders.map(async (order: any) => {
+        const productsWithImages = await Promise.all(
+          order.products.map(async (item: any) => {
+            // Get images for this variant using variantId
+            const images = await ProductImage.find({
+              variantObjectid: item.variantId
+            }).sort({ sort_order: 1 });
+
+            // Get the primary image or first image
+            const primaryImage = images.find(img => img.is_primary) || images[0];
+
+            return {
+              ...item.toObject(),
+              image: primaryImage ? {
+                _id: primaryImage._id,
+                image: primaryImage.image,
+                is_primary: primaryImage.is_primary,
+                sort_order: primaryImage.sort_order
+              } : null
+            };
+          })
+        );
+
+        return {
+          ...order.toObject(),
+          products: productsWithImages
+        };
+      })
+    );
+
+    res.status(200).json({
+      success: true,
+      data: ordersWithImages,
+      pagination: {
+        page: parsedPage,
+        limit: parsedLimit,
+        total,
+        totalPages: Math.ceil(total / parsedLimit)
+      }
+    });
+
+  } catch (error) {
+    console.error("Error fetching user orders:", error);
     res.status(500).json({
       success: false,
       message: "Something went wrong",

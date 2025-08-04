@@ -12,6 +12,7 @@ exports.OrderRouter.post('/createOrder', multer_1.upload.none(), order_controlle
 exports.OrderRouter.get('/getOrder/:orderId', order_controller_1.getOrderById);
 exports.OrderRouter.post('/getAllOrders', multer_1.upload.none(), order_controller_1.getAllOrders);
 exports.OrderRouter.post('/getUserOrders', multer_1.upload.none(), order_controller_1.getOrdersByUserId);
+exports.OrderRouter.get('/getUserOrders/:userId', order_controller_1.getOrdersByUserIdParams);
 exports.OrderRouter.post('/updateProductStatus', multer_1.upload.none(), order_controller_1.updateProductStatus);
 exports.OrderRouter.post('/cancelProduct', multer_1.upload.none(), order_controller_1.cancelProduct);
 exports.default = exports.OrderRouter;
