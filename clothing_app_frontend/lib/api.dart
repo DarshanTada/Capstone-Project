@@ -7,6 +7,7 @@ var endPoint = {
   'login': 'api/user/loginOrRegisterUser',
   'updateUser': 'api/user/updateUser',
   'getUserById': 'api/user/getUserById',
+  'deleteUser': 'api/user/deleteUser',
   'logout': 'api/user/logout',
 
   // Home
