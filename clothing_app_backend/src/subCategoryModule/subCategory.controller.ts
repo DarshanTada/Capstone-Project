@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import SubCategory from './subCategory.model';
+import Product from '../productModule/product.model';
 import { upload } from '../utils/common/multer';
 
 export const uploadSubCategoryImage = upload.fields([
@@ -76,16 +77,30 @@ export const getAllSubCategories = async (req: Request, res: Response): Promise<
   try {
     const subCategories = await SubCategory.find().populate('category');
 
-    const formatted = subCategories.map((subCat) => ({
-      _id: subCat._id,
-      name: subCat.name,
-      gender: subCat.gender,
-      body_type: subCat.body_type,
-      category: subCat.category,
-      image: subCat.image || null,
-      createdAt: subCat.createdAt,
-      updatedAt: subCat.updatedAt,
-    }));
+    // Get products for each subcategory
+    const formatted = await Promise.all(
+      subCategories.map(async (subCat) => {
+        // Find all products that belong to this subcategory
+        const products = await Product.find({ subcategory_id: subCat._id }).select('_id name');
+        
+        return {
+          _id: subCat._id,
+          name: subCat.name,
+          gender: subCat.gender,
+          body_type: subCat.body_type,
+          category: subCat.category,
+          image: subCat.image || null,
+          // productIds: products.map(product => product._id),
+          products: products.map(product => ({
+            _id: product._id,
+            name: product.name
+          })),
+          productCount: products.length,
+          createdAt: subCat.createdAt,
+          updatedAt: subCat.updatedAt,
+        };
+      })
+    );
 
     res.status(200).json({ success: true, data: formatted });
   } catch (error: any) {
