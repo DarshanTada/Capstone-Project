@@ -1900,7 +1900,7 @@ class _CameraCaptureScreenState extends State<CameraCaptureScreen> {
           });
 
           // Wait longer before starting face detection to avoid initial buffer conflicts
-          await Future.delayed(const Duration(seconds: 1500));
+          await Future.delayed(const Duration(milliseconds: 1500));
           if (mounted && !_isCapturing && !_isSaving) {
             _startPeriodicFaceCheck();
           }
