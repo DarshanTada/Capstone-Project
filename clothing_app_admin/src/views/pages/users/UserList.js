@@ -139,14 +139,14 @@ const UserList = () => {
               <CTable align="middle" className="mb-0 border" hover responsive>
                 <CTableHead className="text-nowrap">
                   <CTableRow>
-                    <CTableHeaderCell className="bg-body-tertiary text-center">
+                    {/* <CTableHeaderCell className="bg-body-tertiary text-center">
                       <CIcon icon={cilPeople} />
-                    </CTableHeaderCell>
+                    </CTableHeaderCell> */}
                     <CTableHeaderCell className="bg-body-tertiary">Name</CTableHeaderCell>
                     <CTableHeaderCell className="bg-body-tertiary">Phone Number</CTableHeaderCell>
                     <CTableHeaderCell className="bg-body-tertiary">Email</CTableHeaderCell>
                     <CTableHeaderCell className="bg-body-tertiary">Role</CTableHeaderCell>
-                    <CTableHeaderCell className="bg-body-tertiary">Relation</CTableHeaderCell>
+                    {/* Relation column removed */}
                     <CTableHeaderCell className="bg-body-tertiary text-center">
                       Actions
                     </CTableHeaderCell>
@@ -181,9 +181,9 @@ const UserList = () => {
                           navigate(`/users/${user._id}`)
                         }}
                       >
-                        <CTableDataCell className="text-center">
+                        {/* <CTableDataCell className="text-center">
                           <CAvatar size="md" src={avatars[index % avatars.length]} />
-                        </CTableDataCell>
+                        </CTableDataCell> */}
                         <CTableDataCell>
                           <div>{user.username || user.name || user.preference?.username || 'N/A'}</div>
                         </CTableDataCell>
@@ -196,9 +196,7 @@ const UserList = () => {
                         <CTableDataCell>
                           <div>{user.role || 'user'}</div>
                         </CTableDataCell>
-                        <CTableDataCell>
-                          <div>{user.preference?.body_type || '-'}</div>
-                        </CTableDataCell>
+                        {/* Relation column removed */}
                         <CTableDataCell className="text-center">
                           <CIcon
                             icon={cilTrash}
