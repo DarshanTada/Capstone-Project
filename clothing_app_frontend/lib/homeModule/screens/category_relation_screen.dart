@@ -1,12 +1,11 @@
-import 'dart:convert';
-import 'dart:typed_data';
-
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
-import 'package:clothing_app_frontend/navigation/navigators.dart';
+
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -38,67 +37,124 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
   @override
   void initState() {
     super.initState();
+    print('CategoryRelationScreen - Category: ${widget.args.category}');
+    print(
+      'CategoryRelationScreen - Subcategories count: ${widget.args.subcategories?.length ?? 0}',
+    );
+    print(
+      'CategoryRelationScreen - Products count: ${widget.args.products?.length ?? 0}',
+    );
     _initializeCategories();
     _initializeProducts();
     fetchData();
   }
 
   void _initializeCategories() {
-    // Use only dynamic subcategories data
+    // Use dynamic subcategories if provided, otherwise empty
     if (widget.args.subcategories != null &&
         widget.args.subcategories!.isNotEmpty) {
       categories = widget.args.subcategories!.map((subcat) {
-        final subcatName = subcat['name']?.toString() ?? 'Unknown';
-        final subcatImage = subcat['image']?.toString() ?? '';
-
         return {
-          'name': subcatName,
-          'image': subcatImage, // This will be base64 encoded image
-          'isBase64': true, // Flag to indicate this is base64 data
+          'name': subcat['name']?.toString() ?? 'Unknown',
+          'image': subcat['image']?.toString() ?? '',
+          'id': subcat['_id']?.toString() ?? '',
         };
       }).toList();
     } else {
-      // Show empty state when no dynamic data available
-      categories = [
-        {
-          'name': 'No Categories',
-          'image': '', // Empty image will show placeholder
-          'isBase64': false,
-        },
-      ];
+      categories = []; // Empty if no dynamic data
     }
   }
 
   void _initializeProducts() {
-    // Use only dynamic products data
+    // Use dynamic products if provided, otherwise create dummy products with dynamic names and images
     if (widget.args.products != null && widget.args.products!.isNotEmpty) {
       products = widget.args.products!.map((product) {
         return {
           'name': product['name']?.toString() ?? 'Unknown Product',
           'image': product['image']?.toString() ?? '',
-          'oldPrice': (product['price'] is num)
-              ? (product['price'] as num).toDouble() + 15
-              : 60.0,
-          'price': (product['price'] is num)
-              ? (product['price'] as num).toDouble()
-              : 45.0,
-          'rating': product['rating'] ?? 4.5,
+          'oldPrice':
+              int.tryParse(product['oldPrice']?.toString() ?? '0') ?? 60,
+          'price': int.tryParse(product['price']?.toString() ?? '0') ?? 45,
+          'colors': [Colors.black, Colors.brown, Colors.grey.shade400],
+          'sizes': ['S', 'M', 'L', 'XL'],
+          'isFavorite': false,
+          'id': product['_id']?.toString() ?? '',
+        };
+      }).toList();
+    } else {
+      // Generate dummy products based on category name and subcategories
+      products = _generateDummyProducts();
+    }
+  }
+
+  List<Map<String, dynamic>> _generateDummyProducts() {
+    List<Map<String, dynamic>> dummyProducts = [];
+
+    // Base product names with category-specific variations
+    List<String> baseNames = [
+      '${widget.args.category} Classic',
+      '${widget.args.category} Premium',
+      '${widget.args.category} Deluxe',
+      '${widget.args.category} Essential',
+      '${widget.args.category} Modern',
+      '${widget.args.category} Vintage',
+    ];
+
+    // If we have subcategories, create one unique product per subcategory
+    if (categories.isNotEmpty) {
+      List<String> productStyles = [
+        'Premium',
+        'Classic',
+        'Deluxe',
+        'Essential',
+        'Modern',
+        'Vintage',
+        'Elite',
+        'Pro',
+      ];
+
+      for (int i = 0; i < categories.length; i++) {
+        final subcat = categories[i];
+        final style = productStyles[i % productStyles.length];
+
+        dummyProducts.add({
+          'name': '${subcat['name']} $style',
+          'image': subcat['image'] ?? '', // Use subcategory image
+          'oldPrice': 50 + (i * 7),
+          'price': 30 + (i * 5),
           'colors': [
             Colors.black,
             Colors.brown,
             Colors.grey.shade400,
-            Colors.brown.shade200,
-            Colors.blueGrey,
+            Colors.blue.shade300,
           ],
           'sizes': ['S', 'M', 'L', 'XL'],
           'isFavorite': false,
-          'isBase64': true, // Flag to indicate this is base64 image data
-        };
-      }).toList();
+          'id': 'dummy_$i',
+        });
+      }
     } else {
-      // Show empty state when no dynamic data available - don't create fake products
-      products = [];
+      // If no subcategories, create generic products for the category
+      for (int i = 0; i < baseNames.length; i++) {
+        dummyProducts.add({
+          'name': baseNames[i],
+          'image': '', // No image for generic products
+          'oldPrice': 60 + (i * 5),
+          'price': 45 + (i * 3),
+          'colors': [
+            Colors.black,
+            Colors.brown,
+            Colors.grey.shade400,
+            Colors.blue.shade300,
+          ],
+          'sizes': ['S', 'M', 'L', 'XL'],
+          'isFavorite': false,
+          'id': 'dummy_generic_$i',
+        });
+      }
     }
+
+    return dummyProducts;
   }
 
   fetchData() async {
@@ -118,24 +174,19 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
-            pop();
+            Navigator.pop(context);
           },
           icon: Icon(Icons.arrow_back_ios),
         ),
         centerTitle: true,
         elevation: 3,
         backgroundColor: Colors.white,
-
         title: Column(
           children: [
             TextWidget(title: widget.args.category),
             SizedBox(height: dW * 0.02),
             TextWidget(
-              title:
-                  widget.args.products != null &&
-                      widget.args.products!.isNotEmpty
-                  ? '${widget.args.products!.length} items'
-                  : '0 items',
+              title: '${products.length} items', // Show only products count
             ),
           ],
         ),
@@ -154,55 +205,49 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(height: dW * 0.03),
-                CategoryRow(
-                  categories: categories,
-                  dW: dW,
-                  customTextTheme: customTextTheme,
-                ),
+                // Always show categories if we have dynamic data
+                if (categories.isNotEmpty)
+                  CategoryRow(
+                    categories: categories,
+                    dW: dW,
+                    customTextTheme: customTextTheme,
+                  ),
                 ProductViewToggle(
                   viewType: viewType,
                   onChange: (type) => setState(() => viewType = type),
                   dW: dW,
                 ),
                 Expanded(
-                  child: Builder(
-                    builder: (context) {
-                      // Check if we have real products or just empty state
-                      bool hasRealProducts =
-                          widget.args.products != null &&
-                          widget.args.products!.isNotEmpty;
-
-                      if (!hasRealProducts) {
-                        return _buildEmptyState();
-                      }
-
-                      if (viewType == ProductViewType.oneList) {
-                        return ProductList(
-                          products: products,
-                          dW: dW,
-                          onLikeToggle: (index, liked) {
-                            setState(() {
-                              products[index]['isFavorite'] = liked;
-                            });
+                  child: products.isEmpty && categories.isEmpty
+                      ? _buildEmptyState()
+                      : Builder(
+                          builder: (context) {
+                            if (viewType == ProductViewType.oneList) {
+                              return ProductList(
+                                products: products,
+                                dW: dW,
+                                onLikeToggle: (index, liked) {
+                                  setState(() {
+                                    products[index]['isFavorite'] = liked;
+                                  });
+                                },
+                              );
+                            } else {
+                              int crossAxisCount =
+                                  viewType == ProductViewType.twoGrid ? 2 : 3;
+                              return ProductGrid(
+                                products: products,
+                                dW: dW,
+                                crossAxisCount: crossAxisCount,
+                                onLikeToggle: (index, liked) {
+                                  setState(() {
+                                    products[index]['isFavorite'] = liked;
+                                  });
+                                },
+                              );
+                            }
                           },
-                        );
-                      } else {
-                        int crossAxisCount = viewType == ProductViewType.twoGrid
-                            ? 2
-                            : 3;
-                        return ProductGrid(
-                          products: products,
-                          dW: dW,
-                          crossAxisCount: crossAxisCount,
-                          onLikeToggle: (index, liked) {
-                            setState(() {
-                              products[index]['isFavorite'] = liked;
-                            });
-                          },
-                        );
-                      }
-                    },
-                  ),
+                        ),
                 ),
               ],
             ),
@@ -215,24 +260,22 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(
-            Icons.inventory_2_outlined,
+            Icons.shopping_bag_outlined,
             size: dW * 0.2,
             color: Colors.grey[400],
           ),
-          SizedBox(height: dW * 0.05),
-          Text(
-            'No Products Available',
-            style: customTextTheme.headlineSmall?.copyWith(
-              color: Colors.grey[600],
-              fontWeight: FontWeight.w500,
-            ),
+          SizedBox(height: dW * 0.04),
+          TextWidget(
+            title: 'No products found',
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[600],
           ),
           SizedBox(height: dW * 0.02),
-          Text(
-            'Please check back later or try another category',
-            style: customTextTheme.bodyMedium?.copyWith(
-              color: Colors.grey[500],
-            ),
+          TextWidget(
+            title: 'No products available for ${widget.args.category}',
+            fontSize: 14,
+            color: Colors.grey[500],
             textAlign: TextAlign.center,
           ),
         ],
@@ -253,57 +296,16 @@ class CategoryRow extends StatelessWidget {
     required this.customTextTheme,
   });
 
-  Widget _buildBase64Image(String base64String, double size) {
+  // Helper method to decode base64 images
+  Uint8List? _decodeBase64Image(String? base64String) {
+    if (base64String == null || base64String.isEmpty) return null;
     try {
-      if (base64String.isEmpty) {
-        return Container(
-          width: size,
-          height: size,
-          color: Colors.grey[300],
-          child: Icon(
-            Icons.image_not_supported,
-            color: Colors.grey[600],
-            size: 20,
-          ),
-        );
-      }
-
-      // Extract base64 data (remove data:image/...;base64, prefix if present)
-      final base64Data = base64String.contains(',')
+      final base64Part = base64String.contains(',')
           ? base64String.split(',').last
           : base64String;
-
-      final Uint8List imageBytes = base64Decode(base64Data);
-
-      return Image.memory(
-        imageBytes,
-        width: size,
-        height: size,
-        fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return Container(
-            width: size,
-            height: size,
-            color: Colors.grey[300],
-            child: Icon(
-              Icons.image_not_supported,
-              color: Colors.grey[600],
-              size: 20,
-            ),
-          );
-        },
-      );
+      return base64Decode(base64Part);
     } catch (e) {
-      return Container(
-        width: size,
-        height: size,
-        color: Colors.grey[300],
-        child: Icon(
-          Icons.image_not_supported,
-          color: Colors.grey[600],
-          size: 20,
-        ),
-      );
+      return null;
     }
   }
 
@@ -321,8 +323,7 @@ class CategoryRow extends StatelessWidget {
         separatorBuilder: (_, __) => SizedBox(width: dW * 0.03),
         itemBuilder: (context, i) {
           final cat = categories[i];
-          final isBase64 = cat['isBase64'] == true;
-          final imageData = cat['image'] ?? '';
+          final imageBytes = _decodeBase64Image(cat['image']);
 
           return Column(
             children: [
@@ -331,20 +332,31 @@ class CategoryRow extends StatelessWidget {
                 height: dW * 0.18,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey[200], // Background color for loading
+                  color: Colors.grey[200],
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: isBase64 && imageData.isNotEmpty
-                      ? _buildBase64Image(imageData, dW * 0.18)
+                  child: imageBytes != null
+                      ? Image.memory(
+                          imageBytes,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[300],
+                              child: Icon(
+                                Icons.image_not_supported,
+                                color: Colors.grey[600],
+                                size: 30,
+                              ),
+                            );
+                          },
+                        )
                       : Container(
-                          width: dW * 0.18,
-                          height: dW * 0.18,
                           color: Colors.grey[300],
                           child: Icon(
                             Icons.category,
                             color: Colors.grey[600],
-                            size: 20,
+                            size: 30,
                           ),
                         ),
                 ),
@@ -540,46 +552,16 @@ class ProductCard extends StatefulWidget {
 }
 
 class _ProductCardState extends State<ProductCard> {
-  Widget _buildProductImage(String imageData, bool isBase64, double height) {
-    if (isBase64 && imageData.isNotEmpty) {
-      try {
-        // Extract base64 data (remove data:image/...;base64, prefix if present)
-        final base64Data = imageData.contains(',')
-            ? imageData.split(',').last
-            : imageData;
-
-        final Uint8List imageBytes = base64Decode(base64Data);
-
-        return Image.memory(
-          imageBytes,
-          width: double.infinity,
-          height: height,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              width: double.infinity,
-              height: height,
-              color: Colors.grey[300],
-              child: Icon(Icons.image, size: 50, color: Colors.grey[600]),
-            );
-          },
-        );
-      } catch (e) {
-        return Container(
-          width: double.infinity,
-          height: height,
-          color: Colors.grey[300],
-          child: Icon(Icons.image, size: 50, color: Colors.grey[600]),
-        );
-      }
-    } else {
-      // No image data - show placeholder
-      return Container(
-        width: double.infinity,
-        height: height,
-        color: Colors.grey[300],
-        child: Icon(Icons.image, size: 50, color: Colors.grey[600]),
-      );
+  // Helper method to decode base64 images
+  Uint8List? _decodeBase64Image(String? base64String) {
+    if (base64String == null || base64String.isEmpty) return null;
+    try {
+      final base64Part = base64String.contains(',')
+          ? base64String.split(',').last
+          : base64String;
+      return base64Decode(base64Part);
+    } catch (e) {
+      return null;
     }
   }
 
@@ -591,6 +573,8 @@ class _ProductCardState extends State<ProductCard> {
         : widget.isThreeGrid
         ? widget.dW * 0.22
         : widget.dW * 0.28;
+
+    final imageBytes = _decodeBase64Image(widget.product['image']);
 
     return Container(
       margin: EdgeInsets.all(widget.dW * 0.01),
@@ -619,11 +603,35 @@ class _ProductCardState extends State<ProductCard> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-                  child: _buildProductImage(
-                    widget.product['image'] ?? '',
-                    widget.product['isBase64'] == true,
-                    imageHeight,
-                  ),
+                  child: imageBytes != null
+                      ? Image.memory(
+                          imageBytes,
+                          width: double.infinity,
+                          height: imageHeight,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: double.infinity,
+                              height: imageHeight,
+                              color: Colors.grey[300],
+                              child: Icon(
+                                Icons.image_not_supported,
+                                size: 50,
+                                color: Colors.grey[600],
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          width: double.infinity,
+                          height: imageHeight,
+                          color: Colors.grey[300],
+                          child: Icon(
+                            Icons.shopping_bag,
+                            size: 50,
+                            color: Colors.grey[600],
+                          ),
+                        ),
                 ),
                 Positioned(
                   top: 12,

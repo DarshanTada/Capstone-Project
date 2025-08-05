@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
@@ -80,7 +79,9 @@ class CategoryScreenState extends State<CategoryScreen> {
   @override
   void initState() {
     super.initState();
+
     _scrollController = ScrollController();
+
     fetchData();
   }
 
@@ -209,7 +210,7 @@ class CategoryScreenState extends State<CategoryScreen> {
                               return Column(
                                 crossAxisAlignment: CrossAxisAlignment.stretch,
                                 children: [
-                                  // Static Beautiful Page Header with Clothing Theme
+                                  // Static Page Header with Clothing Theme
                                   Container(
                                     margin: EdgeInsets.only(bottom: dW * 0.05),
                                     decoration: BoxDecoration(
@@ -252,14 +253,6 @@ class CategoryScreenState extends State<CategoryScreen> {
                                                 ),
                                                 width: 2,
                                               ),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.white
-                                                      .withOpacity(0.4),
-                                                  blurRadius: 12,
-                                                  spreadRadius: 2,
-                                                ),
-                                              ],
                                             ),
                                             child: Icon(
                                               Icons.checkroom,
@@ -791,48 +784,58 @@ class CategoryScreenState extends State<CategoryScreen> {
                                             Spacer(),
                                             GestureDetector(
                                               onTap: () {
+                                                // Filter subcategories for this specific category
+                                                final categorySubcategories =
+                                                    rawSubCategories.where((
+                                                      subcat,
+                                                    ) {
+                                                      try {
+                                                        final categoryName =
+                                                            subcat['category']?['name']
+                                                                ?.toString()
+                                                                .toLowerCase() ??
+                                                            '';
+                                                        return categoryName ==
+                                                            category.name
+                                                                .toLowerCase();
+                                                      } catch (e) {
+                                                        return false;
+                                                      }
+                                                    }).toList();
+
+                                                // Get products for this category
+                                                final categoryProducts = categoryProvider
+                                                    .categoryProducts
+                                                    .where((product) {
+                                                      try {
+                                                        final productCategory =
+                                                            product['category']?['name']
+                                                                ?.toString()
+                                                                .toLowerCase() ??
+                                                            '';
+                                                        return productCategory ==
+                                                            category.name
+                                                                .toLowerCase();
+                                                      } catch (e) {
+                                                        return false;
+                                                      }
+                                                    })
+                                                    .toList();
+
                                                 Navigator.push(
                                                   context,
                                                   MaterialPageRoute(
-                                                    builder: (context) => CategoryRelationScreen(
-                                                      args: CategoryRelationScreenArguments(
-                                                        category: category.name,
-                                                        subcategories:
-                                                            categorySubcategories
-                                                                .cast<
-                                                                  Map<
-                                                                    String,
-                                                                    dynamic
-                                                                  >
-                                                                >(),
-                                                        products: categoryProvider
-                                                            .categoryProducts
-                                                            .map(
-                                                              (product) => {
-                                                                'product_id':
-                                                                    product
-                                                                        .productId,
-                                                                'name': product
-                                                                    .productName,
-                                                                'image': product
-                                                                    .productImage,
-                                                                'price': product
-                                                                    .productPrice,
-                                                                'rating': double.parse(
-                                                                  product
-                                                                      .productRating
-                                                                      .toStringAsFixed(
-                                                                        1,
-                                                                      ),
-                                                                ),
-                                                                'category':
-                                                                    category
-                                                                        .name,
-                                                              },
-                                                            )
-                                                            .toList(),
-                                                      ),
-                                                    ),
+                                                    builder: (context) =>
+                                                        CategoryRelationScreen(
+                                                          args: CategoryRelationScreenArguments(
+                                                            category:
+                                                                category.name,
+                                                            subcategories:
+                                                                categorySubcategories,
+                                                            products:
+                                                                categoryProducts,
+                                                          ),
+                                                        ),
                                                   ),
                                                 );
                                               },
@@ -857,47 +860,57 @@ class CategoryScreenState extends State<CategoryScreen> {
                                         // Category image button
                                         GestureDetector(
                                           onTap: () {
+                                            // Filter subcategories for this specific category
+                                            final categorySubcategories =
+                                                rawSubCategories.where((
+                                                  subcat,
+                                                ) {
+                                                  try {
+                                                    final categoryName =
+                                                        subcat['category']?['name']
+                                                            ?.toString()
+                                                            .toLowerCase() ??
+                                                        '';
+                                                    return categoryName ==
+                                                        category.name
+                                                            .toLowerCase();
+                                                  } catch (e) {
+                                                    return false;
+                                                  }
+                                                }).toList();
+
+                                            // Get products for this category
+                                            final categoryProducts = categoryProvider
+                                                .categoryProducts
+                                                .where((product) {
+                                                  try {
+                                                    final productCategory =
+                                                        product['category']?['name']
+                                                            ?.toString()
+                                                            .toLowerCase() ??
+                                                        '';
+                                                    return productCategory ==
+                                                        category.name
+                                                            .toLowerCase();
+                                                  } catch (e) {
+                                                    return false;
+                                                  }
+                                                })
+                                                .toList();
+
                                             Navigator.push(
                                               context,
                                               MaterialPageRoute(
-                                                builder: (context) => CategoryRelationScreen(
-                                                  args: CategoryRelationScreenArguments(
-                                                    category: category.name,
-                                                    subcategories:
-                                                        categorySubcategories
-                                                            .cast<
-                                                              Map<
-                                                                String,
-                                                                dynamic
-                                                              >
-                                                            >(),
-                                                    products: categoryProvider
-                                                        .categoryProducts
-                                                        .map(
-                                                          (product) => {
-                                                            'product_id':
-                                                                product
-                                                                    .productId,
-                                                            'name': product
-                                                                .productName,
-                                                            'image': product
-                                                                .productImage,
-                                                            'price': product
-                                                                .productPrice,
-                                                            'rating': double.parse(
-                                                              product
-                                                                  .productRating
-                                                                  .toStringAsFixed(
-                                                                    1,
-                                                                  ),
-                                                            ),
-                                                            'category':
-                                                                category.name,
-                                                          },
-                                                        )
-                                                        .toList(),
-                                                  ),
-                                                ),
+                                                builder: (context) =>
+                                                    CategoryRelationScreen(
+                                                      args: CategoryRelationScreenArguments(
+                                                        category: category.name,
+                                                        subcategories:
+                                                            categorySubcategories,
+                                                        products:
+                                                            categoryProducts,
+                                                      ),
+                                                    ),
                                               ),
                                             );
                                           },
@@ -1245,65 +1258,14 @@ class CategoryScreenState extends State<CategoryScreen> {
                           ),
                         ],
                       ),
-                    ),
-                  ), // This closes RefreshIndicator child
-                ), // This closes RefreshIndicator
+                    ), // This closes RefreshIndicator child
+                  ), // This closes RefreshIndicator
+                ),
               ), // This closes Expanded
             ],
           ),
         ),
       ),
     );
-  }
-}
-
-// Custom Painter for the background pattern with animation
-class ClothingPatternPainter extends CustomPainter {
-  final double animationValue;
-
-  ClothingPatternPainter({this.animationValue = 0});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final paint = Paint()
-      ..color = Colors.white.withOpacity(
-        0.1 + 0.05 * math.sin(animationValue * math.pi),
-      )
-      ..strokeWidth = 1.0
-      ..style = PaintingStyle.stroke;
-
-    // Draw animated pattern lines
-    for (int i = 0; i < 5; i++) {
-      final offset = animationValue * 20;
-      canvas.drawLine(
-        Offset(size.width * 0.1 * i + offset, 0),
-        Offset(size.width * 0.1 * (i + 1) + offset, size.height),
-        paint,
-      );
-    }
-
-    // Add some animated dots
-    final dotPaint = Paint()
-      ..color = Colors.white.withOpacity(
-        0.2 + 0.1 * math.sin(animationValue * 2 * math.pi),
-      )
-      ..style = PaintingStyle.fill;
-
-    for (int i = 0; i < 3; i++) {
-      for (int j = 0; j < 2; j++) {
-        final x =
-            size.width * (0.2 + i * 0.3) +
-            10 * math.sin(animationValue * math.pi + i);
-        final y =
-            size.height * (0.3 + j * 0.4) +
-            5 * math.cos(animationValue * math.pi + j);
-        canvas.drawCircle(Offset(x, y), 2, dotPaint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(ClothingPatternPainter oldDelegate) {
-    return oldDelegate.animationValue != animationValue;
   }
 }

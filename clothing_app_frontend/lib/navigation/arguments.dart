@@ -56,15 +56,14 @@ class ProductDetailScreenArguments {
   ProductDetailScreenArguments({Null});
 }
 
-
-class CategoryRelationScreenArguments{
-    final String category;
-    final List<Map<String, dynamic>>? subcategories;
-    final List<Map<String, dynamic>>? products;
- CategoryRelationScreenArguments ({
-required this.category,
-this.subcategories,
-this.products,
+class CategoryRelationScreenArguments {
+  final String category;
+  final List<dynamic>? subcategories;
+  final List<dynamic>? products;
+  CategoryRelationScreenArguments({
+    required this.category,
+    this.subcategories,
+    this.products,
   });
 }
 
