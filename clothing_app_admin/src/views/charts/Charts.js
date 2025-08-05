@@ -27,9 +27,14 @@ const Charts = () => {
                 labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
                 datasets: [
                   {
-                    label: 'GitHub Commits',
-                    backgroundColor: '#f87979',
-                    data: [40, 20, 12, 39, 10, 40, 39, 80, 40],
+                    label: 'Users',
+                    backgroundColor: '#6f42c1',
+                    data: [26000, 24500, 23000, 22000, 21000, 20000, 19500],
+                  },
+                  {
+                    label: 'Sessions',
+                    backgroundColor: '#e55353',
+                    data: [44000, 42000, 41000, 40000, 39000, 38000, 37000],
                   },
                 ],
               }}
@@ -49,20 +54,20 @@ const Charts = () => {
                 labels: ['January', 'February', 'March', 'April', 'May', 'June', 'July'],
                 datasets: [
                   {
-                    label: 'My First dataset',
-                    backgroundColor: 'rgba(220, 220, 220, 0.2)',
-                    borderColor: 'rgba(220, 220, 220, 1)',
-                    pointBackgroundColor: 'rgba(220, 220, 220, 1)',
+                    label: 'Income',
+                    backgroundColor: 'rgba(32, 201, 151, 0.2)',
+                    borderColor: 'rgba(32, 201, 151, 1)',
+                    pointBackgroundColor: 'rgba(32, 201, 151, 1)',
                     pointBorderColor: '#fff',
-                    data: [random(), random(), random(), random(), random(), random(), random()],
+                    data: [6200, 7000, 6800, 7200, 6900, 7100, 7300],
                   },
                   {
-                    label: 'My Second dataset',
-                    backgroundColor: 'rgba(151, 187, 205, 0.2)',
-                    borderColor: 'rgba(151, 187, 205, 1)',
-                    pointBackgroundColor: 'rgba(151, 187, 205, 1)',
+                    label: 'Conversion Rate (%)',
+                    backgroundColor: 'rgba(255, 193, 7, 0.2)',
+                    borderColor: 'rgba(255, 193, 7, 1)',
+                    pointBackgroundColor: 'rgba(255, 193, 7, 1)',
                     pointBorderColor: '#fff',
-                    data: [random(), random(), random(), random(), random(), random(), random()],
+                    data: [2.49, 2.60, 2.55, 2.70, 2.65, 2.80, 2.75],
                   },
                 ],
               }}

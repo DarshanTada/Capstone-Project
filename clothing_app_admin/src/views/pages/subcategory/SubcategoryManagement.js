@@ -196,12 +196,27 @@ const SubcategoryManagement = () => {
                 <h5>All Subcategories</h5>
                 <CTable bordered>
                     <thead>
-                        <tr><th>Name</th><th>Actions</th></tr>
+                        <tr>
+                            <th>Name</th>
+                            <th>Image</th>
+                            <th>Actions</th>
+                        </tr>
                     </thead>
                     <tbody>
                         {subcategories.map(sub => (
                             <tr key={sub._id}>
                                 <td>{sub.name}</td>
+                                <td>
+                                    {sub.image ? (
+                                        (typeof sub.image === 'string' && (sub.image.startsWith('http') || sub.image.startsWith('data:image')) ? (
+                                            <img
+                                                src={sub.image}
+                                                alt="Subcategory"
+                                                style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc' }}
+                                            />
+                                        ) : <span className="text-muted">No image</span>)
+                                    ) : <span className="text-muted">No image</span>}
+                                </td>
                                 <td>
                                     <CButton color="danger" size="sm" onClick={() => handleDeleteSubcategory(sub._id)}>Delete</CButton>
                                 </td>

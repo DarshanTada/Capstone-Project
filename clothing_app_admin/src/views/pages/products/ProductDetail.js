@@ -211,7 +211,7 @@ const ProductDetail = () => {
                   {images.map((img, idx) => (
                     <img
                       key={idx}
-                      src={`data:${img.image.contentType};base64,${img.image.base64}`}
+                      src={img.image}
                       alt={`Product Image ${idx + 1}`}
                       style={{
                         width: 80,
@@ -373,9 +373,7 @@ const ProductDetail = () => {
                         onChange={e => handleVariantChange(idx, e)}
                         disabled={!isEditing}
                       />
-                      {variant.avatarUrl && (
-                        <img src={variant.avatarUrl} alt="Avatar" style={{ width: 60, height: 60, objectFit: 'cover', borderRadius: 6, marginTop: 8 }} />
-                      )}
+                      {/* Avatar image preview removed as requested */}
                     </CCol>
                   </CRow>
                   <CRow className="mt-2">

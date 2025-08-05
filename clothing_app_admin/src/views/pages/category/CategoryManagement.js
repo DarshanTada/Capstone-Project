@@ -45,9 +45,11 @@ const CategoryManagement = () => {
                 setTimeout(() => setSuccess(''), 2000); // Hide success after 2 seconds
             } else {
                 setError(res.data.message || 'Failed to add category');
+                console.error('Add category error:', res.data);
             }
-        } catch {
-            setError('Failed to add category');
+        } catch (err) {
+            setError('Failed to add category: ' + (err?.response?.data?.message || err?.message || err));
+            console.error('Add category exception:', err);
         }
     };
 
