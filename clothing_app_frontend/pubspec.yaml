@@ -128,6 +128,32 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/images/
+    - assets/images/jeans/
+    - assets/images/tops/
+    - assets/products/2_tops/bodyfit_tops/
+    - assets/products/2_tops/wide_tops/
+    - assets/products/4_shorts/jeans_shorts/
+    - assets/products/4_shorts/linen_shorts/
+    - assets/products/5_skirts/glitter_skirt/
+    - assets/products/5_skirts/woolen_skirt/
+
+    - assets/products/6_jeans/baggy/
+    - assets/products/6_jeans/ripped_jeans/
+    - assets/products/6_jeans/skinny_jeans/
+    - assets/products/6_jeans/splatter_loose_fit_jeans/
+    - assets/products/6_jeans/wide_leg_jeans/
+    - assets/products/7_shirts/cotton_shirts/
+    - assets/products/7_shirts/jeans_shirts/
+    - assets/products/8_t-shirts/collar_tshirts/
+    - assets/products/8_t-shirts/wide_tshirts/
+
+
+
+
+    - assets/products/bodyfit_tops
+    - assets/products/bodyfit_tops
+    - assets/products/bodyfit_tops
+
     - assets/images/corousel/
     - assets/svgIcons/
     - assets/videos/

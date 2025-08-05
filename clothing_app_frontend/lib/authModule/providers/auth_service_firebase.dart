@@ -9,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
+
 class AuthRepo {
   static String verId = "";
   static final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;
@@ -52,12 +53,21 @@ class AuthRepo {
   }
 
   static void logoutApp(BuildContext context) async {
-    await _firebaseAuth.signOut();
-    // ignore: use_build_context_synchronously
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (ctx) => const PhoneNumberScreen()),
-    );
+    try {
+      // Sign out from Firebase
+      await _firebaseAuth.signOut();
+
+      // Clear user data from AuthProvider
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      await authProvider.logout();
+
+      // Navigate to onboarding screen
+      Navigator.pushReplacementNamed(context, NamedRoute.onBoardingScreen1);
+    } catch (e) {
+      print('Error during logout: $e');
+      // Even if there's an error, still navigate to onboarding
+      Navigator.pushReplacementNamed(context, NamedRoute.onBoardingScreen1);
+    }
   }
 
   static void submitOtp(BuildContext context, String otp, String number) {
@@ -94,19 +104,19 @@ class AuthRepo {
       Navigator.of(context).pop();
 
       if (data['status'] == true) {
-        // Navigate to home screen
-        // Navigator.pushReplacement(
-        //   context,
-        //   MaterialPageRoute(builder: (context) => const HomeScreen()),
+        // Check if user is new or existing based on the API response
+        final bool isNewUser = data['isNewUser'] ?? false;
 
-        // );
-        // pushAndRemoveUntil(
-        //   NamedRoute.bottomNavBarScreen,
-        //   arguments: BottomNavArgumnets(),
-        // );
-        pushAndRemoveUntil(
-          NamedRoute.captureFaceScreen,
-        );
+        if (isNewUser) {
+          // New user - redirect to capture face screen
+          pushAndRemoveUntil(NamedRoute.captureFaceScreen);
+        } else {
+          // Existing user - redirect to home screen
+          pushAndRemoveUntil(
+            NamedRoute.bottomNavBarScreen,
+            arguments: BottomNavArgumnets(),
+          );
+        }
       } else {
         // Show API error
         ScaffoldMessenger.of(context).showSnackBar(

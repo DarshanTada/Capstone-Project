@@ -3,7 +3,54 @@ import Category from '../categoryModule/category.model';
 import SubCategory from '../subCategoryModule/subCategory.model';
 import Product from '../productModule/product.model';
 import ProductVariant from '../productModule/productVariant.model';
+import ProductImage from '../productModule/productImage.model';
 import { Request, Response } from 'express';
+
+// Helper function to attach variants and images to products
+const attachVariantsAndImages = async (products: any[]) => {
+  if (products.length === 0) return [];
+  
+  const productIds = products.map(p => p._id);
+  
+  // Get all variants for these products
+  const variants = await ProductVariant.find({ productObjectId: { $in: productIds } });
+  
+  // Get all images for these variants and products
+  const variantIds = variants.map(v => v._id);
+  const images = await ProductImage.find({
+    $or: [
+      { productObjectId: { $in: productIds } },
+      { variantObjectid: { $in: variantIds } }
+    ]
+  });
+  
+  return products.map(product => {
+    const productVariants = variants.filter(v => 
+      v.productObjectId && v.productObjectId.toString() === product._id.toString()
+    );
+    
+    const productImages = images.filter(img => 
+      img.productObjectId && img.productObjectId.toString() === product._id.toString()
+    );
+    
+    const variantsWithImages = productVariants.map(variant => {
+      const variantImages = images.filter(img => 
+        img.variantObjectid && img.variantObjectid.toString() === variant._id.toString()
+      );
+      
+      return {
+        ...variant.toObject(),
+        images: variantImages
+      };
+    });
+    
+    return {
+      ...product.toObject(),
+      variants: variantsWithImages,
+      images: productImages
+    };
+  });
+};
 // Home API: Aggregates banners, categories, subcategories, and products with pagination and filtering
 export const getHomeData = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -21,30 +68,38 @@ export const getHomeData = async (req: Request, res: Response): Promise<void> =>
     const seasonalBanners = await Banner.find({ type: 'seasonal' });
 
     // 2. Popular Categories
-    const popularCategories = await Category.find({ is_popular: true });
+    const popularCategories = await Category.find();
 
-    // 3. Chic Starts Here (curated subcategories)
-    const chicSubcategories = await SubCategory.find({ is_curated: true });
+    // 3. Chic Starts Here (subcategories with their subcategory list)
+    const chicSubcategoriesRaw = await SubCategory.find({}) // Get first 10 subcategories
+    const chicSubcategories = {
+      title: "Chic Starts Here",
+      subcategories: chicSubcategoriesRaw
+    };
 
     // 4. Discounted Products
     const discountedVariants = await ProductVariant.find({ discount: { $gt: 0 } });
     const discountedProductIds = discountedVariants.map(v => v.productObjectId);
-    const discountedProducts = await Product.find({ _id: { $in: discountedProductIds } });
+    const discountedProductsRaw = await Product.find({ _id: { $in: discountedProductIds } });
+    const discountedProducts = await attachVariantsAndImages(discountedProductsRaw);
 
     // 5. New Arrivals
     const newVariants = await ProductVariant.find().sort({ createdAt: -1 }).limit(20);
     const newProductIds = newVariants.map(v => v.productObjectId);
-    const newArrivals = await Product.find({ _id: { $in: newProductIds } });
+    const newArrivalsRaw = await Product.find({ _id: { $in: newProductIds } });
+    const newArrivals = await attachVariantsAndImages(newArrivalsRaw);
 
     // 6. Best Seller
     const bestSellerVariants = await ProductVariant.find().sort({ sales: -1 }).limit(20);
     const bestSellerProductIds = bestSellerVariants.map(v => v.productObjectId);
-    const bestSellers = await Product.find({ _id: { $in: bestSellerProductIds } });
+    const bestSellersRaw = await Product.find({ _id: { $in: bestSellerProductIds } });
+    const bestSellers = await attachVariantsAndImages(bestSellersRaw);
 
     // 7. Clearance
     const clearanceVariants = await ProductVariant.find({ is_clearance: true });
     const clearanceProductIds = clearanceVariants.map(v => v.productObjectId);
-    const clearanceProducts = await Product.find({ _id: { $in: clearanceProductIds } });
+    const clearanceProductsRaw = await Product.find({ _id: { $in: clearanceProductIds } });
+    const clearanceProducts = await attachVariantsAndImages(clearanceProductsRaw);
 
     // 8. All Products (with filters and pagination)
     let productQuery: any = {};

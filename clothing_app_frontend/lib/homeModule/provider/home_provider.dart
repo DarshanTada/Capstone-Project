@@ -4,10 +4,10 @@ import '../model/product.dart';
 import '../../api.dart';
 
 class HomeProvider extends ChangeNotifier {
-  List _products = [];
+  List _homeData = [];
   bool _isLoading = false;
 
-  List get products => _products;
+  List get homeData => _homeData;
   bool get isLoading => _isLoading;
 
 
@@ -16,25 +16,27 @@ class HomeProvider extends ChangeNotifier {
 
   
 
-  Future<Map<String, dynamic>> fetchHomeData({required String query}) async {
+  Future<Map<String, dynamic>> fetchHomeData() async {
     try {
-      final url = '${webApi['domain']}${endPoint['getHomeData']}?$query';
+      _isLoading = true;
+      final url = '${webApi['domain']}${endPoint['getHomeData']}';
       final response = await RemoteServices.httpRequest(
         method: 'GET',
         url: url,
       );
+      
       if (response['success'] == true && response['data'] is List) {
-        List<Product> fetchedProducts = (response['data'] as List)
-            .map(
-              (product) => Product.fromJson(Map<String, dynamic>.from(product)),
-            )
-            .toList();
-        _products = fetchedProducts;
+        
+        _homeData = response['data'];
         notifyListeners();
       }
+      _isLoading = false;
       return response;
     } catch (error) {
-      return {'success': false, 'message': 'failedGetProducts'};
+      _isLoading = false;
+      return {'success': false, 'message': 'failedGetHomeData'};
     }
   }
+
+
 }

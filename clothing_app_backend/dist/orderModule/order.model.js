@@ -24,6 +24,11 @@ const productItemSchema = new mongoose_1.default.Schema({
         ref: "Product",
         required: true,
     },
+    variantId: {
+        type: mongoose_1.default.Schema.Types.ObjectId,
+        ref: "ProductVariant",
+        required: true,
+    },
     quantity: {
         type: Number,
         required: true,
