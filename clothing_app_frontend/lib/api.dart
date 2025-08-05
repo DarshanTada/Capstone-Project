@@ -17,7 +17,7 @@ var endPoint = {
   // Product
   'getProducts': 'api/product/getProduct',
   // SubCategory
-  'getSubCategories': 'api/subCategory/getAll',
+  'getAllSubCategories': 'api/subCategory/getAll',
 
   // Cart
   'getCart': 'api/cart/getCart',
