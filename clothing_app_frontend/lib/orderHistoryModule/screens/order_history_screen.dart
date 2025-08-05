@@ -26,15 +26,15 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
     final authProvider = Provider.of<AuthProvider>(context, listen: false);
     final orderProvider = Provider.of<OrderProvider>(context, listen: false);
 
-    if (authProvider.user?.id != null && authProvider.user!.id!.isNotEmpty) {
+    if (authProvider.user.id != null && authProvider.user.id!.isNotEmpty) {
       setState(() {
         isLoading = true;
       });
 
-      print('🔄 Fetching orders for user: ${authProvider.user!.id}');
+      print('🔄 Fetching orders for user: ${authProvider.user.id}');
 
       await orderProvider.getUserOrders(
-        userId: authProvider.user!.id!,
+        userId: authProvider.user.id!,
         limit: 20,
         refresh: true,
       );
@@ -198,9 +198,9 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                   context,
                   listen: false,
                 );
-                if (authProvider.user?.id != null) {
+                if (authProvider.user.id != null) {
                   await orderProvider.refreshOrders(
-                    userId: authProvider.user!.id!,
+                    userId: authProvider.user.id!,
                     limit: 20,
                   );
                 }
@@ -349,7 +349,7 @@ class _OrderHistoryScreenState extends State<OrderHistoryScreen> {
                 ),
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(16),
-                  child: Container(
+                  child: SizedBox(
                     height: dW * 0.24,
                     width: dW * 0.24,
                     child: _buildOrderImage(order['image']),

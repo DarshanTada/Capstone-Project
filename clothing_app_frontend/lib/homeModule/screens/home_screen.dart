@@ -1,14 +1,9 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:clothing_app_frontend/colors.dart';
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
-import 'package:clothing_app_frontend/common_widgets/custom_app_bar.dart';
-import 'package:clothing_app_frontend/common_widgets/custom_text_field.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
-import 'package:clothing_app_frontend/homeModule/provider/category_provider.dart';
 import 'package:clothing_app_frontend/homeModule/provider/home_provider.dart';
-import 'package:clothing_app_frontend/homeModule/screens/product_list_screen.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_big_product_card_grid.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_small_product_card_grid.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
@@ -394,7 +389,10 @@ class HomeScreenState extends State<HomeScreen> {
                                           push(
                                             NamedRoute.productDetailScreen,
                                             arguments:
-                                                ProductDetailScreenArguments(),
+                                                ProductDetailScreenArguments(
+                                                  productId:
+                                                      '689152132a5e3b6ee475dd87',
+                                                ),
                                           );
 
                                           //   }

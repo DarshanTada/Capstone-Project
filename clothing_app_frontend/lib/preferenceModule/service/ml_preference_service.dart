@@ -792,7 +792,7 @@ class MLPreferenceService {
         return '#808080'; // default gray
       }
 
-      final result = '#' + cleanColor.toUpperCase();
+      final result = '#${cleanColor.toUpperCase()}';
       print('🔧 Fixed color: "$color" -> "$result"');
       return result;
     }).toList();

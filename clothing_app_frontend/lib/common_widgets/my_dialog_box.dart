@@ -6,7 +6,6 @@ import 'package:provider/provider.dart';
 import '../authModule/providers/auth_provider.dart';
 import '../colors.dart';
 import '../common_functions.dart';
-import '../main.dart' hide navigatorKey;
 import 'circular_loader.dart';
 
 class MyDialogBox extends StatefulWidget {

@@ -10,10 +10,10 @@ class AddressListScreen extends StatefulWidget {
   final Function(String)? onAddressSelected;
 
   const AddressListScreen({
-    Key? key,
+    super.key,
     this.isSelectionMode = false,
     this.onAddressSelected,
-  }) : super(key: key);
+  });
 
   @override
   State<AddressListScreen> createState() => _AddressListScreenState();

@@ -318,7 +318,7 @@ class CategoryScreenState extends State<CategoryScreen> {
                                           ],
                                         ),
                                         SizedBox(height: dW * 0.02),
-                                        Container(
+                                        SizedBox(
                                           height: dW * 0.35,
                                           child: SingleChildScrollView(
                                             scrollDirection: Axis.horizontal,
@@ -517,7 +517,7 @@ class CategoryScreenState extends State<CategoryScreen> {
                                           ],
                                         ),
                                         SizedBox(height: dW * 0.02),
-                                        Container(
+                                        SizedBox(
                                           height: dW * 0.4,
                                           child: SingleChildScrollView(
                                             scrollDirection: Axis.horizontal,
@@ -1251,7 +1251,7 @@ class CategoryScreenState extends State<CategoryScreen> {
                                         SizedBox(height: dW * 0.08),
                                       ],
                                     );
-                                  }).toList(),
+                                  }),
                                 ],
                               );
                             },

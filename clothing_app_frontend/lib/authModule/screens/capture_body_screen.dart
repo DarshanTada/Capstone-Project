@@ -493,7 +493,7 @@ class _CameraCaptureBodyScreenState extends State<CameraCaptureBodyScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
+            SizedBox(
               height: 400,
               width: double.infinity,
               child: Image.file(File(photo.path), fit: BoxFit.cover),

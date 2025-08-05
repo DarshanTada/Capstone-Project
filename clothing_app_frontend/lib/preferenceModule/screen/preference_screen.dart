@@ -1358,7 +1358,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                     ),
                   ],
                   SizedBox(height: 8),
-                  Container(
+                  SizedBox(
                     height: 80, // Increased height to accommodate hex codes
                     child: mlColorTones.isEmpty
                         ? Container(

@@ -6,7 +6,7 @@ import 'package:flutter/material.dart';
 class CategoryProvider with ChangeNotifier {
   List<Category> _categories = [];
   List<dynamic> _categoryProducts = [];
-  bool _isLoadingProducts = false;
+  final bool _isLoadingProducts = false;
 
   List<Category> get categories => _categories;
   List<dynamic> get categoryProducts => _categoryProducts;

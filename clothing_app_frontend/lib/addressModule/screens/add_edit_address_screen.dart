@@ -7,7 +7,7 @@ import '../../authModule/providers/auth_provider.dart';
 class AddEditAddressScreen extends StatefulWidget {
   final Address? address; // Null for add, populated for edit
 
-  const AddEditAddressScreen({Key? key, this.address}) : super(key: key);
+  const AddEditAddressScreen({super.key, this.address});
 
   @override
   State<AddEditAddressScreen> createState() => _AddEditAddressScreenState();
