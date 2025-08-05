@@ -92,6 +92,12 @@ const addToCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const existingItemIndex = cart.items.findIndex((item) => { var _a; return ((_a = item.variantId) === null || _a === void 0 ? void 0 : _a.toString()) === variantId; });
         console.log(`Checking for existing variant: VariantId ${variantId}`);
         console.log(`Existing item index: ${existingItemIndex}`);
+        const images = yield productImage_model_1.default.find({
+            variantObjectid: variantId
+        }).sort({ sort_order: 1 });
+        const validImages = images.filter(img => img.image && img.image.trim() !== '');
+        const primaryImage = validImages.find(img => img.is_primary) || validImages[0];
+        const imageData = primaryImage ? primaryImage.image : null;
         if (existingItemIndex > -1) {
             const newQuantity = cart.items[existingItemIndex].quantity + parsedQuantity;
             console.log(`Updating existing variant: Current qty ${cart.items[existingItemIndex].quantity}, Adding ${parsedQuantity}, New total: ${newQuantity}`);
@@ -104,6 +110,7 @@ const addToCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             }
             cart.items[existingItemIndex].quantity = newQuantity;
             cart.items[existingItemIndex].price = variantPrice * newQuantity;
+            cart.items[existingItemIndex].image = imageData || '';
         }
         else {
             console.log(`Adding new variant: VariantId ${variantId}, Product ${variant.productObjectId}, Size ${variant.size}, Quantity ${parsedQuantity}`);
@@ -112,7 +119,8 @@ const addToCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
                 variantId: variantId,
                 size: variant.size.toLowerCase(),
                 quantity: parsedQuantity,
-                price: variantPrice * parsedQuantity
+                price: variantPrice * parsedQuantity,
+                image: imageData || ''
             });
         }
         cart.subTotalAmount = cart.items.reduce((total, item) => total + item.price, 0);
@@ -120,25 +128,16 @@ const addToCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
         const populatedCart = yield cart_model_1.default.findById(cart._id)
             .populate('items.product', 'name description')
             .populate('user', 'name email');
-        const cartWithImages = yield Promise.all(populatedCart.items.map((item) => __awaiter(void 0, void 0, void 0, function* () {
+        const cartWithVariants = yield Promise.all(populatedCart.items.map((item) => __awaiter(void 0, void 0, void 0, function* () {
             const itemVariant = yield productVariant_model_1.default.findById(item.variantId);
-            const images = yield productImage_model_1.default.find({
-                variantObjectid: item.variantId
-            }).sort({ sort_order: 1 });
-            const primaryImage = images.find(img => img.is_primary) || images[0];
-            return Object.assign(Object.assign({}, item.toObject()), { variant: itemVariant, image: primaryImage ? {
-                    _id: primaryImage._id,
-                    image: primaryImage.image,
-                    is_primary: primaryImage.is_primary,
-                    sort_order: primaryImage.sort_order
-                } : null });
+            return Object.assign(Object.assign({}, item.toObject()), { variant: itemVariant });
         })));
         res.status(200).json({
             success: true,
             message: "Product added to cart successfully",
             data: {
                 user: populatedCart.user,
-                items: cartWithImages,
+                items: cartWithVariants,
                 subTotalAmount: populatedCart.subTotalAmount
             }
         });
@@ -224,32 +223,30 @@ const updateCartQuantity = (req, res) => __awaiter(void 0, void 0, void 0, funct
             });
             return;
         }
+        const images = yield productImage_model_1.default.find({
+            variantObjectid: variantId
+        }).sort({ sort_order: 1 });
+        const validImages = images.filter(img => img.image && img.image.trim() !== '');
+        const primaryImage = validImages.find(img => img.is_primary) || validImages[0];
+        const imageData = primaryImage ? primaryImage.image : null;
         cart.items[itemIndex].quantity = parsedQuantity;
         cart.items[itemIndex].price = variantPrice * parsedQuantity;
+        cart.items[itemIndex].image = imageData || '';
         cart.subTotalAmount = cart.items.reduce((total, item) => total + item.price, 0);
         yield cart.save();
         const populatedCart = yield cart_model_1.default.findById(cart._id)
             .populate('items.product', 'name description')
             .populate('user', 'name email');
-        const cartWithImages = yield Promise.all(populatedCart.items.map((item) => __awaiter(void 0, void 0, void 0, function* () {
+        const cartWithVariants = yield Promise.all(populatedCart.items.map((item) => __awaiter(void 0, void 0, void 0, function* () {
             const itemVariant = yield productVariant_model_1.default.findById(item.variantId);
-            const images = yield productImage_model_1.default.find({
-                variantObjectid: item.variantId
-            }).sort({ sort_order: 1 });
-            const primaryImage = images.find(img => img.is_primary) || images[0];
-            return Object.assign(Object.assign({}, item.toObject()), { variant: itemVariant, image: primaryImage ? {
-                    _id: primaryImage._id,
-                    image: primaryImage.image,
-                    is_primary: primaryImage.is_primary,
-                    sort_order: primaryImage.sort_order
-                } : null });
+            return Object.assign(Object.assign({}, item.toObject()), { variant: itemVariant });
         })));
         res.status(200).json({
             success: true,
             message: "Cart quantity updated successfully",
             data: {
                 user: populatedCart.user,
-                items: cartWithImages,
+                items: cartWithVariants,
                 subTotalAmount: populatedCart.subTotalAmount
             }
         });
@@ -352,25 +349,16 @@ const getCart = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
             });
             return;
         }
-        const cartWithImages = yield Promise.all(cart.items.map((item) => __awaiter(void 0, void 0, void 0, function* () {
+        const cartWithVariants = yield Promise.all(cart.items.map((item) => __awaiter(void 0, void 0, void 0, function* () {
             const itemVariant = yield productVariant_model_1.default.findById(item.variantId);
-            const images = yield productImage_model_1.default.find({
-                variantObjectid: item.variantId
-            }).sort({ sort_order: 1 });
-            const primaryImage = images.find(img => img.is_primary) || images[0];
-            return Object.assign(Object.assign({}, item.toObject()), { variant: itemVariant, image: primaryImage ? {
-                    _id: primaryImage._id,
-                    image: primaryImage.image,
-                    is_primary: primaryImage.is_primary,
-                    sort_order: primaryImage.sort_order
-                } : null });
+            return Object.assign(Object.assign({}, item.toObject()), { variant: itemVariant });
         })));
         res.status(200).json({
             success: true,
             message: "Cart retrieved successfully",
             data: {
                 user: cart.user,
-                items: cartWithImages,
+                items: cartWithVariants,
                 subTotalAmount: cart.subTotalAmount
             }
         });

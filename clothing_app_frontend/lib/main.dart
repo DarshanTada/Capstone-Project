@@ -7,6 +7,8 @@ import 'package:clothing_app_frontend/homeModule/provider/subcategory_provider.d
 import 'package:clothing_app_frontend/addressModule/provider/address_provider.dart';
 import 'package:clothing_app_frontend/homeModule/provider/home_provider.dart';
 import 'package:clothing_app_frontend/authModule/providers/logout_provider.dart';
+import 'package:clothing_app_frontend/cartModule/providers/cart_provider.dart';
+import 'package:clothing_app_frontend/orderModule/providers/order_provider.dart';
 
 // import 'package:clothing_app_frontend/homeModule/screens/category_provider.dart';
 import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
@@ -129,10 +131,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
         ChangeNotifierProvider(create: (_) => SubCategoryProvider()),
         ChangeNotifierProvider(create: (_) => AddressProvider()),
         ChangeNotifierProvider(create: (_) => HomeProvider()),
-
+        ChangeNotifierProvider(create: (_) => CartProvider()),
+        ChangeNotifierProvider(create: (_) => OrderProvider()),
         // ChangeNotifierProvider(create: (_) => CafeProvider()),
-        // ChangeNotifierProvider(create: (_) => CartProvider()),
-        // ChangeNotifierProvider(create: (_) => OrderProvider()),
       ],
       child: Consumer(
         builder: (context, theme, _) => MaterialApp(

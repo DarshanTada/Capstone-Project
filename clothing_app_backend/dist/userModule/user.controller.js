@@ -12,7 +12,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAllUsers = exports.getUserById = exports.loginAdmin = exports.registerAdmin = exports.updateUser = exports.loginOrRegisterUser = exports.sendBulkEmailToUsers = exports.sendPromotionalEmailToUser = void 0;
+exports.getAllUsers = exports.logoutUser = exports.getUserById = exports.loginAdmin = exports.registerAdmin = exports.updateUser = exports.loginOrRegisterUser = exports.sendBulkEmailToUsers = exports.sendPromotionalEmailToUser = void 0;
 const nodemailer_1 = __importDefault(require("nodemailer"));
 const sendPromotionalEmailToUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     const { to, subject, message } = req.body;
@@ -132,6 +132,7 @@ exports.loginOrRegisterUser = [
                 success: true,
                 message: isNewUser ? "User registered successfully." : "Login successful.",
                 token,
+                isNewUser: isNewUser,
                 data: {
                     user: userData,
                     relationProfile: formattedRelationProfiles,
@@ -353,6 +354,59 @@ const getUserById = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
     }
 });
 exports.getUserById = getUserById;
+const logoutUser = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith("Bearer ")) {
+            res.status(401).json({
+                success: false,
+                message: "Unauthorized - No token provided"
+            });
+            return;
+        }
+        const token = authHeader.split(" ")[1];
+        const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
+        const userId = decoded.userId;
+        const user = yield user_model_1.default.findById(userId);
+        if (!user) {
+            res.status(404).json({
+                success: false,
+                message: "User not found"
+            });
+            return;
+        }
+        yield user_model_1.default.findByIdAndUpdate(userId, {
+            $unset: { token: 1 }
+        });
+        res.status(200).json({
+            success: true,
+            message: "Logout successful"
+        });
+    }
+    catch (error) {
+        console.error("Logout Error:", error);
+        if (error.name === 'JsonWebTokenError') {
+            res.status(401).json({
+                success: false,
+                message: "Invalid token"
+            });
+            return;
+        }
+        if (error.name === 'TokenExpiredError') {
+            res.status(401).json({
+                success: false,
+                message: "Token expired"
+            });
+            return;
+        }
+        res.status(500).json({
+            success: false,
+            message: "Server error during logout",
+            error: error.message
+        });
+    }
+});
+exports.logoutUser = logoutUser;
 const getAllUsers = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
     try {
         const users = yield user_model_1.default.find()

@@ -45,13 +45,14 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getOrderById = exports.getOrdersByUserId = exports.getAllOrders = exports.cancelProduct = exports.updateProductStatus = exports.createOrder = void 0;
+exports.getOrdersByUserIdParams = exports.getOrderById = exports.getOrdersByUserId = exports.getAllOrders = exports.cancelProduct = exports.updateProductStatus = exports.createOrder = void 0;
 const order_model_1 = __importStar(require("./order.model"));
 const user_model_1 = __importDefault(require("../userModule/user.model"));
 const productVariant_model_1 = __importDefault(require("../productModule/productVariant.model"));
 const productImage_model_1 = __importDefault(require("../productModule/productImage.model"));
 const address_model_1 = __importDefault(require("../addressModule/address.model"));
 const preference_model_1 = __importDefault(require("../userModule/preference.model"));
+const cart_model_1 = __importDefault(require("../cartModel/cart.model"));
 const mongoose_1 = __importDefault(require("mongoose"));
 const sendMail_1 = require("../utils/sendMail");
 const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
@@ -198,12 +199,22 @@ const createOrder = (req, res) => __awaiter(void 0, void 0, void 0, function* ()
                 status: order_model_1.STATUS.PENDING,
                 price: itemPrice
             });
-            if (variant.stock_qty) {
+            const originalStock = variant.stock_qty || 0;
+            console.log(`📦 Updating stock for ${product.name} (Size: ${variant.size})`);
+            console.log(`   - Original stock: ${originalStock}`);
+            console.log(`   - Quantity ordered: ${parsedQuantity}`);
+            if (variant.stock_qty !== undefined && variant.stock_qty !== null) {
                 variant.stock_qty -= parsedQuantity;
+                console.log(`   - New stock: ${variant.stock_qty}`);
                 if (variant.stock_qty <= 0) {
                     variant.available_status = 'out_of_stock';
+                    console.log(`   - Status updated to: out_of_stock`);
                 }
                 yield variant.save();
+                console.log(`   ✅ Stock updated successfully`);
+            }
+            else {
+                console.log(`   ⚠️ Stock quantity not defined for this variant`);
             }
         }
         const newOrder = yield order_model_1.default.create({
@@ -262,6 +273,27 @@ Your Shopping Team`
         }
         catch (emailError) {
             console.error('Failed to send order confirmation email:', emailError);
+        }
+        try {
+            const cartClearResult = yield cart_model_1.default.findOneAndUpdate({ user: user }, {
+                items: [],
+                subTotalAmount: 0,
+                updatedAt: new Date()
+            }, { new: true });
+            if (cartClearResult) {
+                console.log(`🛒 Cart cleared for user ${user} after order creation`);
+            }
+            else {
+                console.log(`🛒 No cart found for user ${user}, creating empty cart`);
+                yield cart_model_1.default.create({
+                    user: user,
+                    items: [],
+                    subTotalAmount: 0
+                });
+            }
+        }
+        catch (cartError) {
+            console.error('Failed to clear cart after order creation:', cartError);
         }
         res.status(200).json({
             success: true,
@@ -674,3 +706,58 @@ const getOrderById = (req, res) => __awaiter(void 0, void 0, void 0, function* (
     }
 });
 exports.getOrderById = getOrderById;
+const getOrdersByUserIdParams = (req, res) => __awaiter(void 0, void 0, void 0, function* () {
+    try {
+        const { userId } = req.params;
+        const { page, limit, status } = req.query;
+        if (!userId || !mongoose_1.default.Types.ObjectId.isValid(userId)) {
+            res.status(400).json({ success: false, message: "Valid user ID is required" });
+            return;
+        }
+        const parsedPage = parseInt(page) || 1;
+        const parsedLimit = parseInt(limit) || 10;
+        const skip = (parsedPage - 1) * parsedLimit;
+        let filterCondition = { user: userId };
+        const total = yield order_model_1.default.countDocuments(filterCondition);
+        const orders = yield order_model_1.default.find(filterCondition)
+            .populate('products.product', 'name images price')
+            .populate('address')
+            .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(parsedLimit);
+        const ordersWithImages = yield Promise.all(orders.map((order) => __awaiter(void 0, void 0, void 0, function* () {
+            const productsWithImages = yield Promise.all(order.products.map((item) => __awaiter(void 0, void 0, void 0, function* () {
+                const images = yield productImage_model_1.default.find({
+                    variantObjectid: item.variantId
+                }).sort({ sort_order: 1 });
+                const primaryImage = images.find(img => img.is_primary) || images[0];
+                return Object.assign(Object.assign({}, item.toObject()), { image: primaryImage ? {
+                        _id: primaryImage._id,
+                        image: primaryImage.image,
+                        is_primary: primaryImage.is_primary,
+                        sort_order: primaryImage.sort_order
+                    } : null });
+            })));
+            return Object.assign(Object.assign({}, order.toObject()), { products: productsWithImages });
+        })));
+        res.status(200).json({
+            success: true,
+            data: ordersWithImages,
+            pagination: {
+                page: parsedPage,
+                limit: parsedLimit,
+                total,
+                totalPages: Math.ceil(total / parsedLimit)
+            }
+        });
+    }
+    catch (error) {
+        console.error("Error fetching user orders:", error);
+        res.status(500).json({
+            success: false,
+            message: "Something went wrong",
+            error: error.message,
+        });
+    }
+});
+exports.getOrdersByUserIdParams = getOrdersByUserIdParams;
