@@ -2,7 +2,6 @@ import 'dart:convert';
 import '../../http_helper.dart';
 import '../model/user_model.dart';
 import '../model/preference_model.dart';
-import '../model/relation_profile_model.dart';
 import 'package:flutter/material.dart';
 import 'package:localstorage/localstorage.dart';
 import '../../api.dart';

@@ -11,7 +11,7 @@ class AddressCard extends StatelessWidget {
   final bool isSelectionMode;
 
   const AddressCard({
-    Key? key,
+    super.key,
     required this.address,
     this.onEdit,
     this.onDelete,
@@ -19,7 +19,7 @@ class AddressCard extends StatelessWidget {
     this.isSelected = false,
     this.showActions = true,
     this.isSelectionMode = false,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

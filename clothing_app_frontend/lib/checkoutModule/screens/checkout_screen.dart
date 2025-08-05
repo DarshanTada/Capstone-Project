@@ -322,7 +322,7 @@ class _CheckoutScreenState extends State<CheckoutScreen> {
                                       ),
                                     ),
                                   )
-                                  .toList(),
+                                  ,
 
                               SizedBox(height: 16),
                               Divider(color: Colors.grey.shade300),

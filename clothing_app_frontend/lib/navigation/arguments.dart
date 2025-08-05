@@ -53,7 +53,10 @@ class EditProfileScreenArguments {
 }
 
 class ProductDetailScreenArguments {
-  ProductDetailScreenArguments({Null});
+  final String productId;
+  ProductDetailScreenArguments({
+    required this.productId,
+  });
 }
 
 class CategoryRelationScreenArguments {

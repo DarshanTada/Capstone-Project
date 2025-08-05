@@ -811,7 +811,7 @@ class SearchScreenState extends State<SearchScreen> {
                               );
                             },
                           ),
-                          SizedBox(height: dW * 0.08),
+                          // SizedBox(height: dW * 0.08),
 
                           // Trending Section (Always visible)
                           TextWidget(

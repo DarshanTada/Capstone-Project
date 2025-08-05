@@ -6,7 +6,6 @@ import '../../authModule/providers/auth_provider.dart';
 import '../../colors.dart';
 
 import '../../common_functions.dart';
-import '../../main.dart' hide navigatorKey;
 
 class SingleResponseDialogBox extends StatefulWidget {
   final String title;

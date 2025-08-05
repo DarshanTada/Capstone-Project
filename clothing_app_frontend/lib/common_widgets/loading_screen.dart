@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
-import 'package:clothing_app_frontend/navigation/routes.dart';
 import 'package:provider/provider.dart';
 import '../authModule/model/user_model.dart';
 import '../authModule/providers/auth_provider.dart';
-import '../common_functions.dart';
 import '../navigation/arguments.dart';
-import '../navigation/navigators.dart';
 
 class LoadingScreen extends StatefulWidget {
   final LoadingScreenArguments args;

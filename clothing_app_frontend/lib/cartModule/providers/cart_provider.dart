@@ -1,3 +1,5 @@
+import 'package:clothing_app_frontend/api.dart';
+import 'package:clothing_app_frontend/http_helper.dart';
 import 'package:flutter/material.dart';
 import '../services/cart_api_service.dart';
 import '../models/cart_model.dart';
@@ -45,7 +47,6 @@ class CartProvider with ChangeNotifier {
         throw Exception(result['message'] ?? 'Failed to get cart');
       }
     } catch (e) {
-      print('Error getting cart: $e');
       _setError(e.toString());
       // Create empty cart on error
       _cart = CartModel(user: userId, items: [], subTotalAmount: 0.0);
@@ -54,27 +55,48 @@ class CartProvider with ChangeNotifier {
     }
   }
 
-  Future<bool> addToCart(String userId, String variantId, int quantity) async {
+  Future<Map<String, dynamic>> addToCart({
+    required String userId,
+    required String variantId,
+    required int quantity,
+  }) async {
     try {
       _setLoading(true);
       _setError(null);
 
-      final result = await _cartApiService.addToCart(
-        userId,
-        variantId,
-        quantity,
+      final url = '${webApi['domain']}${endPoint['addToCart']}';
+      final response = await RemoteServices.httpRequest(
+        method: 'POST',
+        url: url,
+        body: {
+          'userId': userId,
+          'variantId': variantId,
+          'quantity': quantity,
+        },
       );
 
-      if (result['success'] == true) {
-        _cart = CartModel.fromJson(result['data']);
-        return true;
+      if (response['success'] == true) {
+        // Update cart with new data if provided
+        if (response['data'] != null) {
+          _cart = CartModel.fromJson(response['data']);
+        } else {
+          // Refresh cart after successful addition
+          await getCart(userId);
+        }
+        return {
+          'success': true,
+          'message': 'Product added to cart successfully',
+        };
       } else {
-        throw Exception(result['message'] ?? 'Failed to add to cart');
+        _setError(response['message'] ?? 'Failed to add to cart');
+        return {
+          'success': false,
+          'message': response['message'] ?? 'Failed to add to cart',
+        };
       }
-    } catch (e) {
-      print('Error adding to cart: $e');
-      _setError(e.toString());
-      return false;
+    } catch (error) {
+      _setError(error.toString());
+      return {'success': false, 'message': error.toString()};
     } finally {
       _setLoading(false);
     }
@@ -102,7 +124,6 @@ class CartProvider with ChangeNotifier {
         throw Exception(result['message'] ?? 'Failed to update quantity');
       }
     } catch (e) {
-      print('Error updating quantity: $e');
       _setError(e.toString());
       return false;
     } finally {
@@ -125,7 +146,6 @@ class CartProvider with ChangeNotifier {
         throw Exception(result['message'] ?? 'Failed to remove from cart');
       }
     } catch (e) {
-      print('Error removing from cart: $e');
       _setError(e.toString());
       return false;
     } finally {
@@ -147,7 +167,6 @@ class CartProvider with ChangeNotifier {
         throw Exception(result['message'] ?? 'Failed to clear cart');
       }
     } catch (e) {
-      print('Error clearing cart: $e');
       _setError(e.toString());
       return false;
     } finally {

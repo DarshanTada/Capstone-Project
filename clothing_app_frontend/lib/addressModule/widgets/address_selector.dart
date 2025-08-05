@@ -11,12 +11,12 @@ class AddressSelector extends StatefulWidget {
   final bool isRequired;
 
   const AddressSelector({
-    Key? key,
+    super.key,
     this.selectedAddressId,
     this.onAddressSelected,
     this.title = 'Select Address',
     this.isRequired = false,
-  }) : super(key: key);
+  });
 
   @override
   State<AddressSelector> createState() => _AddressSelectorState();

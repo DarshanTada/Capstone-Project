@@ -4,7 +4,7 @@ import 'addressModule/provider/address_provider.dart';
 import 'checkoutModule/screens/checkout_screen.dart';
 
 class TestScreen extends StatelessWidget {
-  const TestScreen({Key? key}) : super(key: key);
+  const TestScreen({super.key});
 
   @override
   Widget build(BuildContext context) {

@@ -149,9 +149,10 @@ class UserApiService {
       }
       if (size != null) body['size'] = size;
       if (undertone != null) body['undertone'] = undertone.toLowerCase();
-      if (avatarUrl != null)
+      if (avatarUrl != null) {
         body['avartarURL'] =
             avatarUrl; // Note: backend uses 'avartarURL' (typo)
+      }
 
       print('🚀 Sending updateUser request to: $url');
       print('📋 Request body: $body');

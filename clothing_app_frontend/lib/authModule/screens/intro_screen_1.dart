@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../navigation/navigators.dart';
 import '../../navigation/routes.dart';
 
 class IntroScreen1 extends StatelessWidget {
