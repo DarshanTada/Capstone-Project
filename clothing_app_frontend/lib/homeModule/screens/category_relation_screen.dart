@@ -3,7 +3,9 @@ import 'package:clothing_app_frontend/common_functions.dart';
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
-import 'package:clothing_app_frontend/navigation/navigators.dart';
+
+import 'dart:convert';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -35,168 +37,124 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
   @override
   void initState() {
     super.initState();
+    print('CategoryRelationScreen - Category: ${widget.args.category}');
+    print(
+      'CategoryRelationScreen - Subcategories count: ${widget.args.subcategories?.length ?? 0}',
+    );
+    print(
+      'CategoryRelationScreen - Products count: ${widget.args.products?.length ?? 0}',
+    );
     _initializeCategories();
     _initializeProducts();
     fetchData();
   }
 
   void _initializeCategories() {
-    // Set categories based on the selected category from CategoryScreen
-    if (widget.args.category == 'Jeans') {
-      categories = [
-        {
-          'name': 'Baggy',
-          'image': 'assets/products/6_jeans/baggy/product_6_1.png',
-        },
-        {
-          'name': 'Skinny',
-          'image': 'assets/products/6_jeans/skinny_jeans/product_6_1.png',
-        },
-        {
-          'name': 'Ripped',
-          'image': 'assets/products/6_jeans/ripped_jeans/product_6_1.png',
-        },
-        {
-          'name': 'Wide Leg',
-          'image': 'assets/products/6_jeans/wide_leg_jeans/product_6_1.png',
-        },
-        {
-          'name': 'Splatter Loose Fit',
-          'image':
-              'assets/products/6_jeans/splatter_loose_fit_jeans/product_6_1.png',
-        },
-      ];
-    } else if (widget.args.category == 'Shorts') {
-      categories = [
-        {
-          'name': 'Jeans Shorts',
-          'image': 'assets/products/4_shorts/jeans_shorts/product_4_1.png',
-        },
-        {
-          'name': 'Linen Shorts',
-          'image': 'assets/products/4_shorts/linen_shorts/product_4_1.png',
-        },
-      ];
-    } else if (widget.args.category == 'T-Shirts') {
-      categories = [
-        {
-          'name': 'Collar T-Shirts',
-          'image': 'assets/products/8_t-shirts/collar_tshirts/product_8_1.png',
-        },
-        {
-          'name': 'Wide T-Shirts',
-          'image': 'assets/products/8_t-shirts/wide_tshirts/product_8_4.png',
-        },
-        {
-          'name': 'Cotton Shirts',
-          'image': 'assets/products/7_shirts/cotton_shirts/product_7_1.png',
-        },
-        {
-          'name': 'Jeans Shirts',
-          'image': 'assets/products/7_shirts/jeans_shirts/product_7_1.png',
-        },
-      ];
+    // Use dynamic subcategories if provided, otherwise empty
+    if (widget.args.subcategories != null &&
+        widget.args.subcategories!.isNotEmpty) {
+      categories = widget.args.subcategories!.map((subcat) {
+        return {
+          'name': subcat['name']?.toString() ?? 'Unknown',
+          'image': subcat['image']?.toString() ?? '',
+          'id': subcat['_id']?.toString() ?? '',
+        };
+      }).toList();
     } else {
-      // Default categories for other types
-      categories = [
-        {
-          'name': 'All Items',
-          'image': 'assets/products/6_jeans/baggy/product_6_1.png',
-        },
-      ];
+      categories = []; // Empty if no dynamic data
     }
   }
 
   void _initializeProducts() {
-    products = List.generate(10, (i) {
-      // Create different product types based on category with actual asset images
-      List<String> imagesToUse = [];
-      List<String> productNames = [];
+    // Use dynamic products if provided, otherwise create dummy products with dynamic names and images
+    if (widget.args.products != null && widget.args.products!.isNotEmpty) {
+      products = widget.args.products!.map((product) {
+        return {
+          'name': product['name']?.toString() ?? 'Unknown Product',
+          'image': product['image']?.toString() ?? '',
+          'oldPrice':
+              int.tryParse(product['oldPrice']?.toString() ?? '0') ?? 60,
+          'price': int.tryParse(product['price']?.toString() ?? '0') ?? 45,
+          'colors': [Colors.black, Colors.brown, Colors.grey.shade400],
+          'sizes': ['S', 'M', 'L', 'XL'],
+          'isFavorite': false,
+          'id': product['_id']?.toString() ?? '',
+        };
+      }).toList();
+    } else {
+      // Generate dummy products based on category name and subcategories
+      products = _generateDummyProducts();
+    }
+  }
 
-      if (widget.args.category == 'Jeans') {
-        // Use actual jeans images from different subcategories
-        imagesToUse = [
-          'assets/products/6_jeans/baggy/product_6_1.png',
-          'assets/products/6_jeans/baggy/product_6_2.png',
-          'assets/products/6_jeans/skinny_jeans/product_6_1.png',
-          'assets/products/6_jeans/skinny_jeans/product_6_2.png',
-          'assets/products/6_jeans/ripped_jeans/product_6_1.png',
-          'assets/products/6_jeans/wide_leg_jeans/product_6_1.png',
-          'assets/products/6_jeans/splatter_loose_fit_jeans/product_6_1.png',
-        ];
-        productNames = [
-          'Baggy Denim Jeans',
-          'Premium Baggy Jeans',
-          'Skinny Fit Jeans',
-          'Slim Skinny Jeans',
-          'Ripped Denim Jeans',
-          'Wide Leg Jeans',
-          'Splatter Loose Fit Jeans',
-        ];
-      } else if (widget.args.category == 'Shorts') {
-        // Use actual shorts images
-        imagesToUse = [
-          'assets/products/4_shorts/jeans_shorts/product_4_1.png',
-          'assets/products/4_shorts/jeans_shorts/product_4_2.png',
-          'assets/products/4_shorts/linen_shorts/product_4_1.png',
-          'assets/products/4_shorts/linen_shorts/product_4_2.png',
-        ];
-        productNames = [
-          'Denim Cargo Shorts',
-          'Classic Jeans Shorts',
-          'Summer Linen Shorts',
-          'Casual Linen Shorts',
-        ];
-      } else if (widget.args.category == 'T-Shirts') {
-        // Use actual t-shirts and shirts images
-        imagesToUse = [
-          'assets/products/8_t-shirts/collar_tshirts/product_8_1.png',
-          'assets/products/8_t-shirts/collar_tshirts/product_8_2.png',
-          'assets/products/8_t-shirts/collar_tshirts/product_8_3.png',
-          'assets/products/8_t-shirts/wide_tshirts/product_8_4.png',
-          'assets/products/8_t-shirts/wide_tshirts/product_8_5.png',
-          'assets/products/7_shirts/cotton_shirts/product_7_1.png',
-          'assets/products/7_shirts/cotton_shirts/product_7_2.png',
-          'assets/products/7_shirts/cotton_shirts/product_7_3.png',
-          'assets/products/7_shirts/jeans_shirts/product_7_1.png',
-        ];
-        productNames = [
-          'Classic Collar T-Shirt',
-          'Premium Collar T-Shirt',
-          'Designer Collar T-Shirt',
-          'Wide Fit T-Shirt',
-          'Oversized Wide T-Shirt',
-          'Cotton Casual Shirt',
-          'Premium Cotton Shirt',
-          'Classic Cotton Shirt',
-          'Denim Style Shirt',
-        ];
-      } else {
-        // Default fallback
-        imagesToUse = ['assets/products/6_jeans/baggy/product_6_1.png'];
-        productNames = ['Classic Item'];
+  List<Map<String, dynamic>> _generateDummyProducts() {
+    List<Map<String, dynamic>> dummyProducts = [];
+
+    // Base product names with category-specific variations
+    List<String> baseNames = [
+      '${widget.args.category} Classic',
+      '${widget.args.category} Premium',
+      '${widget.args.category} Deluxe',
+      '${widget.args.category} Essential',
+      '${widget.args.category} Modern',
+      '${widget.args.category} Vintage',
+    ];
+
+    // If we have subcategories, create one unique product per subcategory
+    if (categories.isNotEmpty) {
+      List<String> productStyles = [
+        'Premium',
+        'Classic',
+        'Deluxe',
+        'Essential',
+        'Modern',
+        'Vintage',
+        'Elite',
+        'Pro',
+      ];
+
+      for (int i = 0; i < categories.length; i++) {
+        final subcat = categories[i];
+        final style = productStyles[i % productStyles.length];
+
+        dummyProducts.add({
+          'name': '${subcat['name']} $style',
+          'image': subcat['image'] ?? '', // Use subcategory image
+          'oldPrice': 50 + (i * 7),
+          'price': 30 + (i * 5),
+          'colors': [
+            Colors.black,
+            Colors.brown,
+            Colors.grey.shade400,
+            Colors.blue.shade300,
+          ],
+          'sizes': ['S', 'M', 'L', 'XL'],
+          'isFavorite': false,
+          'id': 'dummy_$i',
+        });
       }
+    } else {
+      // If no subcategories, create generic products for the category
+      for (int i = 0; i < baseNames.length; i++) {
+        dummyProducts.add({
+          'name': baseNames[i],
+          'image': '', // No image for generic products
+          'oldPrice': 60 + (i * 5),
+          'price': 45 + (i * 3),
+          'colors': [
+            Colors.black,
+            Colors.brown,
+            Colors.grey.shade400,
+            Colors.blue.shade300,
+          ],
+          'sizes': ['S', 'M', 'L', 'XL'],
+          'isFavorite': false,
+          'id': 'dummy_generic_$i',
+        });
+      }
+    }
 
-      // Cycle through available images and names
-      String selectedImage = imagesToUse[i % imagesToUse.length];
-      String selectedName = productNames[i % productNames.length];
-
-      return {
-        'name': selectedName,
-        'image': selectedImage,
-        'oldPrice': 60 + (i * 5),
-        'price': 45 + (i * 3),
-        'colors': [
-          Colors.black,
-          Colors.brown,
-          Colors.grey.shade400,
-          Colors.brown.shade200,
-          Colors.blueGrey,
-        ],
-        'sizes': ['S', 'M', 'L', 'XL'],
-        'isFavorite': i % 2 == 0,
-      };
-    });
+    return dummyProducts;
   }
 
   fetchData() async {
@@ -216,22 +174,19 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
       appBar: AppBar(
         leading: IconButton(
           onPressed: () {
-            pop();
+            Navigator.pop(context);
           },
           icon: Icon(Icons.arrow_back_ios),
         ),
         centerTitle: true,
         elevation: 3,
         backgroundColor: Colors.white,
-
         title: Column(
           children: [
             TextWidget(title: widget.args.category),
             SizedBox(height: dW * 0.02),
             TextWidget(
-              title: widget.args.category == 'Jeans'
-                  ? '156 items'
-                  : '163 items',
+              title: '${products.length} items', // Show only products count
             ),
           ],
         ),
@@ -250,49 +205,81 @@ class CategoryRelationScreenState extends State<CategoryRelationScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 SizedBox(height: dW * 0.03),
-                CategoryRow(
-                  categories: categories,
-                  dW: dW,
-                  customTextTheme: customTextTheme,
-                ),
+                // Always show categories if we have dynamic data
+                if (categories.isNotEmpty)
+                  CategoryRow(
+                    categories: categories,
+                    dW: dW,
+                    customTextTheme: customTextTheme,
+                  ),
                 ProductViewToggle(
                   viewType: viewType,
                   onChange: (type) => setState(() => viewType = type),
                   dW: dW,
                 ),
                 Expanded(
-                  child: Builder(
-                    builder: (context) {
-                      if (viewType == ProductViewType.oneList) {
-                        return ProductList(
-                          products: products,
-                          dW: dW,
-                          onLikeToggle: (index, liked) {
-                            setState(() {
-                              products[index]['isFavorite'] = liked;
-                            });
+                  child: products.isEmpty && categories.isEmpty
+                      ? _buildEmptyState()
+                      : Builder(
+                          builder: (context) {
+                            if (viewType == ProductViewType.oneList) {
+                              return ProductList(
+                                products: products,
+                                dW: dW,
+                                onLikeToggle: (index, liked) {
+                                  setState(() {
+                                    products[index]['isFavorite'] = liked;
+                                  });
+                                },
+                              );
+                            } else {
+                              int crossAxisCount =
+                                  viewType == ProductViewType.twoGrid ? 2 : 3;
+                              return ProductGrid(
+                                products: products,
+                                dW: dW,
+                                crossAxisCount: crossAxisCount,
+                                onLikeToggle: (index, liked) {
+                                  setState(() {
+                                    products[index]['isFavorite'] = liked;
+                                  });
+                                },
+                              );
+                            }
                           },
-                        );
-                      } else {
-                        int crossAxisCount = viewType == ProductViewType.twoGrid
-                            ? 2
-                            : 3;
-                        return ProductGrid(
-                          products: products,
-                          dW: dW,
-                          crossAxisCount: crossAxisCount,
-                          onLikeToggle: (index, liked) {
-                            setState(() {
-                              products[index]['isFavorite'] = liked;
-                            });
-                          },
-                        );
-                      }
-                    },
-                  ),
+                        ),
                 ),
               ],
             ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.shopping_bag_outlined,
+            size: dW * 0.2,
+            color: Colors.grey[400],
+          ),
+          SizedBox(height: dW * 0.04),
+          TextWidget(
+            title: 'No products found',
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            color: Colors.grey[600],
+          ),
+          SizedBox(height: dW * 0.02),
+          TextWidget(
+            title: 'No products available for ${widget.args.category}',
+            fontSize: 14,
+            color: Colors.grey[500],
+            textAlign: TextAlign.center,
+          ),
+        ],
+      ),
     );
   }
 }
@@ -309,6 +296,19 @@ class CategoryRow extends StatelessWidget {
     required this.customTextTheme,
   });
 
+  // Helper method to decode base64 images
+  Uint8List? _decodeBase64Image(String? base64String) {
+    if (base64String == null || base64String.isEmpty) return null;
+    try {
+      final base64Part = base64String.contains(',')
+          ? base64String.split(',').last
+          : base64String;
+      return base64Decode(base64Part);
+    } catch (e) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return SizedBox(
@@ -323,6 +323,8 @@ class CategoryRow extends StatelessWidget {
         separatorBuilder: (_, __) => SizedBox(width: dW * 0.03),
         itemBuilder: (context, i) {
           final cat = categories[i];
+          final imageBytes = _decodeBase64Image(cat['image']);
+
           return Column(
             children: [
               Container(
@@ -330,12 +332,33 @@ class CategoryRow extends StatelessWidget {
                 height: dW * 0.18,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(12),
-                  image: DecorationImage(
-                    image: AssetImage(
-                      cat['image'],
-                    ), // Changed from NetworkImage to AssetImage
-                    fit: BoxFit.cover,
-                  ),
+                  color: Colors.grey[200],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: imageBytes != null
+                      ? Image.memory(
+                          imageBytes,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: Colors.grey[300],
+                              child: Icon(
+                                Icons.image_not_supported,
+                                color: Colors.grey[600],
+                                size: 30,
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          color: Colors.grey[300],
+                          child: Icon(
+                            Icons.category,
+                            color: Colors.grey[600],
+                            size: 30,
+                          ),
+                        ),
                 ),
               ),
               SizedBox(height: 4),
@@ -529,6 +552,19 @@ class ProductCard extends StatefulWidget {
 }
 
 class _ProductCardState extends State<ProductCard> {
+  // Helper method to decode base64 images
+  Uint8List? _decodeBase64Image(String? base64String) {
+    if (base64String == null || base64String.isEmpty) return null;
+    try {
+      final base64Part = base64String.contains(',')
+          ? base64String.split(',').last
+          : base64String;
+      return base64Decode(base64Part);
+    } catch (e) {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final bool isLiked = widget.product['isFavorite'] ?? false;
@@ -537,6 +573,8 @@ class _ProductCardState extends State<ProductCard> {
         : widget.isThreeGrid
         ? widget.dW * 0.22
         : widget.dW * 0.28;
+
+    final imageBytes = _decodeBase64Image(widget.product['image']);
 
     return Container(
       margin: EdgeInsets.all(widget.dW * 0.01),
@@ -565,24 +603,35 @@ class _ProductCardState extends State<ProductCard> {
               children: [
                 ClipRRect(
                   borderRadius: BorderRadius.vertical(top: Radius.circular(18)),
-                  child: Image.asset(
-                    widget.product['image'],
-                    width: double.infinity,
-                    height: imageHeight,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: double.infinity,
-                        height: imageHeight,
-                        color: Colors.grey[300],
-                        child: Icon(
-                          Icons.image,
-                          size: 50,
-                          color: Colors.grey[600],
+                  child: imageBytes != null
+                      ? Image.memory(
+                          imageBytes,
+                          width: double.infinity,
+                          height: imageHeight,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: double.infinity,
+                              height: imageHeight,
+                              color: Colors.grey[300],
+                              child: Icon(
+                                Icons.image_not_supported,
+                                size: 50,
+                                color: Colors.grey[600],
+                              ),
+                            );
+                          },
+                        )
+                      : Container(
+                          width: double.infinity,
+                          height: imageHeight,
+                          color: Colors.grey[300],
+                          child: Icon(
+                            Icons.shopping_bag,
+                            size: 50,
+                            color: Colors.grey[600],
+                          ),
                         ),
-                      );
-                    },
-                  ),
                 ),
                 Positioned(
                   top: 12,

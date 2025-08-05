@@ -56,11 +56,14 @@ class ProductDetailScreenArguments {
   ProductDetailScreenArguments({Null});
 }
 
-
-class CategoryRelationScreenArguments{
-    final String category ;
- CategoryRelationScreenArguments ({
-required this.category
+class CategoryRelationScreenArguments {
+  final String category;
+  final List<dynamic>? subcategories;
+  final List<dynamic>? products;
+  CategoryRelationScreenArguments({
+    required this.category,
+    this.subcategories,
+    this.products,
   });
 }
 
