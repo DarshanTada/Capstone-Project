@@ -712,10 +712,10 @@ class MLPreferenceService {
         height: preferenceData['height'],
         bodyType: preferenceData['bodyType'],
         skinTone: preferenceData['skinTone'],
-        styles: List<String>.from(preferenceData['styles'] ?? []),
-        occasions: List<String>.from(preferenceData['occasions'] ?? []),
-        festivals: List<String>.from(preferenceData['festivals'] ?? []),
-        colorTones: List<String>.from(preferenceData['colorTones'] ?? []),
+        styles: _processArrayFieldToSingleString(preferenceData['styles']),
+        occasions: _processArrayFieldToSingleString(preferenceData['occasions']),
+        festivals: _processArrayFieldToSingleString(preferenceData['festivals']),
+        colorTones: _processArrayFieldToSingleString(preferenceData['colorTones']),
         size: preferenceData['size'],
         undertone: preferenceData['undertone'],
       );
@@ -792,7 +792,7 @@ class MLPreferenceService {
         return '#808080'; // default gray
       }
 
-      final result = '#' + cleanColor.toUpperCase();
+      final result = '#${cleanColor.toUpperCase()}';
       print('🔧 Fixed color: "$color" -> "$result"');
       return result;
     }).toList();
@@ -835,5 +835,44 @@ class MLPreferenceService {
     }
 
     return isMonochromatic;
+  }
+
+  /// Process array fields to convert from bracketed format to a single-item array with comma-separated string
+  /// This creates the format: Array (1) 0: "Festival, Wedding"
+  static List<String> _processArrayFieldToSingleString(dynamic fieldData) {
+    if (fieldData == null) return [];
+    
+    if (fieldData is List) {
+      List<String> result = [];
+      for (var item in fieldData) {
+        if (item is String) {
+          // Check if it's in bracketed format like "[Casual, Ethnic]"
+          if (item.startsWith('[') && item.endsWith(']')) {
+            // Remove brackets and split by comma
+            String content = item.substring(1, item.length - 1);
+            List<String> splitItems = content.split(',').map((e) => e.trim()).toList();
+            result.addAll(splitItems);
+          } else {
+            // Direct string value
+            result.add(item.trim());
+          }
+        }
+      }
+      // Return as single-item array with comma-separated values
+      return result.isNotEmpty ? [result.join(', ')] : [];
+    } else if (fieldData is String) {
+      // Check if it's in bracketed format
+      if (fieldData.startsWith('[') && fieldData.endsWith(']')) {
+        // Remove brackets and return content as single-item array
+        String content = fieldData.substring(1, fieldData.length - 1);
+        String cleanedContent = content.split(',').map((e) => e.trim()).join(', ');
+        return [cleanedContent];
+      } else {
+        // Single string value as single-item array
+        return [fieldData.trim()];
+      }
+    }
+    
+    return [];
   }
 }

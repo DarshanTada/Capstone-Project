@@ -637,3 +637,115 @@ export const getAllUsers = async (req: Request, res: Response): Promise<void> =>
     });
   }
 };
+
+// Delete User
+export const deleteUser = [
+  upload.none(), // Handle form-data with text fields only
+  async (req: Request, res: Response): Promise<void> => {
+    try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        res.status(401).json({ 
+          success: false, 
+          message: "Unauthorized - No token provided" 
+        });
+        return;
+      }
+
+      const token = authHeader.split(" ")[1];
+      
+      // Verify the token
+      const decoded: any = jwt.verify(token, JWT_SECRET);
+      const currentUserId = decoded.userId;
+
+      // Get userId from request body, params, or query
+      const userIdToDelete = req.body.userId || req.params.id || req.query.userId;
+
+      if (!userIdToDelete) {
+        res.status(400).json({
+          success: false,
+          message: 'userId is required in body, params, or query.'
+        });
+        return;
+      }
+
+      // Check if user exists
+      const userToDelete = await User.findById(userIdToDelete);
+      if (!userToDelete) {
+        res.status(404).json({
+          success: false,
+          message: 'User not found.'
+        });
+        return;
+      }
+
+      // Get current user to check permissions
+      const currentUser = await User.findById(currentUserId);
+      if (!currentUser) {
+        res.status(401).json({
+          success: false,
+          message: 'Current user not found.'
+        });
+        return;
+      }
+
+      // Check permissions: Admin can delete any user, Users can only delete themselves
+      if (currentUser.role !== 'admin' && currentUserId !== userIdToDelete) {
+        res.status(403).json({
+          success: false,
+          message: 'Forbidden - You can only delete your own account or you need admin privileges.'
+        });
+        return;
+      }
+
+      // Delete related data first
+      // Delete user's preferences
+      await Preference.deleteMany({ user: userIdToDelete });
+
+      // Delete user's relation profiles
+      await RelationProfile.deleteMany({ user: userIdToDelete });
+
+      // Note: You might want to handle other related data like:
+      // - Orders associated with this user
+      // - Cart items
+      // - Addresses
+      // Add those deletions here as needed
+
+      // Finally, delete the user
+      await User.findByIdAndDelete(userIdToDelete);
+
+      res.status(200).json({
+        success: true,
+        message: `User ${userToDelete.email || userToDelete.phone_number} deleted successfully.`,
+        deletedUserId: userIdToDelete
+      });
+
+    } catch (error: any) {
+      console.error("Delete User Error:", error);
+      
+      // Handle JWT specific errors
+      if (error.name === 'JsonWebTokenError') {
+        res.status(401).json({
+          success: false,
+          message: "Invalid token"
+        });
+        return;
+      }
+      
+      if (error.name === 'TokenExpiredError') {
+        res.status(401).json({
+          success: false,
+          message: "Token expired"
+        });
+        return;
+      }
+
+      res.status(500).json({
+        success: false,
+        message: "Server error while deleting user.",
+        error: error.message
+      });
+    }
+  }
+];

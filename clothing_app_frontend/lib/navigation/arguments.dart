@@ -53,14 +53,20 @@ class EditProfileScreenArguments {
 }
 
 class ProductDetailScreenArguments {
-  ProductDetailScreenArguments({Null});
+  final String productId;
+  ProductDetailScreenArguments({
+    required this.productId,
+  });
 }
 
-
-class CategoryRelationScreenArguments{
-    final String category ;
- CategoryRelationScreenArguments ({
-required this.category
+class CategoryRelationScreenArguments {
+  final String category;
+  final List<dynamic>? subcategories;
+  final List<dynamic>? products;
+  CategoryRelationScreenArguments({
+    required this.category,
+    this.subcategories,
+    this.products,
   });
 }
 

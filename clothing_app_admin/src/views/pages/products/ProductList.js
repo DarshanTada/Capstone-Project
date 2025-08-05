@@ -3,7 +3,7 @@ import {
   CCard, CCardBody, CCardHeader, CTable, CTableHead, CTableRow, CTableHeaderCell,
   CTableBody, CTableDataCell, CButton, CPagination, CPaginationItem, CFormInput
 } from '@coreui/react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { ROLE, hasPermission } from 'src/roles/permissions';
 import axios from 'axios';
 
@@ -16,39 +16,46 @@ const ProductList = () => {
   const [totalPages, setTotalPages] = useState(1);
   const [categories, setCategories] = useState([]);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      setLoading(true);
-      try {
-        const res = await axios.get('http://localhost:3001/api/product/getProduct', {
-          params: {
-            page: currentPage,
-            limit: productsPerPage,
-          }
-        });
-        if (res.data.success) {
-          setProducts(res.data.data);
-          setTotalPages(res.data.pagination.totalPages);
-        }
-      } catch (err) {
-        console.error('Failed to fetch products:', err);
-      }
-      setLoading(false);
-    };
-    const fetchCategories = async () => {
-      try {
-        const res = await axios.get('http://localhost:3001/api/category/getCategory');
-        if (res.data.success) {
-          setCategories(res.data.data);
-        }
-      } catch (err) {
-        console.error('Failed to fetch categories:', err);
-      }
-    };
     fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPage, productsPerPage, location.pathname]);
+
+  useEffect(() => {
     fetchCategories();
-  }, []); // fetch categories only once
+  }, []);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const res = await axios.get('http://localhost:3001/api/product/getProduct', {
+        params: {
+          page: currentPage,
+          limit: productsPerPage,
+        }
+      });
+      if (res.data.success) {
+        setProducts(res.data.data);
+        setTotalPages(res.data.pagination.totalPages);
+      }
+    } catch (err) {
+      console.error('Failed to fetch products:', err);
+    }
+    setLoading(false);
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const res = await axios.get('http://localhost:3001/api/category/getCategory');
+      if (res.data.success) {
+        setCategories(res.data.data);
+      }
+    } catch (err) {
+      console.error('Failed to fetch categories:', err);
+    }
+  };
 
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this product?')) {
@@ -72,26 +79,39 @@ const ProductList = () => {
     }
   };
 
-  const handleProductsPerPageChange = (e) => {
-    setProductsPerPage(Number(e.target.value));
+  const handleProductsPerPageChange = async (e) => {
+    const value = Number(e.target.value);
+    // If 'All' is selected, fetch total count and set as limit
+    if (value === products.length) {
+      try {
+        const res = await axios.get('http://localhost:3001/api/product/getProduct', { params: { page: 1, limit: 1 } });
+        if (res.data && res.data.pagination && res.data.pagination.total) {
+          setProductsPerPage(res.data.pagination.total);
+        } else {
+          setProductsPerPage(10000); // fallback
+        }
+      } catch {
+        setProductsPerPage(10000);
+      }
+    } else {
+      setProductsPerPage(value);
+    }
     setCurrentPage(1);
   };
 
   const pageOptions = [2, 3, 5, 10, 15, 20, 25, 50].filter(num => num < products.length);
   if (products.length > 0) pageOptions.push(products.length);
 
-  // Filter products by search
+  // Filter products by search (client-side search on current page only)
   const filteredProducts = products.filter(
     (product) =>
       product.name.toLowerCase().includes(search.toLowerCase()) ||
       (product.category_id && product.category_id.name && product.category_id.name.toLowerCase().includes(search.toLowerCase()))
   );
 
-  // Paginate on frontend if backend does not paginate
-  const startIdx = (currentPage - 1) * productsPerPage;
-  const endIdx = startIdx + productsPerPage;
-  const paginatedProducts = filteredProducts.slice(startIdx, endIdx);
-  const totalFilteredPages = Math.ceil(filteredProducts.length / productsPerPage);
+  // Use backend pagination: products is already paginated
+  const paginatedProducts = filteredProducts;
+  const totalFilteredPages = totalPages;
 
   return (
     <CCard className="mb-4">
@@ -111,6 +131,7 @@ const ProductList = () => {
               </option>
             ))}
           </select>
+          {/* Refresh button removed: now auto-refreshes on navigation */}
           {(hasPermission('admin', 'manage_products') || hasPermission('super_admin', 'manage_products') || hasPermission('product_manager', 'manage_products')) && (
             <CButton color="primary" className="float-end ms-3" onClick={() => navigate('/products/add')}>
               Add Product
@@ -170,15 +191,55 @@ const ProductList = () => {
                         })()}
                       </CTableDataCell>
                       <CTableDataCell>
-                        {product.images && product.images.length > 0 ? (
-                          <img
-                            src={`data:${product.images[0].image.contentType};base64,${product.images[0].image.base64}`}
-                            alt="Product"
-                            style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc' }}
-                          />
-                        ) : (
-                          <span className="text-muted">No image</span>
-                        )}
+                        {(() => {
+                          // Support base64, URL, and data URL string in 'image' field
+                          if (product.images && product.images.length > 0 && product.images[0]) {
+                            const imgObj = product.images[0];
+                            // If backend returns a direct URL
+                            if (typeof imgObj === 'string' && imgObj.startsWith('http')) {
+                              return (
+                                <img
+                                  src={imgObj}
+                                  alt="Product"
+                                  style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc' }}
+                                />
+                              );
+                            }
+                            // If backend returns { url: ... }
+                            if (imgObj.url && typeof imgObj.url === 'string' && imgObj.url.startsWith('http')) {
+                              return (
+                                <img
+                                  src={imgObj.url}
+                                  alt="Product"
+                                  style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc' }}
+                                />
+                              );
+                            }
+                            // If backend returns { image: { contentType, base64 } }
+                            if (imgObj.image && imgObj.image.contentType && imgObj.image.base64) {
+                              return (
+                                <img
+                                  src={`data:${imgObj.image.contentType};base64,${imgObj.image.base64}`}
+                                  alt="Product"
+                                  style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc' }}
+                                />
+                              );
+                            }
+                            // If backend returns { image: 'data:image/jpeg;base64,...' }
+                            if (imgObj.image && typeof imgObj.image === 'string' && imgObj.image.startsWith('data:image')) {
+                              return (
+                                <img
+                                  src={imgObj.image}
+                                  alt="Product"
+                                  style={{ width: '40px', height: '40px', objectFit: 'cover', borderRadius: '4px', border: '1px solid #ccc' }}
+                                />
+                              );
+                            }
+                            // Log for debugging if none of the above
+                            console.warn('Unknown image object structure:', imgObj);
+                          }
+                          return <span className="text-muted">No image</span>;
+                        })()}
                       </CTableDataCell>
                       <CTableDataCell>
                         {product.variants && product.variants.length > 0

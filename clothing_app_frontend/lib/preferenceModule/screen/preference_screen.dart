@@ -168,7 +168,8 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
           // Load style preferences
           if (activePreference.style != null &&
               activePreference.style!.isNotEmpty) {
-            selectedStyles = activePreference.style!
+            final processedStyles = _processArrayField(activePreference.style!);
+            selectedStyles = processedStyles
                 .map(
                   (style) =>
                       style[0].toUpperCase() + style.substring(1).toLowerCase(),
@@ -180,19 +181,22 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
           // Load occasions
           if (activePreference.occasion != null &&
               activePreference.occasion!.isNotEmpty) {
-            selectedOccasions = activePreference.occasion!.toSet();
+            final processedOccasions = _processArrayField(activePreference.occasion!);
+            selectedOccasions = processedOccasions.toSet();
           }
 
           // Load festivals
           if (activePreference.festivals != null &&
               activePreference.festivals!.isNotEmpty) {
-            selectedFestivals = activePreference.festivals!.toSet();
+            final processedFestivals = _processArrayField(activePreference.festivals!);
+            selectedFestivals = processedFestivals.toSet();
           }
 
           // Load color preferences
           if (activePreference.colorTones != null &&
               activePreference.colorTones!.isNotEmpty) {
-            mlColorTones = activePreference.colorTones!;
+            final processedColorTones = _processArrayField(activePreference.colorTones!);
+            mlColorTones = processedColorTones;
           }
 
           // Load undertone
@@ -271,8 +275,9 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         selectedSkin = _mapSkinToneToIndex(prefs.skinTone!);
       }
       if (prefs.style != null) {
-        // Convert styles to title case for UI display
-        final titleCaseStyles = prefs.style!
+        // Process styles to remove brackets and convert to title case
+        final processedStyles = _processArrayField(prefs.style!);
+        final titleCaseStyles = processedStyles
             .map(
               (style) =>
                   style[0].toUpperCase() + style.substring(1).toLowerCase(),
@@ -288,16 +293,25 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         // Always update ML-recommended styles for display purposes
         mlRecommendedStyles = titleCaseStyles;
       }
-      if (prefs.occasion != null) selectedOccasions = prefs.occasion!.toSet();
-      if (prefs.festivals != null) selectedFestivals = prefs.festivals!.toSet();
+      if (prefs.occasion != null) {
+        // Process occasions to remove brackets
+        final processedOccasions = _processArrayField(prefs.occasion!);
+        selectedOccasions = processedOccasions.toSet();
+      }
+      if (prefs.festivals != null) {
+        // Process festivals to remove brackets
+        final processedFestivals = _processArrayField(prefs.festivals!);
+        selectedFestivals = processedFestivals.toSet();
+      }
       if (prefs.undertone != null) {
         // Capitalize first letter to match UI display
         selectedUndertone =
             prefs.undertone![0].toUpperCase() + prefs.undertone!.substring(1);
       }
       if (prefs.colorTones != null) {
-        // Handle hex codes directly from ML model
-        mlColorTones = prefs.colorTones!;
+        // Process color tones to remove brackets and extract hex codes
+        final processedColorTones = _processArrayField(prefs.colorTones!);
+        mlColorTones = processedColorTones;
       }
     });
   }
@@ -1166,7 +1180,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                 name.isEmpty ? "Enter your name" : name,
                 () async {
                   final selected = await _showTextInputDialog(
-                    "Enter Name",
+                    "Name",
                     name,
                   );
                   if (selected != null && selected.isNotEmpty) {
@@ -1344,7 +1358,7 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
                     ),
                   ],
                   SizedBox(height: 8),
-                  Container(
+                  SizedBox(
                     height: 80, // Increased height to accommodate hex codes
                     child: mlColorTones.isEmpty
                         ? Container(
@@ -2411,5 +2425,24 @@ class _PreferenceScreenState extends State<PreferenceScreen> {
         ),
       ],
     );
+  }
+
+  /// Process array fields to convert from bracketed format to clean string arrays
+  List<String> _processArrayField(List<String> fieldData) {
+    List<String> result = [];
+    
+    for (var item in fieldData) {
+      if (item.startsWith('[') && item.endsWith(']')) {
+        // Remove brackets and split by comma
+        String content = item.substring(1, item.length - 1);
+        List<String> splitItems = content.split(',').map((e) => e.trim()).toList();
+        result.addAll(splitItems);
+      } else {
+        // Direct string value
+        result.add(item.trim());
+      }
+    }
+    
+    return result;
   }
 }

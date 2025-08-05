@@ -1,10 +1,11 @@
 import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:convert';
 
 import '../../authModule/providers/auth_provider.dart';
-import '../../common_functions.dart';
 import '../../checkoutModule/screens/checkout_screen.dart';
+import '../providers/cart_provider.dart';
 
 class MyCartScreen extends StatefulWidget {
   const MyCartScreen({super.key});
@@ -21,42 +22,66 @@ class _MyCartScreenState extends State<MyCartScreen>
   TextTheme customTextTheme = const TextTheme();
   Map language = {};
   bool isLoading = false;
+  String? userId;
 
-  // Sample cart data - Updated with Denim Jeans
-  List<Map<String, dynamic>> cartItems = [
-    {
-      "name": "High Waist Wide Leg Denim Baggy Jeans",
-      "size": "32",
-      "color": "Sky Blue",
-      "price": 89.99,
-      "originalPrice": 119.99,
-      "discount": "25% OFF",
-      "quantity": 1,
-      "image": "assets/images/product_1_1.jpg",
-      "rating": 4.7,
-      "reviews": "2.8k+ Reviews",
-    },
-    {
-      "name": "Classic Cotton T-Shirt",
-      "size": "M",
-      "color": "White",
-      "price": 24.99,
-      "originalPrice": 29.99,
-      "discount": "17% OFF",
-      "quantity": 1,
-      "image": "assets/images/g1.png",
-      "rating": 4.5,
-      "reviews": "1.5k+ Reviews",
-    },
-  ];
+  // Sample cart data - Updated with Denim Jeans (will be replaced with API data)
+  List<Map<String, dynamic>> cartItems = [];
 
-  fetchData() async {}
+  fetchData() async {
+    // Get user ID from AuthProvider
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+    final user = authProvider.user;
+
+    if (user.id != null && user.id!.isNotEmpty) {
+      userId = user.id!;
+      print('👤 User ID loaded: $userId');
+
+      // Fetch cart data
+      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+      await cartProvider.getCart(userId!);
+
+      setState(() {
+        // Convert CartItem objects to Map for compatibility with existing UI
+        cartItems = cartProvider.cartItems
+            .map(
+              (cartItem) => {
+                "variantId": cartItem.variantId,
+                "name": cartItem.product?.name ?? "Unknown Product",
+                "size": cartItem.size.toUpperCase(),
+                "color": cartItem.variant?.color ?? "Default",
+                "price":
+                    cartItem.variant?.discountPrice ??
+                    cartItem.variant?.price ??
+                    0.0,
+                "originalPrice": cartItem.variant?.price,
+                "discount": cartItem.variant?.discountPrice != null
+                    ? "${(((cartItem.variant!.price! - cartItem.variant!.discountPrice!) / cartItem.variant!.price!) * 100).round()}% OFF"
+                    : null,
+                "quantity": cartItem.quantity,
+                "image":
+                    cartItem.image ??
+                    "assets/images/placeholder.png", // Use image directly as string
+                "rating":
+                    4.5, // Default rating - could be enhanced from product data
+                "reviews": "Reviews",
+              },
+            )
+            .toList();
+      });
+    } else {
+      print('❌ No user ID found');
+    }
+  }
 
   late AnimationController _animationController;
   late Animation<double> _badgeAnimation;
 
-  int get totalItems =>
-      cartItems.fold(0, (sum, item) => sum + (item['quantity'] as int));
+  int get totalItems {
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    return cartProvider.totalItems > 0
+        ? cartProvider.totalItems
+        : cartItems.fold(0, (sum, item) => sum + (item['quantity'] as int));
+  }
 
   @override
   void initState() {
@@ -159,28 +184,95 @@ class _MyCartScreenState extends State<MyCartScreen>
           ),
         ),
       ),
-      body: SizedBox(
-        height: dH,
-        width: dW,
-        child: isLoading
-            ? CircularLoader(android: dW * 0.08, iOS: dW * 0.035)
-            : SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: EdgeInsets.symmetric(horizontal: dW * 0.05),
-                child: Column(
-                  children: [
-                    SizedBox(height: dW * 0.05),
-                    ...cartItems.map((item) => cartItemCard(item)),
-                    SizedBox(height: dW * 0.05),
-                    discountBox(),
-                    SizedBox(height: dW * 0.04),
-                    orderSummarySection(),
-                    SizedBox(height: dW * 0.06),
-                    checkoutButton(),
-                    SizedBox(height: dW * 0.1),
-                  ],
-                ),
-              ),
+      body: Consumer<CartProvider>(
+        builder: (context, cartProvider, child) {
+          return SizedBox(
+            height: dH,
+            width: dW,
+            child: isLoading || cartProvider.isLoading
+                ? CircularLoader(android: dW * 0.08, iOS: dW * 0.035)
+                : SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: EdgeInsets.symmetric(horizontal: dW * 0.05),
+                    child: Column(
+                      children: [
+                        SizedBox(height: dW * 0.05),
+                        if (cartProvider.error != null)
+                          Container(
+                            padding: EdgeInsets.all(16),
+                            margin: EdgeInsets.only(bottom: 16),
+                            decoration: BoxDecoration(
+                              color: Colors.red.shade50,
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(color: Colors.red.shade200),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.error_outline, color: Colors.red),
+                                SizedBox(width: 8),
+                                Expanded(
+                                  child: Text(
+                                    cartProvider.error!,
+                                    style: TextStyle(
+                                      color: Colors.red.shade700,
+                                    ),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () {
+                                    cartProvider.clearError();
+                                    fetchData();
+                                  },
+                                  child: Text('Retry'),
+                                ),
+                              ],
+                            ),
+                          ),
+                        if (cartItems.isEmpty)
+                          Center(
+                            child: Column(
+                              children: [
+                                SizedBox(height: dH * 0.2),
+                                Icon(
+                                  Icons.shopping_cart_outlined,
+                                  size: 80,
+                                  color: Colors.grey.shade400,
+                                ),
+                                SizedBox(height: 16),
+                                Text(
+                                  'Your cart is empty',
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                SizedBox(height: 8),
+                                Text(
+                                  'Add some items to get started',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else ...[
+                          ...cartItems.map((item) => cartItemCard(item)),
+                          SizedBox(height: dW * 0.05),
+                          discountBox(),
+                          SizedBox(height: dW * 0.04),
+                          orderSummarySection(),
+                          SizedBox(height: dW * 0.06),
+                          checkoutButton(),
+                        ],
+                        SizedBox(height: dW * 0.1),
+                      ],
+                    ),
+                  ),
+          );
+        },
       ),
     );
   }
@@ -209,10 +301,11 @@ class _MyCartScreenState extends State<MyCartScreen>
             height: dW * 0.28,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              image: DecorationImage(
-                image: AssetImage(item['image']),
-                fit: BoxFit.cover,
-              ),
+              color: Colors.grey.shade200,
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: _buildImage(item['image']),
             ),
           ),
           SizedBox(width: dW * 0.04),
@@ -364,15 +457,29 @@ class _MyCartScreenState extends State<MyCartScreen>
                 Row(
                   children: [
                     GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          if (item['quantity'] > 1) {
-                            item['quantity']--;
-                            // Restart animation when quantity changes
-                            _animationController.reset();
-                            _animationController.forward();
+                      onTap: () async {
+                        if (item['quantity'] > 1) {
+                          final newQuantity = item['quantity'] - 1;
+                          final cartProvider = Provider.of<CartProvider>(
+                            context,
+                            listen: false,
+                          );
+
+                          final success = await cartProvider.updateQuantity(
+                            userId!,
+                            item['variantId'],
+                            newQuantity,
+                          );
+
+                          if (success) {
+                            setState(() {
+                              item['quantity'] = newQuantity;
+                              // Restart animation when quantity changes
+                              _animationController.reset();
+                              _animationController.forward();
+                            });
                           }
-                        });
+                        }
                       },
                       child: Container(
                         padding: EdgeInsets.all(4),
@@ -398,13 +505,27 @@ class _MyCartScreenState extends State<MyCartScreen>
                       ),
                     ),
                     GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          item['quantity']++;
-                          // Restart animation when quantity changes
-                          _animationController.reset();
-                          _animationController.forward();
-                        });
+                      onTap: () async {
+                        final newQuantity = item['quantity'] + 1;
+                        final cartProvider = Provider.of<CartProvider>(
+                          context,
+                          listen: false,
+                        );
+
+                        final success = await cartProvider.updateQuantity(
+                          userId!,
+                          item['variantId'],
+                          newQuantity,
+                        );
+
+                        if (success) {
+                          setState(() {
+                            item['quantity'] = newQuantity;
+                            // Restart animation when quantity changes
+                            _animationController.reset();
+                            _animationController.forward();
+                          });
+                        }
                       },
                       child: Container(
                         padding: EdgeInsets.all(4),
@@ -417,10 +538,22 @@ class _MyCartScreenState extends State<MyCartScreen>
                     ),
                     Spacer(),
                     IconButton(
-                      onPressed: () {
-                        setState(() {
-                          cartItems.remove(item);
-                        });
+                      onPressed: () async {
+                        final cartProvider = Provider.of<CartProvider>(
+                          context,
+                          listen: false,
+                        );
+
+                        final success = await cartProvider.removeFromCart(
+                          userId!,
+                          item['variantId'],
+                        );
+
+                        if (success) {
+                          setState(() {
+                            cartItems.remove(item);
+                          });
+                        }
                       },
                       icon: Icon(
                         Icons.delete_outline,
@@ -490,6 +623,17 @@ class _MyCartScreenState extends State<MyCartScreen>
   }
 
   Widget orderSummarySection() {
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    double subTotal = cartProvider.subTotalAmount > 0
+        ? cartProvider.subTotalAmount
+        : cartItems.fold(
+            0.0,
+            (sum, item) => sum + (item['price'] * item['quantity']),
+          );
+    double deliveryFee = 5.99;
+    double discount = 25.00;
+    double total = subTotal + deliveryFee - discount;
+
     return Container(
       padding: EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -515,11 +659,15 @@ class _MyCartScreenState extends State<MyCartScreen>
             ),
           ),
           SizedBox(height: 12),
-          orderRow("Sub-total", "\$114.98"),
-          orderRow("Delivery Fee", "\$5.99"),
-          orderRow("Discount", "- \$25.00", color: Color(0xFF8FBC8F)),
+          orderRow("Sub-total", "\$${subTotal.toStringAsFixed(2)}"),
+          orderRow("Delivery Fee", "\$${deliveryFee.toStringAsFixed(2)}"),
+          orderRow(
+            "Discount",
+            "- \$${discount.toStringAsFixed(2)}",
+            color: Color(0xFF8FBC8F),
+          ),
           Divider(color: Colors.grey.shade300),
-          orderRow("Total", "\$95.97", isBold: true),
+          orderRow("Total", "\$${total.toStringAsFixed(2)}", isBold: true),
         ],
       ),
     );
@@ -557,6 +705,17 @@ class _MyCartScreenState extends State<MyCartScreen>
   }
 
   Widget checkoutButton() {
+    final cartProvider = Provider.of<CartProvider>(context, listen: false);
+    double subTotal = cartProvider.subTotalAmount > 0
+        ? cartProvider.subTotalAmount
+        : cartItems.fold(
+            0.0,
+            (sum, item) => sum + (item['price'] * item['quantity']),
+          );
+    double deliveryFee = 5.99;
+    double discount = 25.00;
+    double total = subTotal + deliveryFee - discount;
+
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -575,12 +734,16 @@ class _MyCartScreenState extends State<MyCartScreen>
         ],
       ),
       child: ElevatedButton.icon(
-        onPressed: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => const CheckoutScreen()),
-          );
-        },
+        onPressed: cartItems.isNotEmpty
+            ? () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const CheckoutScreen(),
+                  ),
+                );
+              }
+            : null,
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
@@ -591,13 +754,73 @@ class _MyCartScreenState extends State<MyCartScreen>
         ),
         icon: Icon(Icons.payment, color: Colors.white, size: 20),
         label: Text(
-          'Proceed to Checkout - \$95.97',
+          cartItems.isNotEmpty
+              ? 'Proceed to Checkout - \$${total.toStringAsFixed(2)}'
+              : 'Cart is Empty',
           style: TextStyle(
             fontSize: 16,
             color: Colors.white,
             fontWeight: FontWeight.w600,
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildImage(String? imageUrl) {
+    if (imageUrl == null || imageUrl.isEmpty) {
+      return Image.asset(
+        'assets/images/placeholder.png',
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: Colors.grey.shade200,
+            child: Icon(
+              Icons.shopping_bag_outlined,
+              color: Colors.grey.shade400,
+              size: 40,
+            ),
+          );
+        },
+      );
+    }
+
+    // Check if it's a data URL (from API)
+    if (imageUrl.startsWith('data:')) {
+      try {
+        // Extract base64 data from data URL
+        final base64Data = imageUrl.split(',')[1];
+        final bytes = base64Decode(base64Data);
+        return Image.memory(
+          bytes,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return _buildFallbackImage();
+          },
+        );
+      } catch (e) {
+        print('Error decoding base64 image: $e');
+        return _buildFallbackImage();
+      }
+    }
+
+    // If it's a regular asset path
+    return Image.asset(
+      imageUrl,
+      fit: BoxFit.cover,
+      errorBuilder: (context, error, stackTrace) {
+        return _buildFallbackImage();
+      },
+    );
+  }
+
+  Widget _buildFallbackImage() {
+    return Container(
+      color: Colors.grey.shade200,
+      child: Icon(
+        Icons.shopping_bag_outlined,
+        color: Colors.grey.shade400,
+        size: 40,
       ),
     );
   }

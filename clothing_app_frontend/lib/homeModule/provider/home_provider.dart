@@ -1,6 +1,5 @@
 import 'package:clothing_app_frontend/http_helper.dart';
 import 'package:flutter/material.dart';
-import '../model/product.dart';
 import '../../api.dart';
 
 class HomeProvider extends ChangeNotifier {

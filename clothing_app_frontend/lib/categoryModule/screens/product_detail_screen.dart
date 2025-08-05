@@ -1,10 +1,11 @@
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
+import 'package:clothing_app_frontend/cartModule/providers/cart_provider.dart';
 import 'package:clothing_app_frontend/cartModule/screens/cart_screen.dart';
 import 'package:clothing_app_frontend/categoryModule/widgets/similar_product_card_widget.dart';
 import 'package:clothing_app_frontend/checkoutModule/screens/checkout_screen.dart';
 import 'package:clothing_app_frontend/common_functions.dart';
-import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
+import 'package:clothing_app_frontend/homeModule/provider/product_detail_provider.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_big_product_card_grid.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/custom_small_product_card_grid.dart';
 import 'package:clothing_app_frontend/homeModule/widgets/size_chart_screen.dart';
@@ -24,6 +25,7 @@ class ProductDetailScreen extends StatefulWidget {
 class ProductDetailScreenState extends State<ProductDetailScreen> {
   // Add this for dynamic images
   int selectedImageIndex = 0;
+  bool isCheckOutPressed = false;
   List<String> productImages = [
     'assets/images/product_1_1.jpg',
     'assets/images/product_1_2.jpg',
@@ -36,8 +38,8 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
   String selectedSize = '32';
   int selectedColorIndex = 3; // Example: Sky Blue
 
-  final List<String> sizes = ['28', '30', '32', '34', '36'];
-  final List<Color> colors = [
+  List<String> sizes = ['28', '30', '32', '34', '36'];
+  List<Color> colors = [
     Color(0xFF000000), // Black
     Color(0xFF7D7D7D), // Gray
     Color(0xFF1A1F71), // Dark Blue
@@ -55,7 +57,201 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
   bool isFavourite = false;
   int cartItemCount = 0; // Add cart counter
 
-  fetchData() async {}
+  fetchProductDetails() async {
+    setState(() => isLoading = true);
+    try {
+      final response = await Provider.of<ProductDetailProvider>(
+        context,
+        listen: false,
+      ).fetchProductDetails(productId: widget.args.productId);
+
+      if (response['success']) {
+        // Update product images, colors, sizes based on API data
+        _updateProductDataFromAPI();
+      } else {
+        showSnackbar(response['message']);
+      }
+    } catch (e) {
+      showSnackbar('Failed to load product details');
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  void _updateProductDataFromAPI() {
+    final provider = Provider.of<ProductDetailProvider>(context, listen: false);
+    if (provider.rawProductDetails.isNotEmpty) {
+      final productData = safeProductDetail;
+
+      if (productData == null) return;
+
+      // Update product images from variants if available
+      if (productData['variants'] != null &&
+          productData['variants'].isNotEmpty) {
+        List<String> apiImages = [];
+        for (var variant in productData['variants']) {
+          if (variant['imageUrl'] != null && variant['imageUrl'].isNotEmpty) {
+            apiImages.add(variant['imageUrl']);
+          }
+        }
+        // Use API images if available, otherwise keep static images as fallback
+        if (apiImages.isNotEmpty) {
+          productImages = apiImages;
+          selectedImageIndex = 0;
+        }
+      }
+
+      // Update available sizes from variants
+      if (productData['variants'] != null) {
+        final variants = List<dynamic>.from(productData['variants']);
+        final availableSizes = variants
+            .map<String>(
+              (variant) => variant['size']?.toString().toUpperCase() ?? '',
+            )
+            .where((size) => size.isNotEmpty)
+            .toSet()
+            .toList();
+        if (availableSizes.isNotEmpty) {
+          sizes.clear();
+          sizes.addAll(availableSizes);
+          selectedSize = sizes.first;
+        }
+      }
+
+      // Update available colors from variants
+      if (productData['variants'] != null) {
+        final variants = List<dynamic>.from(productData['variants']);
+        final availableColors = variants
+            .map<String>((variant) => variant['color']?.toString() ?? '')
+            .where((color) => color.isNotEmpty)
+            .toSet()
+            .toList();
+
+        // Map color names to Color objects (you can expand this)
+        colors.clear();
+        for (String colorName in availableColors) {
+          switch (colorName.toUpperCase()) {
+            case 'BLACK':
+              colors.add(Color(0xFF000000));
+              break;
+            case 'WHITE':
+              colors.add(Color(0xFFFFFFFF));
+              break;
+            case 'BLUE':
+            case 'DARK BLUE':
+              colors.add(Color(0xFF1A1F71));
+              break;
+            case 'SKY BLUE':
+            case 'LIGHT BLUE':
+              colors.add(Color(0xFF87CEEB));
+              break;
+            case 'RED':
+              colors.add(Color(0xFFDC143C));
+              break;
+            case 'GREEN':
+            case 'DARK OLIVE GREEN':
+              colors.add(Color(0xFF556B2F));
+              break;
+            case 'GRAY':
+            case 'GREY':
+              colors.add(Color(0xFF7D7D7D));
+              break;
+            case 'TAN':
+            case 'BEIGE':
+              colors.add(Color(0xFFC3B091));
+              break;
+            default:
+              colors.add(Color(0xFF7D7D7D)); // Default gray
+          }
+        }
+
+        if (colors.isNotEmpty) {
+          selectedColorIndex = 0;
+        }
+      }
+    }
+  }
+
+  // Helper method to get current product data
+  Map<String, dynamic>? get currentProductData {
+    final provider = Provider.of<ProductDetailProvider>(context, listen: false);
+    if (provider.rawProductDetails.isNotEmpty) {
+      return provider.rawProductDetails[0];
+    }
+    return null;
+  }
+
+  // Helper method to safely get product detail data
+  Map<String, dynamic>? get safeProductDetail {
+    try {
+      final data = currentProductData;
+      if (data != null) {
+        // Try different possible data structures
+        if (data['data'] != null && data['data']['productDetail'] != null) {
+          return data['data']['productDetail'];
+        } else if (data['productDetail'] != null) {
+          return data['productDetail'];
+        } else if (data['product'] != null) {
+          return data['product'];
+        } else {
+          // Return the whole data if no nested structure
+          return data;
+        }
+      }
+    } catch (e) {
+      // Silently handle any access errors
+    }
+    return null;
+  }
+
+  // Helper method to get current variant data
+  Map<String, dynamic>? get currentVariant {
+    final productData = safeProductDetail;
+    if (productData != null && productData['variants'] != null) {
+      final variants = productData['variants'] as List;
+
+      // Get selected color name from the available variants
+      String selectedColorName = '';
+      if (selectedColorIndex < variants.length) {
+        final uniqueColors = variants
+            .map<String>((v) => v['color']?.toString() ?? '')
+            .where((color) => color.isNotEmpty)
+            .toSet()
+            .toList();
+        if (selectedColorIndex < uniqueColors.length) {
+          selectedColorName = uniqueColors[selectedColorIndex];
+        }
+      }
+
+      // Find variant matching selected size and color
+      for (var variant in variants) {
+        final variantSize = variant['size']?.toString().toUpperCase() ?? '';
+        final variantColor = variant['color']?.toString() ?? '';
+
+        if (variantSize == selectedSize.toUpperCase() &&
+            variantColor.toLowerCase() == selectedColorName.toLowerCase()) {
+          return variant;
+        }
+      }
+
+      // If no exact match, try to find by size only
+      for (var variant in variants) {
+        final variantSize = variant['size']?.toString().toUpperCase() ?? '';
+        if (variantSize == selectedSize.toUpperCase()) {
+          return variant;
+        }
+      }
+
+      // Return first variant if no match found
+      return variants.isNotEmpty ? variants[0] : null;
+    }
+    return null;
+  }
+
+  fetchData() async {
+    await fetchProductDetails();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -72,7 +268,10 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: const Text('Product Detail', style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600)),
+        title: const Text(
+          'Product Detail',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.w600),
+        ),
         centerTitle: true,
         backgroundColor: Colors.white,
         elevation: 0,
@@ -85,7 +284,10 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
           Stack(
             children: [
               IconButton(
-                icon: Icon(Icons.shopping_cart_outlined, color: Color(0xFFB8956A)),
+                icon: Icon(
+                  Icons.shopping_cart_outlined,
+                  color: Color(0xFFB8956A),
+                ),
                 onPressed: () {
                   Navigator.push(
                     context,
@@ -105,10 +307,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                       color: Colors.red,
                       borderRadius: BorderRadius.circular(10),
                     ),
-                    constraints: BoxConstraints(
-                      minWidth: 16,
-                      minHeight: 16,
-                    ),
+                    constraints: BoxConstraints(minWidth: 16, minHeight: 16),
                     child: Text(
                       '$cartItemCount',
                       style: TextStyle(
@@ -124,14 +323,14 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
           ),
           IconButton(
             icon: Icon(
-              isFavourite ? Icons.favorite : Icons.favorite_border, 
-              color: isFavourite ? Colors.red : Color(0xFFB8956A)
+              isFavourite ? Icons.favorite : Icons.favorite_border,
+              color: isFavourite ? Colors.red : Color(0xFFB8956A),
             ),
             onPressed: () {
               setState(() {
                 isFavourite = !isFavourite;
               });
-              
+
               // Show appropriate message
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
@@ -142,9 +341,10 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                         color: Colors.white,
                       ),
                       SizedBox(width: 8),
-                      Text(isFavourite 
-                        ? 'Added to favorites!' 
-                        : 'Removed from favorites'
+                      Text(
+                        isFavourite
+                            ? 'Added to favorites!'
+                            : 'Removed from favorites',
                       ),
                     ],
                   ),
@@ -163,6 +363,11 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
             icon: Icon(Icons.share, color: Color(0xFFB8956A)),
             onPressed: () {},
           ),
+          // Debug button - remove this after fixing
+          IconButton(
+            icon: Icon(Icons.bug_report, color: Color(0xFFB8956A)),
+            onPressed: _debugApiResponse,
+          ),
         ],
       ),
       body: iOSCondition(dH) ? screenBody() : SafeArea(child: screenBody()),
@@ -174,7 +379,47 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
       height: dH,
       width: dW,
       child: isLoading
-          ? CircularLoader(android: dW * 0.08, iOS: dW * 0.035)
+          ? Center(
+              child: Container(
+                padding: EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.1),
+                      blurRadius: 20,
+                      offset: Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    SizedBox(
+                      width: 50,
+                      height: 50,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 4,
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Color(0xFFB8956A),
+                        ),
+                        backgroundColor: Color(0xFFB8956A).withOpacity(0.2),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    Text(
+                      'Loading product details...',
+                      style: TextStyle(
+                        color: Color(0xFFB8956A),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
           : SingleChildScrollView(
               physics: const BouncingScrollPhysics(),
               padding: EdgeInsets.symmetric(horizontal: dW * 0.05),
@@ -202,11 +447,8 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                       children: [
                         ClipRRect(
                           borderRadius: BorderRadius.circular(20),
-                          child: Image.asset(
+                          child: _buildProductImage(
                             productImages[selectedImageIndex],
-                            height: dW * 0.7,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
                           ),
                         ),
                         // Positioned(
@@ -271,11 +513,8 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                                   ),
                                   child: ClipRRect(
                                     borderRadius: BorderRadius.circular(8),
-                                    child: Image.asset(
+                                    child: _buildThumbnailImage(
                                       productImages[index],
-                                      height: 48,
-                                      width: 48,
-                                      fit: BoxFit.cover,
                                     ),
                                   ),
                                 ),
@@ -289,7 +528,11 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
 
                   // Product Title
                   TextWidget(
-                    title: 'High Waist Wide Leg Denim Baggy Jeans',
+                    title:
+                        safeProductDetail?['name'] ??
+                        safeProductDetail?['title'] ??
+                        safeProductDetail?['productName'] ??
+                        'Product Name',
                     fontWeight: FontWeight.w500,
                     fontSize: 27,
                   ),
@@ -326,36 +569,43 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                     crossAxisAlignment: CrossAxisAlignment.end,
                     children: [
                       TextWidget(
-                        title: '\$89.99',
+                        title:
+                            '\$${currentVariant?['price']?.toString() ?? '0.00'}',
                         fontWeight: FontWeight.w700,
                         fontSize: 22,
                       ),
                       SizedBox(width: 12),
-                      TextWidget(
-                        title: '\$119.99',
-                        fontWeight: FontWeight.w400,
-                        fontSize: 16,
-                        textDecoration: TextDecoration.lineThrough,
-                        color: Colors.grey,
-                      ),
-                      SizedBox(width: 8),
-                      // Discount badge
-                      Container(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 2,
+                      if (currentVariant?['discount_price'] != null)
+                        TextWidget(
+                          title:
+                              '\$${currentVariant?['discount_price']?.toString() ?? '0.00'}',
+                          fontWeight: FontWeight.w400,
+                          fontSize: 16,
+                          textDecoration: TextDecoration.lineThrough,
+                          color: Colors.grey,
                         ),
-                        decoration: BoxDecoration(
-                          color: Color(0xFF8FBC8F), // Subtle green that complements brown theme
-                          borderRadius: BorderRadius.circular(8),
+                      if (currentVariant?['discount_price'] != null)
+                        SizedBox(width: 8),
+                      // Discount badge - show only if there's a discount
+                      if (currentVariant?['discount_price'] != null)
+                        Container(
+                          padding: EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Color(
+                              0xFF8FBC8F,
+                            ), // Subtle green that complements brown theme
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: TextWidget(
+                            title: _calculateDiscountPercentage(),
+                            fontWeight: FontWeight.w600,
+                            fontSize: 13,
+                            color: Colors.white,
+                          ),
                         ),
-                        child: TextWidget(
-                          title: '25% OFF',
-                          fontWeight: FontWeight.w600,
-                          fontSize: 13,
-                          color: Colors.white,
-                        ),
-                      ),
                     ],
                   ),
                   SizedBox(height: 12),
@@ -363,7 +613,10 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                   // Description
                   TextWidget(
                     title:
-                        'Premium high-rise denim jeans featuring a relaxed wide-leg silhouette. Crafted from 100% cotton denim with a comfortable baggy fit. Perfect for casual and street style looks.',
+                        safeProductDetail?['description'] ??
+                        safeProductDetail?['desc'] ??
+                        safeProductDetail?['details'] ??
+                        'This is a high-quality product designed for comfort and style.',
                     fontWeight: FontWeight.w400,
                     fontSize: 15,
                     color: Colors.grey.shade700,
@@ -423,7 +676,11 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                               color: Color(0xFFB8956A),
                             ),
                             SizedBox(width: 4),
-                            Icon(Icons.star, color: Color(0xFFB8956A), size: 16),
+                            Icon(
+                              Icons.star,
+                              color: Color(0xFFB8956A),
+                              size: 16,
+                            ),
                           ],
                         ),
                       ),
@@ -460,10 +717,16 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                             SizeChartScreen.show(context);
                           },
                           child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            padding: EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 16,
+                            ),
                             decoration: BoxDecoration(
                               color: Colors.white,
-                              border: Border.all(color: Color(0xFFD2B193), width: 1.5),
+                              border: Border.all(
+                                color: Color(0xFFD2B193),
+                                width: 1.5,
+                              ),
                               borderRadius: BorderRadius.circular(16),
                               boxShadow: [
                                 BoxShadow(
@@ -501,7 +764,10 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                             await _openTryOnModel();
                           },
                           child: Container(
-                            padding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
+                            padding: EdgeInsets.symmetric(
+                              vertical: 14,
+                              horizontal: 16,
+                            ),
                             decoration: BoxDecoration(
                               gradient: LinearGradient(
                                 colors: [Color(0xFFD2B193), Color(0xFFB8956A)],
@@ -558,12 +824,35 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                           fontSize: 18,
                         ),
                         SizedBox(height: 12),
-                        _detailRow('Fabric', '100% Cotton Denim'),
-                        _detailRow('Fit', 'Relaxed Baggy Fit'),
-                        _detailRow('Rise', 'High Waist'),
-                        _detailRow('Length', 'Full Length'),
-                        _detailRow('Style', 'Wide Leg'),
-                        _detailRow('Closure', 'Button & Zip Fly'),
+                        _detailRow(
+                          'Fabric',
+                          safeProductDetail?['fabric_type'] ??
+                              safeProductDetail?['fabric'] ??
+                              safeProductDetail?['material'] ??
+                              'Cotton',
+                        ),
+                        _detailRow(
+                          'Gender',
+                          safeProductDetail?['gender'] ??
+                              safeProductDetail?['targetGender'] ??
+                              'Unisex',
+                        ),
+                        _detailRow(
+                          'Body Type',
+                          safeProductDetail?['bodyType'] ??
+                              safeProductDetail?['body_type'] ??
+                              safeProductDetail?['fit'] ??
+                              'Regular',
+                        ),
+                        _detailRow(
+                          'Product Type',
+                          safeProductDetail?['productType'] ??
+                              safeProductDetail?['product_type'] ??
+                              safeProductDetail?['category'] ??
+                              'Clothing',
+                        ),
+                        _detailRow('Style', _getStyleString()),
+                        _detailRow('SKU', currentVariant?['sku'] ?? 'N/A'),
                         SizedBox(height: 16),
                         TextWidget(
                           title: 'Care Instructions',
@@ -572,7 +861,8 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                         ),
                         SizedBox(height: 8),
                         TextWidget(
-                          title: '• Machine wash cold with like colors\n• Tumble dry low heat\n• Do not bleach\n• Iron on medium heat if needed',
+                          title:
+                              '• Machine wash cold with like colors\n• Tumble dry low heat\n• Do not bleach\n• Iron on medium heat if needed',
                           fontWeight: FontWeight.w400,
                           fontSize: 14,
                           color: Colors.grey.shade700,
@@ -590,7 +880,10 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                         child: Container(
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            border: Border.all(color: Color(0xFFD2B193), width: 1.5),
+                            border: Border.all(
+                              color: Color(0xFFD2B193),
+                              width: 1.5,
+                            ),
                             borderRadius: BorderRadius.circular(16),
                             boxShadow: [
                               BoxShadow(
@@ -661,6 +954,10 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                               ),
                             ),
                             onPressed: () {
+                              setState(() {
+                                isCheckOutPressed = true;
+                              });
+                              _addToCart();
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
@@ -777,8 +1074,7 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                             onTap: () {},
                           ),
                           CustomSmallProductCardGrid(
-                            imageUrl:
-                                'assets/images/g3.png',
+                            imageUrl: 'assets/images/g3.png',
                             price: '90',
                             rating: 4.5,
                             onTap: () {},
@@ -834,6 +1130,23 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
 
   // Helper to get color name
   String _getColorName(int index) {
+    final productData = safeProductDetail;
+    if (productData != null && productData['variants'] != null) {
+      final variants = productData['variants'] as List;
+
+      // Get unique colors
+      final uniqueColors = variants
+          .map<String>((v) => v['color']?.toString() ?? '')
+          .where((color) => color.isNotEmpty)
+          .toSet()
+          .toList();
+
+      if (index < uniqueColors.length) {
+        return uniqueColors[index];
+      }
+    }
+
+    // Fallback to static color names if API data not available
     switch (index) {
       case 0:
         return 'Black';
@@ -848,16 +1161,20 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
       case 5:
         return 'Dark Olive Green';
       default:
-        return '';
+        return 'Unknown';
     }
   }
 
   // Helper method to open Try On 3D model
   Future<void> _openTryOnModel() async {
-    const url = 'https://models.readyplayer.me/68840d454f328601275c3f78.glb';
+    // final variant = currentVariant;
+    final avatarUrl =
+        // variant?['avatarUrl'] ??
+        'https://models.readyplayer.me/68840d454f328601275c3f78.glb';
+
     try {
       // Use AvatarViewerPage to view the 3D model
-      AvatarViewerPage.viewModel(context, url, title: "Try On");
+      AvatarViewerPage.viewModel(context, avatarUrl, title: "Try On");
     } catch (e) {
       // Handle any errors
       ScaffoldMessenger.of(context).showSnackBar(
@@ -870,57 +1187,143 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
   }
 
   // Helper method to add product to cart
-  void _addToCart() {
-    setState(() {
-      cartItemCount++; // Increment cart counter
-    });
-    
-    // Show success toast
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white),
-            SizedBox(width: 8),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Added to cart successfully!',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+  void _addToCart() async {
+    // Get the current variant to get the variant ID
+    // final variant = currentVariant;
+    // if (variant == null || variant['id'] == null) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(
+    //       content: Text('Unable to add to cart. Please try again.'),
+    //       backgroundColor: Colors.red,
+    //     ),
+    //   );
+    //   return;
+    // }
+
+    try {
+      // Get user ID from AuthProvider
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.user.id == ''
+          ? '6891343a436e2277cd0a829f'
+          : authProvider.user.id;
+
+      // Call the CartProvider addToCart method
+      final cartProvider = Provider.of<CartProvider>(context, listen: false);
+      final result = await cartProvider.addToCart(
+        userId: userId!,
+        variantId: '689152132a5e3b6ee475dd89',
+        quantity: isCheckOutPressed ? 1 : 1, // Default quantity is 1
+      );
+
+      if (result['success'] == true) {
+        setState(() {
+          cartItemCount++; // Increment cart counter
+        });
+
+        // Show success toast
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white),
+                SizedBox(width: 8),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'Added to cart successfully!',
+                        style: TextStyle(fontWeight: FontWeight.w600),
+                      ),
+                      Text(
+                        '${safeProductDetail?['name'] ?? 'Product'} - Size $selectedSize added to cart!',
+                        style: TextStyle(fontSize: 12, color: Colors.white70),
+                      ),
+                    ],
                   ),
-                  Text(
-                    'High Waist Wide Leg Denim Baggy Jeans - Size $selectedSize',
-                    style: TextStyle(fontSize: 12, color: Colors.white70),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+            backgroundColor: Color(0xFF8FBC8F),
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: EdgeInsets.all(16),
+            duration: Duration(seconds: 3),
+            action: SnackBarAction(
+              label: 'VIEW CART',
+              textColor: Colors.white,
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const MyCartScreen()),
+                );
+              },
+            ),
+          ),
+        );
+      } else {
+        // Show error message
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                Icon(Icons.error, color: Colors.white),
+                SizedBox(width: 8),
+                Text(result['message'] ?? 'Failed to add to cart'),
+              ],
+            ),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+            margin: EdgeInsets.all(16),
+            duration: Duration(seconds: 3),
+          ),
+        );
+      }
+    } catch (e) {
+      // Handle any errors
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              Icon(Icons.error, color: Colors.white),
+              SizedBox(width: 8),
+              Text('Error adding to cart. Please try again.'),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          margin: EdgeInsets.all(16),
+          duration: Duration(seconds: 3),
         ),
-        backgroundColor: Color(0xFF8FBC8F),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        margin: EdgeInsets.all(16),
-        duration: Duration(seconds: 3),
-        action: SnackBarAction(
-          label: 'VIEW CART',
-          textColor: Colors.white,
-          onPressed: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => const MyCartScreen(),
-              ),
-            );
-          },
-        ),
-      ),
-    );
+      );
+    }
+  }
+
+  // Helper method to calculate discount percentage
+  String _calculateDiscountPercentage() {
+    final variant = currentVariant;
+    if (variant != null &&
+        variant['price'] != null &&
+        variant['discount_price'] != null) {
+      final price = double.tryParse(variant['price'].toString()) ?? 0.0;
+      final discountPrice =
+          double.tryParse(variant['discount_price'].toString()) ?? 0.0;
+
+      if (price > 0 && discountPrice > 0 && price > discountPrice) {
+        final percentage = ((price - discountPrice) / price * 100).round();
+        return '${percentage}% OFF';
+      }
+    }
+    return '0% OFF';
   }
 
   Widget _detailRow(String label, String value) {
@@ -988,17 +1391,19 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
           width: 1.5,
         ),
         borderRadius: BorderRadius.circular(12),
-        boxShadow: selected ? [
-          BoxShadow(
-            color: Color(0xFFB8956A).withOpacity(0.1),
-            blurRadius: 8,
-            offset: Offset(0, 2),
-          ),
-        ] : [],
+        boxShadow: selected
+            ? [
+                BoxShadow(
+                  color: Color(0xFFB8956A).withOpacity(0.1),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ]
+            : [],
       ),
       child: TextWidget(
-        title: size, 
-        fontWeight: FontWeight.w600, 
+        title: size,
+        fontWeight: FontWeight.w600,
         fontSize: 15,
         color: selected ? Color(0xFFB8956A) : Colors.black87,
       ),
@@ -1034,5 +1439,223 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
         ),
       ],
     );
+  }
+
+  // Helper method to build product image (supports both asset and network images)
+  Widget _buildProductImage(String imagePath) {
+    // Check if it's a network URL
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        height: dW * 0.7,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: dW * 0.7,
+            width: double.infinity,
+            color: Colors.grey.shade200,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.image_not_supported,
+                  size: 48,
+                  color: Colors.grey.shade400,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Image not available',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                ),
+              ],
+            ),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            height: dW * 0.7,
+            width: double.infinity,
+            color: Colors.grey.shade100,
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                          loadingProgress.expectedTotalBytes!
+                    : null,
+                color: Color(0xFFB8956A),
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      // Asset image
+      return Image.asset(
+        imagePath,
+        height: dW * 0.7,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: dW * 0.7,
+            width: double.infinity,
+            color: Colors.grey.shade200,
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.image_not_supported,
+                  size: 48,
+                  color: Colors.grey.shade400,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Image not available',
+                  style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                ),
+              ],
+            ),
+          );
+        },
+      );
+    }
+  }
+
+  // Helper method to build thumbnail image
+  Widget _buildThumbnailImage(String imagePath) {
+    // Check if it's a network URL
+    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+      return Image.network(
+        imagePath,
+        height: 48,
+        width: 48,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: 48,
+            width: 48,
+            color: Colors.grey.shade200,
+            child: Icon(
+              Icons.image_not_supported,
+              size: 24,
+              color: Colors.grey.shade400,
+            ),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            height: 48,
+            width: 48,
+            color: Colors.grey.shade100,
+            child: Center(
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  color: Color(0xFFB8956A),
+                ),
+              ),
+            ),
+          );
+        },
+      );
+    } else {
+      // Asset image
+      return Image.asset(
+        imagePath,
+        height: 48,
+        width: 48,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            height: 48,
+            width: 48,
+            color: Colors.grey.shade200,
+            child: Icon(
+              Icons.image_not_supported,
+              size: 24,
+              color: Colors.grey.shade400,
+            ),
+          );
+        },
+      );
+    }
+  }
+
+  // Debug method to show actual API response structure
+  void _debugApiResponse() {
+    final provider = Provider.of<ProductDetailProvider>(context, listen: false);
+    if (provider.rawProductDetails.isNotEmpty) {
+      final response = provider.rawProductDetails[0];
+
+      // Show a dialog with the API structure
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text('API Response Structure'),
+          content: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Keys in response: ${response.keys.toList()}'),
+                SizedBox(height: 10),
+                if (response['data'] != null) ...[
+                  Text('data keys: ${(response['data'] as Map).keys.toList()}'),
+                  SizedBox(height: 5),
+                  if (response['data']['productDetail'] != null)
+                    Text(
+                      'productDetail keys: ${(response['data']['productDetail'] as Map).keys.toList()}',
+                    ),
+                ],
+                if (response['productDetail'] != null)
+                  Text(
+                    'productDetail keys: ${(response['productDetail'] as Map).keys.toList()}',
+                  ),
+                SizedBox(height: 10),
+                Text(
+                  'Safe product detail: ${safeProductDetail?.keys.toList() ?? "null"}',
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text('Close'),
+            ),
+          ],
+        ),
+      );
+    }
+  }
+
+  // Helper method to get style string from various possible field names
+  String _getStyleString() {
+    final productData = safeProductDetail;
+    if (productData != null) {
+      // Try different possible style field names
+      if (productData['style'] != null) {
+        if (productData['style'] is List) {
+          return (productData['style'] as List).join(', ');
+        } else {
+          return productData['style'].toString();
+        }
+      } else if (productData['styles'] != null) {
+        if (productData['styles'] is List) {
+          return (productData['styles'] as List).join(', ');
+        } else {
+          return productData['styles'].toString();
+        }
+      } else if (productData['styleType'] != null) {
+        return productData['styleType'].toString();
+      } else if (productData['design'] != null) {
+        return productData['design'].toString();
+      }
+    }
+    return 'Casual';
   }
 }

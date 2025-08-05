@@ -1,6 +1,4 @@
-import 'package:clothing_app_frontend/authModule/screens/phone_number_screen.dart';
 import 'package:clothing_app_frontend/authModule/screens/verify_otp_screen2.dart';
-import 'package:clothing_app_frontend/homeModule/screens/home_screen.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
 import 'package:clothing_app_frontend/navigation/navigators.dart';
 import 'package:clothing_app_frontend/navigation/routes.dart';
@@ -8,7 +6,6 @@ import 'package:firebase_auth/firebase_auth.dart' hide AuthProvider;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
-import 'package:clothing_app_frontend/authModule/screens/capture_face_screen.dart';
 
 class AuthRepo {
   static String verId = "";

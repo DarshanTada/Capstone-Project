@@ -23,7 +23,7 @@ import {
 } from '@coreui/icons'
 import CIcon from '@coreui/icons-react'
 
-import avatar8 from './../../assets/images/avatars/8.jpg'
+// import avatar8 from './../../assets/images/avatars/8.jpg'
 import { useDispatch, useSelector } from 'react-redux'
 
 const AppHeaderDropdown = () => {
@@ -39,8 +39,8 @@ const AppHeaderDropdown = () => {
 
   return (
     <CDropdown variant="nav-item">
-      <CDropdownToggle placement="bottom-end" className="py-0 pe-0" caret={false}>
-        <CAvatar src={avatar8} size="md" />
+      <CDropdownToggle placement="bottom-end" caret={false}>
+        <CIcon icon={cilUser} size="xl" />
       </CDropdownToggle>
       <CDropdownMenu className="pt-0" placement="bottom-end">
         {/* <CDropdownHeader className="bg-body-secondary fw-semibold mb-2">Account</CDropdownHeader>

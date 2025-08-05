@@ -3,16 +3,17 @@ import 'package:provider/provider.dart';
 import '../provider/address_provider.dart';
 import '../widgets/address_card.dart';
 import 'add_edit_address_screen.dart';
+import '../../authModule/providers/auth_provider.dart';
 
 class AddressListScreen extends StatefulWidget {
   final bool isSelectionMode;
   final Function(String)? onAddressSelected;
 
   const AddressListScreen({
-    Key? key,
+    super.key,
     this.isSelectionMode = false,
     this.onAddressSelected,
-  }) : super(key: key);
+  });
 
   @override
   State<AddressListScreen> createState() => _AddressListScreenState();
@@ -28,10 +29,22 @@ class _AddressListScreenState extends State<AddressListScreen> {
   }
 
   Future<void> _loadAddresses() async {
-    final addressProvider = Provider.of<AddressProvider>(context, listen: false);
-    // TODO: Get actual user ID from authentication/storage
-    const String userId = "68659717fde8b5c9994263e3"; // Replace with actual user ID
-    
+    final addressProvider = Provider.of<AddressProvider>(
+      context,
+      listen: false,
+    );
+    final authProvider = Provider.of<AuthProvider>(context, listen: false);
+
+    // Get user ID from AuthProvider
+    final user = authProvider.user;
+    if (user.id == null || user.id!.isEmpty) {
+      print('❌ No user ID found in AuthProvider');
+      return;
+    }
+
+    final userId = user.id!;
+    print('👤 Loading addresses for user ID: $userId');
+
     await addressProvider.getAddressesByUserId(
       context: context,
       userId: userId,
@@ -77,9 +90,7 @@ class _AddressListScreenState extends State<AddressListScreen> {
       body: Consumer<AddressProvider>(
         builder: (context, addressProvider, child) {
           if (addressProvider.isLoading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
+            return const Center(child: CircularProgressIndicator());
           }
 
           if (addressProvider.errorMessage != null) {
@@ -152,10 +163,7 @@ class _AddressListScreenState extends State<AddressListScreen> {
                   const SizedBox(height: 8),
                   Text(
                     'Add your first address to get started',
-                    style: TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey.shade600,
-                    ),
+                    style: TextStyle(fontSize: 16, color: Colors.grey.shade600),
                   ),
                   const SizedBox(height: 24),
                   ElevatedButton.icon(
@@ -228,7 +236,7 @@ class _AddressListScreenState extends State<AddressListScreen> {
                     ),
                   ),
                 ],
-                
+
                 // Address list
                 Expanded(
                   child: ListView.builder(
@@ -248,7 +256,8 @@ class _AddressListScreenState extends State<AddressListScreen> {
                                 setState(() {
                                   selectedAddressId = address.id;
                                 });
-                                if (widget.onAddressSelected != null && address.id != null) {
+                                if (widget.onAddressSelected != null &&
+                                    address.id != null) {
                                   widget.onAddressSelected!(address.id!);
                                 }
                               }
@@ -275,9 +284,7 @@ class _AddressListScreenState extends State<AddressListScreen> {
   void _navigateToAddAddress() {
     Navigator.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => const AddEditAddressScreen(),
-      ),
+      MaterialPageRoute(builder: (context) => const AddEditAddressScreen()),
     ).then((_) => _loadAddresses());
   }
 
@@ -331,10 +338,10 @@ class _AddressListScreenState extends State<AddressListScreen> {
   }
 
   Future<void> _deleteAddress(String addressId) async {
-    final addressProvider = Provider.of<AddressProvider>(context, listen: false);
-    await addressProvider.deleteAddress(
-      context: context,
-      addressId: addressId,
+    final addressProvider = Provider.of<AddressProvider>(
+      context,
+      listen: false,
     );
+    await addressProvider.deleteAddress(context: context, addressId: addressId);
   }
 }

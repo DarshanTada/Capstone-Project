@@ -7,10 +7,7 @@ const mongoose_1 = __importDefault(require("mongoose"));
 const productImageSchema = new mongoose_1.default.Schema({
     productObjectId: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'Product' },
     variantObjectid: { type: mongoose_1.default.Schema.Types.ObjectId, ref: 'ProductVariant' },
-    image: {
-        base64: String,
-        contentType: String,
-    },
+    image: { type: String, required: false },
     is_primary: Boolean,
     sort_order: Number
 }, { timestamps: true });
