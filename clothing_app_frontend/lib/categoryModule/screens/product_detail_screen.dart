@@ -162,16 +162,16 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
       if (productData['variants'] != null) {
         final variants = List<dynamic>.from(productData['variants']);
         final availableSizes = variants
-            .map<String>(
-              (variant) => variant['size']?.toString().toUpperCase() ?? '',
-            )
+            .map<String>((variant) => variant['size']?.toString() ?? '')
             .where((size) => size.isNotEmpty)
             .toSet()
             .toList();
         if (availableSizes.isNotEmpty) {
-          sizes.clear();
-          sizes.addAll(availableSizes);
-          selectedSize = sizes.first;
+          setState(() {
+            sizes.clear();
+            sizes.addAll(availableSizes);
+            selectedSize = sizes.first; // Set to first available size from API
+          });
         }
       }
 
@@ -193,6 +193,9 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
               break;
             case 'WHITE':
               colors.add(Color(0xFFFFFFFF));
+              break;
+            case 'BROWN':
+              colors.add(Color(0xFF8B4513)); // Brown color
               break;
             case 'BLUE':
             case 'DARK BLUE':
@@ -223,7 +226,9 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
         }
 
         if (colors.isNotEmpty) {
-          selectedColorIndex = 0;
+          setState(() {
+            selectedColorIndex = 0; // Set to first available color from API
+          });
         }
       }
     }
@@ -267,9 +272,20 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
     if (productData != null && productData['variants'] != null) {
       final variants = productData['variants'] as List;
 
+      // DEBUG: Print variant structure to understand the data
+      if (variants.isNotEmpty) {
+        print('=== VARIANT DEBUG INFO ===');
+        print('Number of variants: ${variants.length}');
+        print('First variant structure: ${variants[0]}');
+        print('First variant keys: ${variants[0].keys.toList()}');
+        print('Selected size: $selectedSize');
+        print('Selected color index: $selectedColorIndex');
+        print('=== END DEBUG INFO ===');
+      }
+
       // Get selected color name from the available variants
       String selectedColorName = '';
-      if (selectedColorIndex < variants.length) {
+      if (variants.isNotEmpty) {
         final uniqueColors = variants
             .map<String>((v) => v['color']?.toString() ?? '')
             .where((color) => color.isNotEmpty)
@@ -282,24 +298,27 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
 
       // Find variant matching selected size and color
       for (var variant in variants) {
-        final variantSize = variant['size']?.toString().toUpperCase() ?? '';
+        final variantSize = variant['size']?.toString() ?? '';
         final variantColor = variant['color']?.toString() ?? '';
 
-        if (variantSize == selectedSize.toUpperCase() &&
+        if (variantSize.toLowerCase() == selectedSize.toLowerCase() &&
             variantColor.toLowerCase() == selectedColorName.toLowerCase()) {
+          print('Found exact match variant: $variant');
           return variant;
         }
       }
 
       // If no exact match, try to find by size only
       for (var variant in variants) {
-        final variantSize = variant['size']?.toString().toUpperCase() ?? '';
-        if (variantSize == selectedSize.toUpperCase()) {
+        final variantSize = variant['size']?.toString() ?? '';
+        if (variantSize.toLowerCase() == selectedSize.toLowerCase()) {
+          print('Found size match variant: $variant');
           return variant;
         }
       }
 
-      // Return first variant if no match found
+      // If no size/color matching works, return first variant (fallback)
+      print('Using first variant as fallback: ${variants[0]}');
       return variants.isNotEmpty ? variants[0] : null;
     }
     return null;
@@ -693,7 +712,9 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
                             },
                             child: _sizeChip(
                               size,
-                              selected: selectedSize == size,
+                              selected:
+                                  selectedSize.toLowerCase() ==
+                                  size.toLowerCase(),
                             ),
                           ),
                         )
@@ -1227,7 +1248,8 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
     // final variant = currentVariant;
     final avatarUrl =
         // variant?['avatarUrl'] ??
-        'https://models.readyplayer.me/68840d454f328601275c3f78.glb';
+        'https://models.readyplayer.me/6891102bece5d61d2d67f672.glb';
+        // 'https://models.readyplayer.me/68840d454f328601275c3f78.glb';
 
     try {
       // Use AvatarViewerPage to view the 3D model
@@ -1245,17 +1267,57 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
 
   // Helper method to add product to cart
   void _addToCart() async {
-    // Get the current variant to get the variant ID
-    // final variant = currentVariant;
-    // if (variant == null || variant['id'] == null) {
-    //   ScaffoldMessenger.of(context).showSnackBar(
-    //     SnackBar(
-    //       content: Text('Unable to add to cart. Please try again.'),
-    //       backgroundColor: Colors.red,
-    //     ),
-    //   );
-    //   return;
-    // }
+    // Validate current variant is available
+    final variant = currentVariant;
+
+    print('=== ADD TO CART DEBUG ===');
+    print('Current variant: $variant');
+    print('Variant _id: ${variant?['_id']}');
+    print('Selected size: $selectedSize');
+    print('Selected color index: $selectedColorIndex');
+    print('Available sizes: $sizes');
+    print('Available colors count: ${colors.length}');
+    if (safeProductDetail?['variants'] != null) {
+      final variants = safeProductDetail!['variants'] as List;
+      print('Total variants in API: ${variants.length}');
+      for (int i = 0; i < variants.length; i++) {
+        print(
+          'Variant $i: size=${variants[i]['size']}, color=${variants[i]['color']}, _id=${variants[i]['_id']}',
+        );
+      }
+    }
+    print('========================');
+
+    if (variant == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('No variant data available. Please try again.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Check for variant ID in multiple possible field names
+    String? variantId;
+    if (variant['_id'] != null && variant['_id'].toString().isNotEmpty) {
+      variantId = variant['_id'].toString();
+    } else if (variant['id'] != null && variant['id'].toString().isNotEmpty) {
+      variantId = variant['id'].toString();
+    } else if (variant['variantId'] != null &&
+        variant['variantId'].toString().isNotEmpty) {
+      variantId = variant['variantId'].toString();
+    }
+
+    if (variantId == null || variantId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Unable to add to cart: Invalid variant ID'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
 
     try {
       // Get user ID from AuthProvider
@@ -1264,12 +1326,31 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
           ? '6891343a436e2277cd0a829f'
           : authProvider.user.id;
 
-      // Call the CartProvider addToCart method
+      // Validate userId
+      if (userId == null || userId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Unable to add to cart: User not logged in'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      // Call the CartProvider addToCart method with the actual selected variant ID
       final cartProvider = Provider.of<CartProvider>(context, listen: false);
+
+      // Ensure we always have a valid quantity (minimum 1)
+      final quantityToAdd = 1; // Always add 1 item to cart
+
+      print(
+        'Adding to cart with userId: $userId, variantId: $variantId, quantity: $quantityToAdd',
+      );
+
       final result = await cartProvider.addToCart(
-        userId: userId!,
-        variantId: '689152132a5e3b6ee475dd89',
-        quantity: isCheckOutPressed ? 1 : 1, // Default quantity is 1
+        userId: userId,
+        variantId: variantId,
+        quantity: quantityToAdd,
       );
 
       if (result['success'] == true) {
