@@ -1,6 +1,6 @@
 // var webApi = {'domain': 'http://localhost:3001/'}; // LOCALHOST
 // var webApi = {'domain': 'http://10.144.120.158:3001/'}; //PC IP ADDRESS
-var webApi = {'domain': 'http://10.144.121.95:3001/'}; //MAC IP ADDRESS
+var webApi = {'domain': 'http://10.192.44.168:3001/'}; //MAC IP ADDRESS
 
 var mlApi = {
   'domain': 'https://naturally-giving-chow.ngrok-free.app/',
