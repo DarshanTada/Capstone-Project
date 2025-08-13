@@ -18,11 +18,11 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
   final _fullNameController = TextEditingController();
   final _houseNumberController = TextEditingController();
   final _addressController = TextEditingController();
-  final _cityController = TextEditingController();
   final _zipController = TextEditingController();
 
   String _selectedType = 'home';
   String _selectedProvince = 'Ontario';
+  String? _selectedCity;
   bool _isLoading = false;
 
   bool get isEditMode => widget.address != null;
@@ -39,7 +39,7 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
       _fullNameController.text = address.fullName;
       _houseNumberController.text = address.houseNumber;
       _addressController.text = address.address;
-      _cityController.text = address.city;
+      _selectedCity = address.city;
       _zipController.text = address.zip;
       _selectedType = address.type;
       _selectedProvince = address.province;
@@ -51,7 +51,6 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
     _fullNameController.dispose();
     _houseNumberController.dispose();
     _addressController.dispose();
-    _cityController.dispose();
     _zipController.dispose();
     super.dispose();
   }
@@ -143,18 +142,7 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
                 children: [
                   Expanded(
                     flex: 2,
-                    child: _buildTextField(
-                      controller: _cityController,
-                      label: 'City',
-                      hint: 'Enter city',
-                      icon: Icons.location_city_outlined,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'Please enter city';
-                        }
-                        return null;
-                      },
-                    ),
+                    child: _buildCitySelector(),
                   ),
                   const SizedBox(width: 16),
                   Expanded(
@@ -349,6 +337,46 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
     );
   }
 
+  Widget _buildCitySelector() {
+    final cities = AddressConstants.getCitiesForProvince(_selectedProvince);
+    
+    return DropdownButtonFormField<String>(
+      value: _selectedCity != null && cities.contains(_selectedCity) ? _selectedCity : null,
+      decoration: InputDecoration(
+        labelText: 'City',
+        prefixIcon: Icon(Icons.location_city_outlined, color: Colors.brown.shade300),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+          borderSide: BorderSide(color: Colors.brown.shade300, width: 2),
+        ),
+        filled: true,
+        fillColor: Colors.white,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
+      ),
+      items: cities.map((city) {
+        return DropdownMenuItem(value: city, child: Text(city));
+      }).toList(),
+      onChanged: (value) => setState(() => _selectedCity = value),
+      validator: (value) {
+        if (value == null || value.isEmpty) {
+          return 'Please select a city';
+        }
+        return null;
+      },
+    );
+  }
+
   Widget _buildProvinceSelector() {
     return DropdownButtonFormField<String>(
       value: _selectedProvince,
@@ -377,7 +405,13 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
       items: AddressConstants.provinces.map((province) {
         return DropdownMenuItem(value: province, child: Text(province));
       }).toList(),
-      onChanged: (value) => setState(() => _selectedProvince = value!),
+      onChanged: (value) {
+        setState(() {
+          _selectedProvince = value!;
+          // Reset city when province changes to prevent misalignment
+          _selectedCity = null;
+        });
+      },
       validator: (value) {
         if (value == null || value.isEmpty) {
           return 'Please select a province';
@@ -440,7 +474,7 @@ class _AddEditAddressScreenState extends State<AddEditAddressScreen> {
         fullName: _fullNameController.text.trim(),
         houseNumber: _houseNumberController.text.trim(),
         address: _addressController.text.trim(),
-        city: _cityController.text.trim(),
+        city: _selectedCity ?? '',
         zip: _zipController.text.trim().toUpperCase(),
         province: _selectedProvince,
         userId: userId,
