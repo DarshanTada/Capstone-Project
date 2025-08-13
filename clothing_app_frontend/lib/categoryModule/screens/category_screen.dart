@@ -173,12 +173,14 @@ class CategoryScreenState extends State<CategoryScreen> {
                                               borderRadius:
                                                   BorderRadius.circular(30),
                                             ),
-                                            child: CircularProgressIndicator(
-                                              valueColor:
-                                                  AlwaysStoppedAnimation<Color>(
-                                                    Colors.white,
-                                                  ),
-                                              strokeWidth: 3,
+                                            child: Center(
+                                              child: CircularProgressIndicator(
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<Color>(
+                                                      Colors.white,
+                                                    ),
+                                                strokeWidth: 3,
+                                              ),
                                             ),
                                           ),
                                           SizedBox(height: dW * 0.04),

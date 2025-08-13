@@ -1,4 +1,3 @@
-import 'package:clothing_app_frontend/common_widgets/circular_loader.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
@@ -190,7 +189,74 @@ class _MyCartScreenState extends State<MyCartScreen>
             height: dH,
             width: dW,
             child: isLoading || cartProvider.isLoading
-                ? CircularLoader(android: dW * 0.08, iOS: dW * 0.035)
+                ? Column(
+                    children: [
+                      SizedBox(height: dH * 0.25),
+                      Container(
+                        padding: EdgeInsets.all(dW * 0.08),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(20),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(
+                                0xFF76929F,
+                              ).withOpacity(0.1),
+                              blurRadius: 20,
+                              offset: Offset(0, 10),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                              width: 60,
+                              height: 60,
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    Color(0xFF76929F),
+                                    Color(0xFF8BA5B1),
+                                  ],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
+                                ),
+                                borderRadius:
+                                    BorderRadius.circular(30),
+                              ),
+                              child: Center(
+                                child: CircularProgressIndicator(
+                                  valueColor:
+                                      AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                  strokeWidth: 3,
+                                ),
+                              ),
+                            ),
+                            SizedBox(height: dW * 0.04),
+                            Text(
+                              "Loading Cart...",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF76929F),
+                              ),
+                            ),
+                            SizedBox(height: dW * 0.02),
+                            Text(
+                              "Getting your items ready",
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey[600],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  )
                 : SingleChildScrollView(
                     physics: const BouncingScrollPhysics(),
                     padding: EdgeInsets.symmetric(horizontal: dW * 0.05),
