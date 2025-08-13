@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../authModule/providers/auth_provider.dart';
 import '../../common_widgets/circular_loader.dart';
 import '../../common_functions.dart';
+import '../model/address_model.dart';
 
 class AddAddressScreen extends StatefulWidget {
   const AddAddressScreen({super.key});
@@ -23,10 +24,11 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController houseController = TextEditingController();
   final TextEditingController streetController = TextEditingController();
-  final TextEditingController cityController = TextEditingController();
   final TextEditingController zipController = TextEditingController();
 
   String selectedType = 'Other';
+  String selectedProvince = 'Ontario';
+  String? selectedCity;
 
   fetchData() async {}
 
@@ -77,9 +79,14 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
 
   Widget screenBody() {
     return isLoading
-        ? Center(child: CircularLoader(android: dW * 0.08, iOS: dW * 0.035))
+        ? Center(
+            child: CircularLoader(android: dW * 0.08, iOS: dW * 0.035),
+          )
         : SingleChildScrollView(
-            padding: EdgeInsets.symmetric(horizontal: dW * 0.04, vertical: dH * 0.02),
+            padding: EdgeInsets.symmetric(
+              horizontal: dW * 0.04,
+              vertical: dH * 0.02,
+            ),
             physics: const BouncingScrollPhysics(),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,7 +155,7 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                   ),
                 ),
                 SizedBox(height: dH * 0.025),
-                
+
                 // Address Type Selection
                 Container(
                   padding: EdgeInsets.all(dW * 0.05),
@@ -177,13 +184,34 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                       SizedBox(height: dH * 0.015),
                       Row(
                         children: [
-                          Expanded(flex: 1, child: addressTypeButton(Icons.home_outlined, 'Home')),
+                          Expanded(
+                            flex: 1,
+                            child: addressTypeButton(
+                              Icons.home_outlined,
+                              'Home',
+                            ),
+                          ),
                           SizedBox(width: 12),
-                          Expanded(flex: 1, child: addressTypeButton(Icons.work_outline, 'Work')),
+                          Expanded(
+                            flex: 1,
+                            child: addressTypeButton(
+                              Icons.work_outline,
+                              'Work',
+                            ),
+                          ),
                           SizedBox(width: 12),
-                          Expanded(flex: 1, child: addressTypeButton(Icons.person_outline, 'Friend')),
+                          Expanded(
+                            flex: 1,
+                            child: addressTypeButton(
+                              Icons.person_outline,
+                              'Friend',
+                            ),
+                          ),
                           SizedBox(width: 12),
-                          Expanded(flex: 1, child: addressTypeButton(Icons.add, 'Other')),
+                          Expanded(
+                            flex: 1,
+                            child: addressTypeButton(Icons.add, 'Other'),
+                          ),
                         ],
                       ),
                     ],
@@ -217,11 +245,28 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
                         ),
                       ),
                       SizedBox(height: dH * 0.02),
-                      buildTextField('Full Name', nameController, Icons.person_outline),
-                      buildTextField('House/Apartment Number', houseController, Icons.home_outlined),
-                      buildTextField('Street Address', streetController, Icons.location_on_outlined),
-                      buildTextField('City', cityController, Icons.location_city_outlined),
-                      buildTextField('ZIP/Postal Code', zipController, Icons.markunread_mailbox_outlined),
+                      buildTextField(
+                        'Full Name',
+                        nameController,
+                        Icons.person_outline,
+                      ),
+                      buildTextField(
+                        'House/Apartment Number',
+                        houseController,
+                        Icons.home_outlined,
+                      ),
+                      buildTextField(
+                        'Street Address',
+                        streetController,
+                        Icons.location_on_outlined,
+                      ),
+                      buildProvinceDropdown(),
+                      buildCityDropdown(),
+                      buildTextField(
+                        'ZIP/Postal Code',
+                        zipController,
+                        Icons.markunread_mailbox_outlined,
+                      ),
                     ],
                   ),
                 ),
@@ -285,31 +330,28 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
           );
   }
 
-  Widget buildTextField(String hint, TextEditingController controller, IconData icon) {
+  Widget buildTextField(
+    String hint,
+    TextEditingController controller,
+    IconData icon,
+  ) {
     return Padding(
       padding: EdgeInsets.only(bottom: dH * 0.02),
       child: TextField(
         controller: controller,
         style: const TextStyle(fontSize: 15),
         decoration: InputDecoration(
-          contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-          hintText: hint,
-          hintStyle: TextStyle(
-            color: Colors.grey.shade500,
-            fontSize: 14,
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: 16,
           ),
+          hintText: hint,
+          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
           prefixIcon: Container(
             margin: EdgeInsets.only(right: 12),
-            child: Icon(
-              icon,
-              color: Color(0xFFB8956A),
-              size: 20,
-            ),
+            child: Icon(icon, color: Color(0xFFB8956A), size: 20),
           ),
-          prefixIconConstraints: BoxConstraints(
-            minWidth: 45,
-            minHeight: 20,
-          ),
+          prefixIconConstraints: BoxConstraints(minWidth: 45, minHeight: 20),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
             borderSide: BorderSide(color: Colors.grey.shade300),
@@ -402,6 +444,121 @@ class _AddAddressScreenState extends State<AddAddressScreen> {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget buildProvinceDropdown() {
+    return Padding(
+      padding: EdgeInsets.only(bottom: dH * 0.02),
+      child: DropdownButtonFormField<String>(
+        value: selectedProvince,
+        decoration: InputDecoration(
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: 16,
+          ),
+          hintText: 'Select Province/Territory',
+          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+          prefixIcon: Container(
+            margin: EdgeInsets.only(right: 12),
+            child: Icon(Icons.map_outlined, color: Color(0xFFB8956A), size: 20),
+          ),
+          prefixIconConstraints: BoxConstraints(minWidth: 45, minHeight: 20),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Color(0xFFD2B193), width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade50,
+        ),
+        items: AddressConstants.provinces.map((province) {
+          return DropdownMenuItem(
+            value: province,
+            child: Text(province, style: TextStyle(fontSize: 15)),
+          );
+        }).toList(),
+        onChanged: (value) {
+          setState(() {
+            selectedProvince = value!;
+            selectedCity = null; // Reset city when province changes
+          });
+        },
+      ),
+    );
+  }
+
+  Widget buildCityDropdown() {
+    final cities = AddressConstants.getCitiesForProvince(selectedProvince);
+
+    return Padding(
+      padding: EdgeInsets.only(bottom: dH * 0.02),
+      child: DropdownButtonFormField<String>(
+        value: selectedCity != null && cities.contains(selectedCity)
+            ? selectedCity
+            : null,
+        decoration: InputDecoration(
+          contentPadding: const EdgeInsets.symmetric(
+            vertical: 16,
+            horizontal: 16,
+          ),
+          hintText: cities.isEmpty ? 'Select province first' : 'Select City',
+          hintStyle: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+          prefixIcon: Container(
+            margin: EdgeInsets.only(right: 12),
+            child: Icon(
+              Icons.location_city_outlined,
+              color: Color(0xFFB8956A),
+              size: 20,
+            ),
+          ),
+          prefixIconConstraints: BoxConstraints(minWidth: 45, minHeight: 20),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Colors.grey.shade300),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide(color: Color(0xFFD2B193), width: 2),
+          ),
+          filled: true,
+          fillColor: Colors.grey.shade50,
+        ),
+        items: cities.isEmpty
+            ? [
+                DropdownMenuItem(
+                  value: '',
+                  child: Text(
+                    'Select province first',
+                    style: TextStyle(color: Colors.grey.shade500, fontSize: 15),
+                  ),
+                ),
+              ]
+            : cities.map((city) {
+                return DropdownMenuItem(
+                  value: city,
+                  child: Text(city, style: TextStyle(fontSize: 15)),
+                );
+              }).toList(),
+        onChanged: cities.isEmpty
+            ? null
+            : (value) {
+                setState(() {
+                  selectedCity = value;
+                });
+              },
       ),
     );
   }

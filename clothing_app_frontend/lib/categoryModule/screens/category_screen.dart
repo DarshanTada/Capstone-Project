@@ -10,6 +10,7 @@ import 'package:clothing_app_frontend/homeModule/widgets/custom_big_product_card
 import 'package:clothing_app_frontend/homeModule/widgets/custom_small_product_card_grid.dart';
 import 'package:clothing_app_frontend/common_widgets/text_widget.dart';
 import 'package:clothing_app_frontend/navigation/arguments.dart';
+import 'package:clothing_app_frontend/categoryModule/screens/product_detail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -176,9 +177,9 @@ class CategoryScreenState extends State<CategoryScreen> {
                                             child: Center(
                                               child: CircularProgressIndicator(
                                                 valueColor:
-                                                    AlwaysStoppedAnimation<Color>(
-                                                      Colors.white,
-                                                    ),
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(Colors.white),
                                                 strokeWidth: 3,
                                               ),
                                             ),
@@ -1055,18 +1056,74 @@ class CategoryScreenState extends State<CategoryScreen> {
                                                           .toStringAsFixed(1),
                                                     ),
                                                     onTap: () {
-                                                      Navigator.push(
-                                                        context,
-                                                        MaterialPageRoute(
-                                                          builder: (context) =>
-                                                              CategoryRelationScreen(
-                                                                args: CategoryRelationScreenArguments(
-                                                                  category:
-                                                                      subcatName,
-                                                                ),
+                                                      // Check if subcategory has products
+                                                      if (subcat['products'] !=
+                                                              null &&
+                                                          subcat['products']
+                                                              is List &&
+                                                          (subcat['products']
+                                                                  as List)
+                                                              .isNotEmpty) {
+                                                        final products =
+                                                            subcat['products']
+                                                                as List;
+                                                        final firstProduct =
+                                                            products[0];
+
+                                                        // Check if the product has an ID
+                                                        if (firstProduct
+                                                                is Map &&
+                                                            firstProduct['_id'] !=
+                                                                null &&
+                                                            firstProduct['_id']
+                                                                .toString()
+                                                                .isNotEmpty) {
+                                                          final productId =
+                                                              firstProduct['_id']
+                                                                  .toString();
+
+                                                          // Navigate to ProductDetailScreen with the product ID
+                                                          Navigator.push(
+                                                            context,
+                                                            MaterialPageRoute(
+                                                              builder: (context) =>
+                                                                  ProductDetailScreen(
+                                                                    args: ProductDetailScreenArguments(
+                                                                      productId:
+                                                                          productId,
+                                                                    ),
+                                                                  ),
+                                                            ),
+                                                          );
+                                                        } else {
+                                                          // If no valid product ID, show a message
+                                                          ScaffoldMessenger.of(
+                                                            context,
+                                                          ).showSnackBar(
+                                                            SnackBar(
+                                                              content: Text(
+                                                                'No product details available',
                                                               ),
-                                                        ),
-                                                      );
+                                                              backgroundColor:
+                                                                  Colors.orange,
+                                                            ),
+                                                          );
+                                                        }
+                                                      } else {
+                                                        // If no products in subcategory, navigate to category relation screen
+                                                        Navigator.push(
+                                                          context,
+                                                          MaterialPageRoute(
+                                                            builder: (context) =>
+                                                                CategoryRelationScreen(
+                                                                  args: CategoryRelationScreenArguments(
+                                                                    category:
+                                                                        subcatName,
+                                                                  ),
+                                                                ),
+                                                          ),
+                                                        );
+                                                      }
                                                     },
                                                   ),
                                                 ),
@@ -1144,20 +1201,73 @@ class CategoryScreenState extends State<CategoryScreen> {
                                                                   ),
                                                             ),
                                                             onTap: () {
-                                                              Navigator.push(
-                                                                context,
-                                                                MaterialPageRoute(
-                                                                  builder:
-                                                                      (
-                                                                        context,
-                                                                      ) => CategoryRelationScreen(
-                                                                        args: CategoryRelationScreenArguments(
-                                                                          category:
-                                                                              subcatName,
+                                                              // Check if subcategory has products
+                                                              if (subcat['products'] !=
+                                                                      null &&
+                                                                  subcat['products']
+                                                                      is List &&
+                                                                  (subcat['products']
+                                                                          as List)
+                                                                      .isNotEmpty) {
+                                                                final products =
+                                                                    subcat['products']
+                                                                        as List;
+                                                                final firstProduct =
+                                                                    products[0];
+
+                                                                // Check if the product has an ID
+                                                                if (firstProduct
+                                                                        is Map &&
+                                                                    firstProduct['_id'] !=
+                                                                        null &&
+                                                                    firstProduct['_id']
+                                                                        .toString()
+                                                                        .isNotEmpty) {
+                                                                  final productId =
+                                                                      firstProduct['_id']
+                                                                          .toString();
+
+                                                                  // Navigate to ProductDetailScreen with the product ID
+                                                                  Navigator.push(
+                                                                    context,
+                                                                    MaterialPageRoute(
+                                                                      builder: (context) => ProductDetailScreen(
+                                                                        args: ProductDetailScreenArguments(
+                                                                          productId:
+                                                                              productId,
                                                                         ),
                                                                       ),
-                                                                ),
-                                                              );
+                                                                    ),
+                                                                  );
+                                                                } else {
+                                                                  // If no valid product ID, show a message
+                                                                  ScaffoldMessenger.of(
+                                                                    context,
+                                                                  ).showSnackBar(
+                                                                    SnackBar(
+                                                                      content: Text(
+                                                                        'No product details available',
+                                                                      ),
+                                                                      backgroundColor:
+                                                                          Colors
+                                                                              .orange,
+                                                                    ),
+                                                                  );
+                                                                }
+                                                              } else {
+                                                                // If no products in subcategory, navigate to category relation screen
+                                                                Navigator.push(
+                                                                  context,
+                                                                  MaterialPageRoute(
+                                                                    builder: (context) => CategoryRelationScreen(
+                                                                      args: CategoryRelationScreenArguments(
+                                                                        category:
+                                                                            subcatName,
+                                                                      ),
+                                                                    ),
+                                                                  ),
+                                                                );
+                                                              }
                                                             },
                                                           ),
                                                           if (categorySubcategories

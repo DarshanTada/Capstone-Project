@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:clothing_app_frontend/authModule/providers/auth_provider.dart';
 import 'package:clothing_app_frontend/cartModule/providers/cart_provider.dart';
 import 'package:clothing_app_frontend/cartModule/screens/cart_screen.dart';
@@ -85,21 +86,77 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
 
       if (productData == null) return;
 
-      // Update product images from variants if available
-      if (productData['variants'] != null &&
-          productData['variants'].isNotEmpty) {
-        List<String> apiImages = [];
-        for (var variant in productData['variants']) {
-          if (variant['imageUrl'] != null && variant['imageUrl'].isNotEmpty) {
-            apiImages.add(variant['imageUrl']);
+      // Update product images from API data (prioritize API images over static)
+      List<String> apiImages = [];
+
+      // Handle images array with base64 data
+      if (productData['images'] != null && productData['images'] is List) {
+        final imagesList = productData['images'] as List;
+        for (var imageObj in imagesList) {
+          if (imageObj is Map && imageObj['image'] != null) {
+            String base64Image = imageObj['image'].toString();
+            if (base64Image.isNotEmpty) {
+              // Add the base64 image directly (it already contains data:image/png;base64, prefix)
+              apiImages.add(base64Image);
+            }
           }
         }
-        // Use API images if available, otherwise keep static images as fallback
-        if (apiImages.isNotEmpty) {
-          productImages = apiImages;
-          selectedImageIndex = 0;
+      }
+
+      // Also check variants for images (in case there are variant-specific images)
+      if (productData['variants'] != null &&
+          productData['variants'].isNotEmpty) {
+        for (var variant in productData['variants']) {
+          if (variant['imageUrl'] != null &&
+              variant['imageUrl'].toString().isNotEmpty) {
+            apiImages.add(variant['imageUrl'].toString());
+          } else if (variant['image'] != null &&
+              variant['image'].toString().isNotEmpty) {
+            String variantImage = variant['image'].toString();
+            // Handle base64 images from variants
+            if (variantImage.startsWith('data:image/')) {
+              apiImages.add(variantImage);
+            } else {
+              apiImages.add(variantImage);
+            }
+          }
         }
       }
+
+      // Check for main product image fields (in case there are other image fields)
+      if (productData['imageUrl'] != null &&
+          productData['imageUrl'].toString().isNotEmpty) {
+        apiImages.insert(
+          0,
+          productData['imageUrl'].toString(),
+        ); // Add as first image
+      }
+      if (productData['image'] != null &&
+          productData['image'].toString().isNotEmpty) {
+        String mainImage = productData['image'].toString();
+        if (mainImage.startsWith('data:image/')) {
+          apiImages.insert(0, mainImage); // Add as first image
+        } else {
+          apiImages.insert(0, mainImage);
+        }
+      }
+
+      // Remove duplicates while preserving order
+      final uniqueApiImages = <String>[];
+      for (String image in apiImages) {
+        if (!uniqueApiImages.contains(image)) {
+          uniqueApiImages.add(image);
+        }
+      }
+
+      // Use API images if available, otherwise keep static images as fallback
+      if (uniqueApiImages.isNotEmpty) {
+        setState(() {
+          productImages = uniqueApiImages;
+          selectedImageIndex = 0;
+        });
+      }
+      // If no API images found, productImages will remain with static asset images
 
       // Update available sizes from variants
       if (productData['variants'] != null) {
@@ -1441,10 +1498,65 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
     );
   }
 
-  // Helper method to build product image (supports both asset and network images)
+  // Helper method to build product image (supports asset, network, and base64 images)
   Widget _buildProductImage(String imagePath) {
+    // Check if it's a base64 image
+    if (imagePath.startsWith('data:image/')) {
+      try {
+        // Extract base64 data from the data URL
+        final base64String = imagePath.split(',').last;
+        final bytes = base64Decode(base64String);
+
+        return Image.memory(
+          bytes,
+          height: dW * 0.7,
+          width: double.infinity,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              height: dW * 0.7,
+              width: double.infinity,
+              color: Colors.grey.shade200,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.image_not_supported,
+                    size: 48,
+                    color: Colors.grey.shade400,
+                  ),
+                  SizedBox(height: 8),
+                  Text(
+                    'Base64 image error',
+                    style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      } catch (e) {
+        return Container(
+          height: dW * 0.7,
+          width: double.infinity,
+          color: Colors.grey.shade200,
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.error, size: 48, color: Colors.grey.shade400),
+              SizedBox(height: 8),
+              Text(
+                'Invalid base64 image',
+                style: TextStyle(color: Colors.grey.shade600, fontSize: 14),
+              ),
+            ],
+          ),
+        );
+      }
+    }
     // Check if it's a network URL
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    else if (imagePath.startsWith('http://') ||
+        imagePath.startsWith('https://')) {
       return Image.network(
         imagePath,
         height: dW * 0.7,
@@ -1523,10 +1635,45 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
     }
   }
 
-  // Helper method to build thumbnail image
+  // Helper method to build thumbnail image (supports asset, network, and base64 images)
   Widget _buildThumbnailImage(String imagePath) {
+    // Check if it's a base64 image
+    if (imagePath.startsWith('data:image/')) {
+      try {
+        // Extract base64 data from the data URL
+        final base64String = imagePath.split(',').last;
+        final bytes = base64Decode(base64String);
+
+        return Image.memory(
+          bytes,
+          height: 48,
+          width: 48,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) {
+            return Container(
+              height: 48,
+              width: 48,
+              color: Colors.grey.shade200,
+              child: Icon(
+                Icons.image_not_supported,
+                size: 24,
+                color: Colors.grey.shade400,
+              ),
+            );
+          },
+        );
+      } catch (e) {
+        return Container(
+          height: 48,
+          width: 48,
+          color: Colors.grey.shade200,
+          child: Icon(Icons.error, size: 24, color: Colors.grey.shade400),
+        );
+      }
+    }
     // Check if it's a network URL
-    if (imagePath.startsWith('http://') || imagePath.startsWith('https://')) {
+    else if (imagePath.startsWith('http://') ||
+        imagePath.startsWith('https://')) {
       return Image.network(
         imagePath,
         height: 48,
