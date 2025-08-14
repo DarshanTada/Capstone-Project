@@ -1425,24 +1425,24 @@ class ProductDetailScreenState extends State<ProductDetailScreen> {
       }
     } catch (e) {
       // Handle any errors
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              Icon(Icons.error, color: Colors.white),
-              SizedBox(width: 8),
-              Text('Error adding to cart. Please try again.'),
-            ],
-          ),
-          backgroundColor: Colors.red,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(12),
-          ),
-          margin: EdgeInsets.all(16),
-          duration: Duration(seconds: 3),
-        ),
-      );
+      // ScaffoldMessenger.of(context).showSnackBar(
+      //   SnackBar(
+      //     content: Row(
+      //       children: [
+      //         Icon(Icons.error, color: Colors.white),
+      //         SizedBox(width: 8),
+      //         Text('Error adding to cart. Please try again.'),
+      //       ],
+      //     ),
+      //     backgroundColor: Colors.red,
+      //     behavior: SnackBarBehavior.floating,
+      //     shape: RoundedRectangleBorder(
+      //       borderRadius: BorderRadius.circular(12),
+      //     ),
+      //     margin: EdgeInsets.all(16),
+      //     duration: Duration(seconds: 3),
+      //   ),
+      // );
     }
   }
 
