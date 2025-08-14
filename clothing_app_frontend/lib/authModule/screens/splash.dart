@@ -74,11 +74,11 @@ class _SplashScreenState extends State<SplashScreenMain>
     }
 
     try {
-      // pushAndRemoveUntil(NamedRoute.onBoardingScreen1);
-      pushAndRemoveUntil(
-        NamedRoute.bottomNavBarScreen,
-        arguments: BottomNavArgumnets(),
-      );
+      pushAndRemoveUntil(NamedRoute.onBoardingScreen1);
+      // pushAndRemoveUntil(
+      //   NamedRoute.bottomNavBarScreen,
+      //   arguments: BottomNavArgumnets(),
+      // );
     } catch (e) {
       print("Navigation error: $e");
       // Fallback navigation
